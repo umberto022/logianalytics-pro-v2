@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // Users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Companies: owner or members can access
+    match /companies/{companyId} {
+      allow read, write: if isAuth() &&
+        (resource == null || resource.data.ownerId == request.auth.uid);
+    }
+
+    // Inventory: scoped per user
+    match /inventory/{userId}/items/{itemId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Inventory movements: scoped per user
+    match /inventoryMovements/{userId}/records/{movId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Sales: scoped per user
+    match /sales/{userId}/records/{saleId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}
