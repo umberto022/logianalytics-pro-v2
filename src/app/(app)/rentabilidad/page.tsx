@@ -200,8 +200,7 @@ export default function RentabilidadPage() {
                     dataKey="size"
                     aspectRatio={4 / 3}
                     stroke="#fff"
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    content={(props: any) => {
+                    content={((props: any) => {
                       const { x, y, width, height, name, margin: mg } = props;
                       const bg = (mg ?? 0) >= 25 ? "#10b981" : (mg ?? 0) >= 15 ? "#f59e0b" : "#ef4444";
                       return (
@@ -214,7 +213,7 @@ export default function RentabilidadPage() {
                           )}
                         </g>
                       );
-                    }}
+                    }) as any}
                   />
                 </ResponsiveContainer>
               </div>

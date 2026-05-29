@@ -18,7 +18,10 @@ export default function ConfiguracionPage() {
   const [savingPassword, setSavingPassword] = useState(false);
 
   const [prof, setProf] = useState({ fullName: "", phone: "" });
-  const [comp, setComp] = useState({
+  const [comp, setComp] = useState<{
+    name: string; rif: string; address: string; phone: string; email: string;
+    industry: string; country: string;
+  }>({
     name: "", rif: "", address: "", phone: "", email: "", industry: INDUSTRIES[0], country: COUNTRIES[0],
   });
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
