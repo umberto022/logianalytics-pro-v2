@@ -15,13 +15,13 @@ import {
 import type { UserProfile } from "@/types";
 
 interface AuthCtx {
-  user:        User | null;
-  profile:     UserProfile | null;
-  loading:     boolean;
-  signIn:      (email: string, password: string) => Promise<void>;
-  signInGoogle:() => Promise<void>;
-  register:    (email: string, password: string, fullName: string, phone: string) => Promise<void>;
-  logout:      () => Promise<void>;
+  user:         User | null;
+  profile:      UserProfile | null;
+  loading:      boolean;
+  signIn:       (email: string, password: string) => Promise<void>;
+  signInGoogle: () => Promise<void>;
+  register:     (email: string, password: string, fullName: string, phone: string) => Promise<void>;
+  logout:       () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -33,17 +33,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(u: User) {
-    const p = await getUserProfile(u.uid);
-    setProfile(p);
-    if (p) touchLastLogin(u.uid).catch(() => {});
+    try {
+      const p = await getUserProfile(u.uid);
+      setProfile(p);
+      if (p) touchLastLogin(u.uid).catch(() => {});
+    } catch (e) {
+      console.error("loadProfile error:", e);
+      setProfile(null);
+    }
   }
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      if (u) await loadProfile(u);
-      else    setProfile(null);
-      setLoading(false);
+      try {
+        if (u) await loadProfile(u);
+        else    setProfile(null);
+      } catch (e) {
+        console.error("onAuthStateChanged error:", e);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
     });
     return unsub;
   }, []);
@@ -56,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signInGoogle() {
     const provider = new GoogleAuthProvider();
     const cred = await signInWithPopup(auth, provider);
-    const exists = await getUserProfile(cred.user.uid);
+    const exists = await getUserProfile(cred.user.uid).catch(() => null);
     if (!exists) {
       await createUserProfile(cred.user.uid, {
         email:    cred.user.email!,
