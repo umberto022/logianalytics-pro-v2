@@ -38,8 +38,13 @@ export default function InventarioPage() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    setItems(await listInventory(user.uid));
-    setLoading(false);
+    try {
+      setItems(await listInventory(user.uid));
+    } catch (e) {
+      console.error("inventario load error:", e);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => { load(); }, [load]);

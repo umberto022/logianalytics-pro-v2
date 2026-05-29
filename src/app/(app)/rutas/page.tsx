@@ -31,9 +31,14 @@ export default function RutasPage() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const sl = await getSales(user.uid, period);
-    setRoutes(computeByRoute(sl));
-    setLoading(false);
+    try {
+      const sl = await getSales(user.uid, period);
+      setRoutes(computeByRoute(sl));
+    } catch (e) {
+      console.error("rutas load error:", e);
+    } finally {
+      setLoading(false);
+    }
   }, [user, period]);
 
   useEffect(() => { load(); }, [load]);

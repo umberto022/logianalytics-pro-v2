@@ -43,16 +43,21 @@ export default function VentasPage() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [inv, sl] = await Promise.all([
-      listInventory(user.uid),
-      getSales(user.uid, period),
-    ]);
-    setItems(inv);
-    setSales(sl);
-    if (inv.length && !form.inventoryId) {
-      setForm((p) => ({ ...p, inventoryId: inv[0].id, unitPrice: inv[0].salePrice }));
+    try {
+      const [inv, sl] = await Promise.all([
+        listInventory(user.uid),
+        getSales(user.uid, period),
+      ]);
+      setItems(inv);
+      setSales(sl);
+      if (inv.length && !form.inventoryId) {
+        setForm((p) => ({ ...p, inventoryId: inv[0].id, unitPrice: inv[0].salePrice }));
+      }
+    } catch (e) {
+      console.error("ventas load error:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [user, period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { load(); }, [load]);

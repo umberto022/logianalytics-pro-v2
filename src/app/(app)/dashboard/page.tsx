@@ -31,13 +31,18 @@ export default function DashboardPage() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [inv, sl] = await Promise.all([
-      listInventory(user.uid),
-      getSales(user.uid, period),
-    ]);
-    setItems(inv);
-    setSales(sl);
-    setLoading(false);
+    try {
+      const [inv, sl] = await Promise.all([
+        listInventory(user.uid),
+        getSales(user.uid, period),
+      ]);
+      setItems(inv);
+      setSales(sl);
+    } catch (e) {
+      console.error("dashboard load error:", e);
+    } finally {
+      setLoading(false);
+    }
   }, [user, period]);
 
   useEffect(() => { load(); }, [load]);

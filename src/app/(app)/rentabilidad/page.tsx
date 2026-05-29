@@ -31,13 +31,18 @@ export default function RentabilidadPage() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [sl, mv] = await Promise.all([
-      getSales(user.uid, period),
-      listMovements(user.uid, period),
-    ]);
-    setSales(sl);
-    setMovements(mv);
-    setLoading(false);
+    try {
+      const [sl, mv] = await Promise.all([
+        getSales(user.uid, period),
+        listMovements(user.uid, period),
+      ]);
+      setSales(sl);
+      setMovements(mv);
+    } catch (e) {
+      console.error("rentabilidad load error:", e);
+    } finally {
+      setLoading(false);
+    }
   }, [user, period]);
 
   useEffect(() => { load(); }, [load]);
