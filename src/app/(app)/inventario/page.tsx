@@ -112,12 +112,13 @@ function PhotoPicker({ current, onChange, onUploading }: {
       const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
         method: "POST", body: form,
       });
-      if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message ?? "Upload failed");
       setPreview(data.secure_url);
       onChange(data.secure_url);
-    } catch {
-      toast.error("Error al subir la imagen");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      toast.error(`Error: ${msg}`);
     } finally {
       setUploading(false);
       onUploading?.(false);
