@@ -88,7 +88,11 @@ function StatCard({
 
 // ─────────────────────── Photo picker ────────────────────────────────────────
 
-function PhotoPicker({ current, onChange }: { current: string; onChange: (url: string) => void }) {
+function PhotoPicker({ current, onChange, onUploading }: {
+  current: string;
+  onChange: (url: string) => void;
+  onUploading?: (uploading: boolean) => void;
+}) {
   const fileRef   = useRef<HTMLInputElement>(null);
   const videoRef  = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -99,8 +103,10 @@ function PhotoPicker({ current, onChange }: { current: string; onChange: (url: s
 
   async function uploadFile(blob: Blob, name: string) {
     setUploading(true);
+    onUploading?.(true);
     try {
-      const path = `inventory-photos/${Date.now()}_${name}`;
+      const safeName = name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `inventory-photos/${Date.now()}_${safeName}`;
       const snap = await uploadBytes(storageRef(storage, path), blob);
       const url  = await getDownloadURL(snap.ref);
       setPreview(url);
@@ -109,6 +115,7 @@ function PhotoPicker({ current, onChange }: { current: string; onChange: (url: s
       toast.error("Error al subir la imagen");
     } finally {
       setUploading(false);
+      onUploading?.(false);
     }
   }
 
@@ -157,7 +164,8 @@ function PhotoPicker({ current, onChange }: { current: string; onChange: (url: s
       {preview && (
         <div className="relative w-24 h-24 mb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="producto" className="w-24 h-24 object-cover rounded-xl border border-slate-200" />
+          <img src={preview} alt="producto" className="w-24 h-24 object-cover rounded-xl border border-slate-200"
+            onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <button type="button" onClick={() => { setPreview(""); onChange(""); }}
             className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
             <X size={10} />
@@ -196,6 +204,28 @@ function PhotoPicker({ current, onChange }: { current: string; onChange: (url: s
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
         </div>
       )}
+    </div>
+  );
+}
+
+// ─────────────────────── Product thumbnail ───────────────────────────────────
+
+function ProductThumb({ url, name }: { url?: string; name: string }) {
+  const [err, setErr] = useState(false);
+  if (url && !err) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt={name}
+        className="w-10 h-10 object-cover rounded-lg border border-slate-200"
+        onError={() => setErr(true)}
+      />
+    );
+  }
+  return (
+    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300">
+      <Package size={16} />
     </div>
   );
 }
@@ -421,8 +451,9 @@ export default function InventarioPage() {
   const [saving,       setSaving]       = useState(false);
   const [search,       setSearch]       = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
-  const [form,         setForm]         = useState(EMPTY);
-  const [editing,      setEditing]      = useState<InventoryItem | null>(null);
+  const [form,           setForm]           = useState(EMPTY);
+  const [editing,        setEditing]        = useState<InventoryItem | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -655,11 +686,7 @@ export default function InventarioPage() {
                       return (
                         <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
                           <td className="py-3 px-4">
-                            {item.imageUrl
-                              // eslint-disable-next-line @next/next/no-img-element
-                              ? <img src={item.imageUrl} alt={item.name} className="w-10 h-10 object-cover rounded-lg border border-slate-200" />
-                              : <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300"><Package size={16} /></div>
-                            }
+                            <ProductThumb url={item.imageUrl} name={item.name} />
                           </td>
                           <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
                           <td className="py-3 px-4 font-medium">{item.name}</td>
@@ -737,11 +764,12 @@ export default function InventarioPage() {
             <PhotoPicker
               current={form.imageUrl ?? ""}
               onChange={(url) => setForm((p) => ({ ...p, imageUrl: url }))}
+              onUploading={setImageUploading}
             />
             <div className="flex gap-3 pt-2">
-              <button type="submit" disabled={saving}
+              <button type="submit" disabled={saving || imageUploading}
                 className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">
-                {saving ? "Guardando…" : (editing ? "Guardar cambios" : "Agregar al inventario")}
+                {imageUploading ? "Subiendo foto…" : saving ? "Guardando…" : (editing ? "Guardar cambios" : "Agregar al inventario")}
               </button>
               <button type="button" onClick={() => { setEditing(null); setForm(EMPTY); setTab("list"); }}
                 className="px-5 py-2.5 border border-slate-200 rounded-lg text-sm hover:bg-slate-50 transition">
