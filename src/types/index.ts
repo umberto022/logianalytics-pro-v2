@@ -40,6 +40,7 @@ export interface InventoryItem {
   salePrice: number;
   dailyDemand?: number;
   leadTimeDays: number;
+  imageUrl?: string;
   updatedAt: Timestamp;
 }
 

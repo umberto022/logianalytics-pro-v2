@@ -1,6 +1,6 @@
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
-  query, orderBy, Timestamp, writeBatch, getDoc,
+  Timestamp, writeBatch, getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { InventoryItem, InventoryMovement } from "@/types";
@@ -13,9 +13,10 @@ const movementsCol = (uid: string) =>
   collection(db, "inventoryMovements", uid, "records");
 
 export async function listInventory(uid: string): Promise<InventoryItem[]> {
-  const q = query(itemsCol(uid), orderBy("category"), orderBy("name"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as InventoryItem));
+  const snap = await getDocs(itemsCol(uid));
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() } as InventoryItem))
+    .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
 }
 
 export async function addInventoryItem(
@@ -129,9 +130,9 @@ export async function listMovements(
   const since = Timestamp.fromDate(
     new Date(Date.now() - days * 24 * 60 * 60 * 1000)
   );
-  const q = query(movementsCol(uid), orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
+  const snap = await getDocs(movementsCol(uid));
   return snap.docs
     .map((d) => ({ id: d.id, ...d.data() } as InventoryMovement))
-    .filter((m) => m.createdAt >= since);
+    .filter((m) => m.createdAt >= since)
+    .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
 }

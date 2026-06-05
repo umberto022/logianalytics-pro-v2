@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
-import { Plus, Download, Upload, Edit2, Trash2, Package, Search } from "lucide-react";
+import { Plus, Download, Upload, Edit2, Trash2, Package, Search, Camera, X, Image as ImageIcon } from "lucide-react";
 import Papa from "papaparse";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   listInventory, addInventoryItem, updateInventoryItem,
@@ -16,13 +18,163 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import type { InventoryItem } from "@/types";
 
-type Tab = "list" | "add" | "import";
+type Tab = "list" | "add";
 
 const EMPTY: Omit<InventoryItem, "id" | "sku" | "updatedAt"> = {
   name: "", category: "", color: "", supplier: "",
   currentStock: 0, minStock: 5, maxStock: 100,
-  unitCost: 0, salePrice: 0, leadTimeDays: 7,
+  unitCost: 0, salePrice: 0, leadTimeDays: 7, imageUrl: "",
 };
+
+// ── Photo picker ────────────────────────────────────────────────────────────
+
+function PhotoPicker({
+  current, onChange,
+}: {
+  current: string;
+  onChange: (url: string) => void;
+}) {
+  const fileRef  = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [mode, setMode]     = useState<"idle" | "camera">("idle");
+  const [preview, setPreview] = useState(current);
+  const [uploading, setUploading] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  async function uploadFile(blob: Blob, name: string) {
+    setUploading(true);
+    try {
+      const path = `inventory-photos/${Date.now()}_${name}`;
+      const snap = await uploadBytes(storageRef(storage, path), blob);
+      const url = await getDownloadURL(snap.ref);
+      setPreview(url);
+      onChange(url);
+    } catch {
+      toast.error("Error al subir la imagen");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file, file.name);
+    e.target.value = "";
+  }
+
+  async function startCamera() {
+    setMode("camera");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+    } catch {
+      toast.error("No se pudo acceder a la cámara");
+      setMode("idle");
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setMode("idle");
+  }
+
+  async function capturePhoto() {
+    if (!videoRef.current || !canvasRef.current) return;
+    const v = videoRef.current;
+    canvasRef.current.width  = v.videoWidth;
+    canvasRef.current.height = v.videoHeight;
+    canvasRef.current.getContext("2d")!.drawImage(v, 0, 0);
+    stopCamera();
+    canvasRef.current.toBlob(async (blob) => {
+      if (blob) await uploadFile(blob, "camara.jpg");
+    }, "image/jpeg", 0.8);
+  }
+
+  function clearPhoto() {
+    setPreview("");
+    onChange("");
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-2">
+        Foto del producto <span className="text-slate-400 font-normal">(opcional)</span>
+      </label>
+
+      {/* Current preview */}
+      {preview && (
+        <div className="relative w-24 h-24 mb-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={preview} alt="producto" className="w-24 h-24 object-cover rounded-xl border border-slate-200" />
+          <button
+            type="button"
+            onClick={clearPhoto}
+            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition"
+          >
+            <X size={10} />
+          </button>
+        </div>
+      )}
+
+      {/* Camera mode */}
+      {mode === "camera" && (
+        <div className="mb-3 rounded-xl overflow-hidden border border-slate-200 bg-black relative">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video ref={videoRef} className="w-full max-h-56 object-cover" autoPlay playsInline />
+          <canvas ref={canvasRef} className="hidden" />
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3">
+            <button
+              type="button"
+              onClick={capturePhoto}
+              className="px-5 py-2 bg-white text-slate-900 rounded-full text-sm font-semibold shadow hover:bg-slate-100 transition"
+            >
+              📸 Capturar
+            </button>
+            <button
+              type="button"
+              onClick={stopCamera}
+              className="px-4 py-2 bg-red-500 text-white rounded-full text-sm font-semibold shadow hover:bg-red-600 transition"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Upload / Camera buttons */}
+      {uploading ? (
+        <p className="text-sm text-brand-600 animate-pulse">Subiendo imagen…</p>
+      ) : mode === "idle" && (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+          >
+            <ImageIcon size={14} /> Subir foto
+          </button>
+          <button
+            type="button"
+            onClick={startCamera}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+          >
+            <Camera size={14} /> Tomar foto
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────────────────
 
 export default function InventarioPage() {
   const { user } = useAuth();
@@ -42,6 +194,7 @@ export default function InventarioPage() {
       setItems(await listInventory(user.uid));
     } catch (e) {
       console.error("inventario load error:", e);
+      toast.error("Error al cargar inventario");
     } finally {
       setLoading(false);
     }
@@ -57,13 +210,22 @@ export default function InventarioPage() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.category) { toast.error("Nombre y tipo son obligatorios"); return; }
+    if (!form.name.trim() || !form.category.trim()) {
+      toast.error("Nombre y tipo son obligatorios");
+      return;
+    }
     if (!user) return;
     setSaving(true);
     const r = await addInventoryItem(user.uid, form);
     setSaving(false);
-    if (r.ok) { toast.success(r.message); setForm(EMPTY); await load(); setTab("list"); }
-    else        toast.error(r.message);
+    if (r.ok) {
+      toast.success(r.message);
+      setForm(EMPTY);
+      await load();
+      setTab("list");
+    } else {
+      toast.error(r.message);
+    }
   }
 
   async function handleUpdate(e: React.FormEvent) {
@@ -72,8 +234,14 @@ export default function InventarioPage() {
     setSaving(true);
     const r = await updateInventoryItem(user.uid, editing.id, form);
     setSaving(false);
-    if (r.ok) { toast.success(r.message); setEditing(null); await load(); setTab("list"); }
-    else        toast.error(r.message);
+    if (r.ok) {
+      toast.success(r.message);
+      setEditing(null);
+      await load();
+      setTab("list");
+    } else {
+      toast.error(r.message);
+    }
   }
 
   async function handleDelete(item: InventoryItem) {
@@ -90,7 +258,7 @@ export default function InventarioPage() {
       supplier: item.supplier, currentStock: item.currentStock,
       minStock: item.minStock, maxStock: item.maxStock,
       unitCost: item.unitCost, salePrice: item.salePrice,
-      leadTimeDays: item.leadTimeDays,
+      leadTimeDays: item.leadTimeDays, imageUrl: item.imageUrl ?? "",
     });
     setTab("add");
   }
@@ -120,7 +288,7 @@ export default function InventarioPage() {
           maxStock:     Number(r.stock_maximo || r.maxStock || 100),
           unitCost:     Number(r.costo || r.unitCost || 0),
           salePrice:    Number(r.precio_venta || r.salePrice || 0),
-          leadTimeDays: 7,
+          leadTimeDays: 7, imageUrl: "",
         })).filter((r) => r.name && r.category);
 
         if (!rows.length) { toast.error("No se encontraron filas válidas"); return; }
@@ -174,10 +342,10 @@ export default function InventarioPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KPICard label="Productos"          value={fmt(items.length, 0)}      color="indigo" />
-        <KPICard label="Valor del inventario" value={fmtCurrency(totalValue)} color="green"  />
-        <KPICard label="Stock crítico"      value={String(criticalCount)}     color="red"    />
-        <KPICard label="Stock bajo"         value={String(lowCount)}          color="amber"  />
+        <KPICard label="Productos"            value={fmt(items.length, 0)}      color="indigo" />
+        <KPICard label="Valor del inventario" value={fmtCurrency(totalValue)}   color="green"  />
+        <KPICard label="Stock crítico"        value={String(criticalCount)}      color="red"    />
+        <KPICard label="Stock bajo"           value={String(lowCount)}           color="amber"  />
       </div>
 
       {/* Tabs */}
@@ -185,7 +353,7 @@ export default function InventarioPage() {
         {(["list", "add"] as Tab[]).map((t) => (
           <button
             key={t}
-            onClick={() => { setTab(t); if (t === "add" && editing) { setEditing(null); setForm(EMPTY); } }}
+            onClick={() => { setTab(t); if (t === "list") { setEditing(null); setForm(EMPTY); } }}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition ${tab === t ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}
           >
             {t === "list" ? `📋 Mis productos (${items.length})` : (editing ? "✏️ Editar producto" : "➕ Agregar producto")}
@@ -193,10 +361,9 @@ export default function InventarioPage() {
         ))}
       </div>
 
-      {/* List tab */}
+      {/* ── List tab ── */}
       {tab === "list" && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {/* Filters */}
           <div className="flex gap-3 p-4 border-b border-slate-100">
             <div className="relative flex-1 max-w-sm">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -224,7 +391,7 @@ export default function InventarioPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-slate-500 bg-slate-50">
-                    {["SKU", "Producto", "Tipo", "Color", "Stock", "Mín / Máx", "Costo", "P. Venta", "Estado", ""].map((h) => (
+                    {["📷", "SKU", "Producto", "Tipo", "Color", "Stock", "Mín / Máx", "Costo", "P. Venta", "Estado", ""].map((h) => (
                       <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -235,6 +402,13 @@ export default function InventarioPage() {
                     const pct = item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0;
                     return (
                       <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
+                        <td className="py-3 px-4">
+                          {item.imageUrl
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={item.imageUrl} alt={item.name} className="w-10 h-10 object-cover rounded-lg border border-slate-200" />
+                            : <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300"><Package size={16} /></div>
+                          }
+                        </td>
                         <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
                         <td className="py-3 px-4 font-medium">{item.name}</td>
                         <td className="py-3 px-4 text-slate-600">{item.category}</td>
@@ -274,14 +448,14 @@ export default function InventarioPage() {
         </div>
       )}
 
-      {/* Add / Edit tab */}
+      {/* ── Add / Edit tab ── */}
       {tab === "add" && (
         <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm max-w-2xl">
           <h2 className="text-lg font-semibold mb-5">{editing ? "Editar producto" : "Registrar nuevo producto"}</h2>
-          <form onSubmit={editing ? handleUpdate : handleAdd} className="space-y-4">
+          <form onSubmit={editing ? handleUpdate : handleAdd} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Nombre del producto *", key: "name" as const, placeholder: "ej. Camiseta manga corta" },
+                { label: "Nombre del producto *", key: "name" as const,     placeholder: "ej. Camiseta manga corta" },
                 { label: "Tipo / Categoría *",    key: "category" as const, placeholder: "ej. Ropa, Electrónico" },
                 { label: "Color",                 key: "color" as const,    placeholder: "ej. Rojo, Azul" },
                 { label: "Proveedor",             key: "supplier" as const, placeholder: "Nombre del proveedor" },
@@ -307,6 +481,12 @@ export default function InventarioPage() {
                 </div>
               ))}
             </div>
+
+            {/* Photo picker */}
+            <PhotoPicker
+              current={form.imageUrl ?? ""}
+              onChange={(url) => setForm((p) => ({ ...p, imageUrl: url }))}
+            />
 
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={saving}
