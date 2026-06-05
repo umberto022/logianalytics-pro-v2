@@ -13,8 +13,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
   Cell, PieChart, Pie, Legend,
 } from "recharts";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+const CLOUDINARY_CLOUD  = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+const CLOUDINARY_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
 import { useAuth } from "@/contexts/AuthContext";
 import {
   listInventory, addInventoryItem, updateInventoryItem,
@@ -105,12 +105,17 @@ function PhotoPicker({ current, onChange, onUploading }: {
     setUploading(true);
     onUploading?.(true);
     try {
-      const safeName = name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `inventory-photos/${Date.now()}_${safeName}`;
-      const snap = await uploadBytes(storageRef(storage, path), blob);
-      const url  = await getDownloadURL(snap.ref);
-      setPreview(url);
-      onChange(url);
+      const form = new FormData();
+      form.append("file", blob, name);
+      form.append("upload_preset", CLOUDINARY_PRESET);
+      form.append("folder", "inventory-photos");
+      const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+        method: "POST", body: form,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setPreview(data.secure_url);
+      onChange(data.secure_url);
     } catch {
       toast.error("Error al subir la imagen");
     } finally {
