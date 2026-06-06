@@ -13,8 +13,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
   Cell, PieChart, Pie, Legend,
 } from "recharts";
-const CLOUDINARY_CLOUD  = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
-const CLOUDINARY_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
+const CLOUDINARY_CLOUD  = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME  ?? "").trim();
+const CLOUDINARY_PRESET = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
 import { useAuth } from "@/contexts/AuthContext";
 import {
   listInventory, addInventoryItem, updateInventoryItem,
@@ -102,6 +102,10 @@ function PhotoPicker({ current, onChange, onUploading }: {
   const streamRef = useRef<MediaStream | null>(null);
 
   async function uploadFile(blob: Blob, name: string) {
+    if (!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET) {
+      toast.error("Configuración de Cloudinary faltante. Verifica las variables de entorno.");
+      return;
+    }
     setUploading(true);
     onUploading?.(true);
     try {
@@ -109,16 +113,20 @@ function PhotoPicker({ current, onChange, onUploading }: {
       form.append("file", blob, name);
       form.append("upload_preset", CLOUDINARY_PRESET);
       form.append("folder", "inventory-photos");
-      const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-        method: "POST", body: form,
-      });
+      const res  = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,
+        { method: "POST", body: form }
+      );
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message ?? "Upload failed");
+      if (!res.ok) {
+        console.error("Cloudinary error:", data);
+        throw new Error(data?.error?.message ?? `HTTP ${res.status}`);
+      }
       setPreview(data.secure_url);
       onChange(data.secure_url);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error desconocido";
-      toast.error(`Error: ${msg}`);
+      toast.error(`Error subiendo foto: ${msg}`);
     } finally {
       setUploading(false);
       onUploading?.(false);
