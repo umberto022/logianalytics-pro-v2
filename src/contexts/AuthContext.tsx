@@ -6,7 +6,8 @@ import {
 import {
   onAuthStateChanged, signOut, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, GoogleAuthProvider,
-  signInWithPopup, updateProfile, sendPasswordResetEmail, type User,
+  signInWithPopup, updateProfile, sendPasswordResetEmail,
+  setPersistence, browserSessionPersistence, type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import {
@@ -61,11 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(email: string, password: string) {
+    await setPersistence(auth, browserSessionPersistence);
     const cred = await signInWithEmailAndPassword(auth, email, password);
     await loadProfile(cred.user);
   }
 
   async function signInGoogle() {
+    await setPersistence(auth, browserSessionPersistence);
     const provider = new GoogleAuthProvider();
     const cred = await signInWithPopup(auth, provider);
     const exists = await getUserProfile(cred.user.uid).catch(() => null);
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function register(
     email: string, password: string, fullName: string, phone: string
   ) {
+    await setPersistence(auth, browserSessionPersistence);
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: fullName });
     await createUserProfile(cred.user.uid, { email, fullName, phone });

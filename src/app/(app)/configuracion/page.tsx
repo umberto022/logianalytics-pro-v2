@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { updatePassword, type User } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
@@ -9,11 +8,9 @@ import { auth, db } from "@/lib/firebase";
 import { updateUserProfile } from "@/lib/firestore/users";
 import { createCompany, getCompany, updateCompany } from "@/lib/firestore/companies";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePlan } from "@/hooks/usePlan";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { UpgradeModal } from "@/components/ui/UpgradeModal";
 import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
-import { Zap, CheckCircle2, Bell, BellOff } from "lucide-react";
+import { CheckCircle2, Bell, BellOff } from "lucide-react";
 import {
   isPushEnabled,
   setPushEnabled,
@@ -22,24 +19,7 @@ import {
 
 export default function ConfiguracionPage() {
   const { user, profile, refreshProfile } = useAuth();
-  const { isFree, isPro } = usePlan();
-  const searchParams = useSearchParams();
   const [company, setCompany] = useState<Company | null>(null);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-
-  // Activate Pro after successful Stripe Payment Link redirect
-  useEffect(() => {
-    const upgrade = searchParams.get("upgrade");
-    if (upgrade !== "success" || !user) return;
-
-    updateDoc(doc(db, "users", user.uid), { subscriptionPlan: "pro" })
-      .then(() => refreshProfile())
-      .then(() => {
-        toast.success("¡Plan Pro activado! Bienvenido a LogiAnalytics Pro.");
-        window.history.replaceState({}, "", "/configuracion");
-      })
-      .catch(() => {});
-  }, [searchParams, user, refreshProfile]);
   const [pushEnabled, setPushEnabledState] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
 
@@ -146,7 +126,6 @@ export default function ConfiguracionPage() {
 
   return (
     <div>
-      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
       <PageHeader title="Configuración" subtitle="Administra tu perfil y empresa" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -164,25 +143,7 @@ export default function ConfiguracionPage() {
               <span className="text-slate-500">Rol</span>
               <span className="font-medium capitalize">{profile?.role ?? "—"}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500">Plan</span>
-              {isPro ? (
-                <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
-                  <CheckCircle2 size={14} /> Pro activo
-                </span>
-              ) : (
-                <span className="font-medium capitalize text-slate-600">{profile?.subscriptionPlan ?? "free"}</span>
-              )}
-            </div>
           </div>
-
-          {isFree && (
-            <button onClick={() => setShowUpgrade(true)}
-              className="w-full flex items-center justify-center gap-2 mb-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition">
-              <Zap size={15} className="text-yellow-300" />
-              Upgrade a Pro — $19/mes
-            </button>
-          )}
 
           <form onSubmit={saveProfile} className="space-y-3">
             <div>

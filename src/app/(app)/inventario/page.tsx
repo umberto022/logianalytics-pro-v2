@@ -34,8 +34,6 @@ import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
-import { UpgradeModal } from "@/components/ui/UpgradeModal";
-import { usePlan } from "@/hooks/usePlan";
 import type { InventoryItem, InventoryMovement, PurchaseOrder, PurchaseOrderStatus, StockStatus } from "@/types";
 
 type Tab = "dashboard" | "list" | "add" | "historial" | "ordenes";
@@ -1081,8 +1079,6 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
 
 export default function InventarioPage() {
   const { user } = useAuth();
-  const { productLimitReached } = usePlan();
-  const [showUpgrade, setShowUpgrade] = useState(false);
   const [tab,          setTab]          = useState<Tab>("dashboard");
   const [items,        setItems]        = useState<InventoryItem[]>([]);
   const [loading,      setLoading]      = useState(true);
@@ -1126,7 +1122,6 @@ export default function InventarioPage() {
     e.preventDefault();
     if (!form.name.trim() || !form.category.trim()) { toast.error("Nombre y tipo son obligatorios"); return; }
     if (!user) return;
-    if (productLimitReached(items.length)) { setShowUpgrade(true); return; }
     setSaving(true);
     const r = await addInventoryItem(user.uid, form);
     setSaving(false);
@@ -1326,12 +1321,7 @@ export default function InventarioPage() {
         <QRModal item={qrItem} onClose={() => setQrItem(null)} />
       )}
 
-      {showUpgrade && (
-        <UpgradeModal
-          reason="Has alcanzado el límite de 50 productos del plan Free. Actualiza a Pro para agregar productos ilimitados."
-          onClose={() => setShowUpgrade(false)}
-        />
-      )}
+
 
       <PageHeader
         title="Inventario"
