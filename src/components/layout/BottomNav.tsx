@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Package,
   ClipboardList, Users, MoreHorizontal,
-  MapPin, TrendingUp, Settings, LogOut, X, Download,
+  MapPin, TrendingUp, Settings, LogOut, X, Download, Store,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,7 @@ const MAIN_NAV = [
 
 const MORE_NAV = [
   { href: "/rutas",         label: "Rutas",         icon: MapPin     },
+  { href: "/proveedores",   label: "Proveedores",   icon: Store      },
   { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp },
   { href: "/configuracion", label: "Configuración", icon: Settings   },
 ];

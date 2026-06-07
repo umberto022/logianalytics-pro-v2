@@ -16,7 +16,7 @@ import {
 import Papa from "papaparse";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
-  Cell, PieChart, Pie,
+  Cell, PieChart, Pie, LineChart, Line, CartesianGrid,
 } from "recharts";
 
 const CLOUDINARY_CLOUD  = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME  ?? "").trim();
@@ -29,6 +29,7 @@ import {
   deleteInventoryItem, bulkAddInventory, listMovements, adjustStock,
 } from "@/lib/firestore/inventory";
 import { listPurchaseOrders } from "@/lib/firestore/purchases";
+import { listSuppliers, type Supplier } from "@/lib/firestore/suppliers";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
 import { StockBadge } from "@/components/ui/StockBadge";
@@ -343,6 +344,43 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust }: {
               <span>Lead time: {item.leadTimeDays}d</span>
             </div>
           </div>
+
+          {/* Price history chart */}
+          {item.priceHistory && item.priceHistory.length >= 2 && (() => {
+            const chartData = [...item.priceHistory]
+              .sort((a, b) => a.date.toMillis() - b.date.toMillis())
+              .map((e) => ({
+                date: e.date.toDate().toLocaleDateString("es-DO", { day: "2-digit", month: "short" }),
+                Costo: e.unitCost,
+                Precio: e.salePrice,
+              }));
+            return (
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                  <History size={11} /> Evolución de precios
+                </p>
+                <div className="h-28">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#94a3b8" }} tickLine={false} />
+                      <YAxis tick={{ fontSize: 9, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e2e8f0" }}
+                        formatter={(v: number) => [`$${v.toFixed(2)}`, ""]}
+                      />
+                      <Line type="monotone" dataKey="Costo"  stroke="#ef4444" strokeWidth={1.5} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="Precio" stroke="#10b981" strokeWidth={1.5} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex gap-4 justify-center mt-1">
+                  <span className="flex items-center gap-1 text-xs text-red-500"><span className="w-3 h-0.5 bg-red-500 inline-block" /> Costo</span>
+                  <span className="flex items-center gap-1 text-xs text-emerald-600"><span className="w-3 h-0.5 bg-emerald-500 inline-block" /> Precio venta</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Actions */}
           <div className="flex gap-2">
@@ -1101,10 +1139,17 @@ export default function InventarioPage() {
   const [qrItem,       setQrItem]       = useState<InventoryItem | null>(null);
   const [detailItem,   setDetailItem]   = useState<InventoryItem | null>(null);
 
+  // Suppliers
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    try { setItems(await listInventory(user.uid)); }
+    try {
+      const [inv, sups] = await Promise.all([listInventory(user.uid), listSuppliers(user.uid)]);
+      setItems(inv);
+      setSuppliers(sups);
+    }
     catch { toast.error("Error al cargar inventario"); }
     finally { setLoading(false); }
   }, [user]);
@@ -1611,8 +1656,7 @@ export default function InventarioPage() {
               {[
                 { label: "Nombre del producto *", key: "name" as const,     placeholder: "ej. Camiseta manga corta" },
                 { label: "Tipo / Categoría *",    key: "category" as const, placeholder: "ej. Ropa, Electrónico" },
-                { label: "Color",                 key: "color" as const,    placeholder: "ej. Rojo, Azul" },
-                { label: "Proveedor",             key: "supplier" as const, placeholder: "Nombre del proveedor" },
+                { label: "Color", key: "color" as const, placeholder: "ej. Rojo, Azul" },
               ].map(({ label, key, placeholder }) => (
                 <div key={key}>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
@@ -1620,6 +1664,21 @@ export default function InventarioPage() {
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               ))}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Proveedor</label>
+                {suppliers.length > 0 ? (
+                  <select value={form.supplier} onChange={(e) => setForm((p) => ({ ...p, supplier: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <option value="">— Sin proveedor —</option>
+                    {suppliers.filter(s => s.active).map((s) => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input value={form.supplier} onChange={setF("supplier")} placeholder="Nombre del proveedor"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                )}
+              </div>
               {[
                 { label: "Stock inicial",       key: "currentStock" as const, min: 0 },
                 { label: "Stock mínimo",        key: "minStock" as const,     min: 0 },

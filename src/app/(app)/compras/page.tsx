@@ -13,6 +13,7 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { listInventory } from "@/lib/firestore/inventory";
+import { listSuppliers, type Supplier } from "@/lib/firestore/suppliers";
 import {
   listPurchaseOrders, createPurchaseOrder,
   deletePurchaseOrder, updatePurchaseOrder,
@@ -254,10 +255,11 @@ const EMPTY_ORDER = {
   expectedDate: "", status: "pendiente" as PurchaseOrderStatus,
 };
 
-function OrderFormModal({ inventory, editOrder, preloadItems, onClose, onDone }: {
+function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose, onDone }: {
   inventory: InventoryItem[];
   editOrder: PurchaseOrder | null;
   preloadItems?: PurchaseOrder["items"] | null;
+  suppliers: Supplier[];
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -359,6 +361,23 @@ function OrderFormModal({ inventory, editOrder, preloadItems, onClose, onDone }:
             <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
               <TruckIcon size={14} /> Datos del proveedor
             </h3>
+            {suppliers.filter(s => s.active).length > 0 && (
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Seleccionar de mis proveedores</label>
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const s = suppliers.find(s => s.id === e.target.value);
+                    if (s) setFields(p => ({ ...p, supplierId: s.id, supplierName: s.name, supplierRnc: s.rnc, supplierPhone: s.phone, supplierEmail: s.email }));
+                  }}
+                  className="w-full px-3 py-2 border border-brand-200 bg-brand-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <option value="">— Elegir proveedor guardado —</option>
+                  {suppliers.filter(s => s.active).map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}{s.rnc ? ` · ${s.rnc}` : ""}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: "Nombre del proveedor *", key: "supplierName" as const, placeholder: "ej. Distribuidora ABC" },
@@ -516,12 +535,14 @@ export default function ComprasPage() {
   const [detailOrder, setDetailOrder] = useState<PurchaseOrder | null>(null);
   const [receiveOrder, setReceiveOrder] = useState<PurchaseOrder | null>(null);
 
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [o, i] = await Promise.all([listPurchaseOrders(user.uid), listInventory(user.uid)]);
-      setOrders(o); setInventory(i);
+      const [o, i, s] = await Promise.all([listPurchaseOrders(user.uid), listInventory(user.uid), listSuppliers(user.uid)]);
+      setOrders(o); setInventory(i); setSuppliers(s);
     } catch { toast.error("Error al cargar datos"); }
     finally { setLoading(false); }
   }, [user]);
@@ -574,7 +595,7 @@ export default function ComprasPage() {
     <div>
       {showForm && (
         <OrderFormModal inventory={inventory} editOrder={editOrder}
-          preloadItems={preloadItems}
+          preloadItems={preloadItems} suppliers={suppliers}
           onClose={() => { setShowForm(false); setEditOrder(null); setPreloadItems(null); }}
           onDone={load} />
       )}

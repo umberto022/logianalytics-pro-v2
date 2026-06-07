@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
   Settings, LogOut, Truck, Building2, MapPin, ClipboardList,
-  Users, Sun, Moon,
+  Users, Sun, Moon, Store,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
@@ -19,6 +19,7 @@ const NAV = [
   { href: "/rutas",         label: "Rutas",         icon: MapPin,          badge: null         },
   { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp,      badge: null         },
   { href: "/compras",       label: "Compras",       icon: ClipboardList,   badge: null         },
+  { href: "/proveedores",   label: "Proveedores",   icon: Store,           badge: null         },
   { href: "/inventario",    label: "Inventario",    icon: Package,         badge: "stock" as const },
   { href: "/configuracion", label: "Configuración", icon: Settings,        badge: null         },
 ];
