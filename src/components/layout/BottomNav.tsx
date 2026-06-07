@@ -1,55 +1,152 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Package,
-  ClipboardList, Users,
+  ClipboardList, Users, MoreHorizontal,
+  MapPin, TrendingUp, Settings, LogOut, X, Download,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/ventas",     label: "Ventas",     icon: ShoppingCart },
-  { href: "/clientes",   label: "Clientes",   icon: Users,        badge: false },
-  { href: "/compras",    label: "Compras",    icon: ClipboardList, badge: false },
-  { href: "/inventario", label: "Inventario", icon: Package,       badge: true  },
+const MAIN_NAV = [
+  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard, badge: false },
+  { href: "/ventas",     label: "Ventas",     icon: ShoppingCart,    badge: false },
+  { href: "/clientes",   label: "Clientes",   icon: Users,           badge: false },
+  { href: "/compras",    label: "Compras",    icon: ClipboardList,   badge: false },
+  { href: "/inventario", label: "Inventario", icon: Package,         badge: true  },
+];
+
+const MORE_NAV = [
+  { href: "/rutas",         label: "Rutas",         icon: MapPin      },
+  { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp  },
+  { href: "/configuracion", label: "Configuración", icon: Settings    },
 ];
 
 export function BottomNav() {
   const pathname      = usePathname();
   const criticalCount = useStockAlerts();
+  const { logout }    = useAuth();
+  const { canInstall, install } = usePWAInstall();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const moreActive = MORE_NAV.some(({ href }) => pathname === href || pathname.startsWith(href + "/"));
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-30 bg-sidebar border-t border-white/10 flex lg:hidden safe-area-bottom">
-      {NAV.map(({ href, label, icon: Icon, badge }) => {
-        const active    = pathname === href || pathname.startsWith(href + "/");
-        const showBadge = badge && criticalCount > 0;
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 relative transition-colors",
-              active ? "text-brand-400" : "text-slate-500"
-            )}
+    <>
+      {/* Backdrop */}
+      {moreOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={() => setMoreOpen(false)}
+        />
+      )}
+
+      {/* More drawer */}
+      <div className={cn(
+        "fixed inset-x-0 z-50 bg-white rounded-t-2xl shadow-2xl lg:hidden transition-transform duration-300",
+        moreOpen ? "translate-y-0" : "translate-y-full",
+        "bottom-[calc(56px+env(safe-area-inset-bottom))]"
+      )}>
+        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <span className="font-bold text-slate-800 text-base">Más opciones</span>
+          <button
+            onClick={() => setMoreOpen(false)}
+            className="p-1.5 rounded-xl hover:bg-slate-100 transition"
           >
-            <span className="relative">
-              <Icon size={20} />
-              {showBadge && (
-                <span className="absolute -top-1 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 animate-pulse">
-                  {criticalCount > 9 ? "9+" : criticalCount}
-                </span>
+            <X size={18} className="text-slate-500" />
+          </button>
+        </div>
+
+        <div className="px-4 pb-4 space-y-1">
+          {MORE_NAV.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMoreOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                  active
+                    ? "bg-brand-50 text-brand-600"
+                    : "text-slate-600 hover:bg-slate-100"
+                )}
+              >
+                <Icon size={20} />
+                {label}
+              </Link>
+            );
+          })}
+
+          {canInstall && (
+            <button
+              onClick={() => { install(); setMoreOpen(false); }}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium text-brand-600 hover:bg-brand-50 transition-colors"
+            >
+              <Download size={20} />
+              Instalar app en este dispositivo
+            </button>
+          )}
+
+          <div className="h-px bg-slate-100 my-2" />
+
+          <button
+            onClick={() => { logout(); setMoreOpen(false); }}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut size={20} />
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom nav bar */}
+      <nav className="fixed bottom-0 inset-x-0 z-30 bg-sidebar border-t border-white/10 flex lg:hidden safe-area-bottom">
+        {MAIN_NAV.map(({ href, label, icon: Icon, badge }) => {
+          const active    = pathname === href || pathname.startsWith(href + "/");
+          const showBadge = badge && criticalCount > 0;
+
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 relative transition-colors",
+                active ? "text-brand-400" : "text-slate-500"
               )}
-            </span>
-            <span className="text-[10px] font-medium leading-none">{label}</span>
-            {active && (
-              <span className="absolute top-0 inset-x-0 h-0.5 bg-brand-400 rounded-b" />
-            )}
-          </Link>
-        );
-      })}
-    </nav>
+            >
+              <span className="relative">
+                <Icon size={20} />
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 animate-pulse">
+                    {criticalCount > 9 ? "9+" : criticalCount}
+                  </span>
+                )}
+              </span>
+              <span className="text-[10px] font-medium leading-none">{label}</span>
+              {active && <span className="absolute top-0 inset-x-0 h-0.5 bg-brand-400 rounded-b" />}
+            </Link>
+          );
+        })}
+
+        {/* Más */}
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          className={cn(
+            "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 relative transition-colors",
+            moreOpen || moreActive ? "text-brand-400" : "text-slate-500"
+          )}
+        >
+          <MoreHorizontal size={20} />
+          <span className="text-[10px] font-medium leading-none">Más</span>
+          {moreActive && <span className="absolute top-0 inset-x-0 h-0.5 bg-brand-400 rounded-b" />}
+        </button>
+      </nav>
+    </>
   );
 }
