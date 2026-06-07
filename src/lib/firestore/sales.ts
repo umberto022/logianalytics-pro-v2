@@ -4,7 +4,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type {
-  Sale, SalesSummary, RouteStats, ProductStats, DailyStat,
+  Sale, SalesSummary, RouteStats, ProductStats, DailyStat, ClientStats, PaymentStatus,
 } from "@/types";
 import { format } from "date-fns";
 
@@ -94,6 +94,97 @@ export async function registerSale(
   }
 }
 
+// ─── Multi-item sale order ────────────────────────────────────────────────────
+
+export async function registerSaleOrder(
+  uid: string,
+  params: {
+    items: Array<{ inventoryId: string; quantity: number; unitPrice: number }>;
+    route: string;
+    zone: string;
+    client: string;
+    saleDate: Date;
+    paymentStatus: PaymentStatus;
+    dueDate?: Date;
+  }
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    // Validate all items first
+    const snapshots = await Promise.all(
+      params.items.map((it) => getDoc(invItemDoc(uid, it.inventoryId)))
+    );
+    for (let i = 0; i < params.items.length; i++) {
+      const snap = snapshots[i];
+      if (!snap.exists()) return { ok: false, message: "Producto no encontrado en inventario" };
+      const { currentStock, name } = snap.data();
+      if (currentStock < params.items[i].quantity)
+        return { ok: false, message: `Stock insuficiente para "${name}": disponible ${currentStock}` };
+    }
+
+    const now        = Timestamp.now();
+    const saleTs     = Timestamp.fromDate(params.saleDate);
+    const dueDateTs  = params.dueDate ? Timestamp.fromDate(params.dueDate) : undefined;
+    const saleOrderId = doc(salesCol(uid)).id; // shared ID for all items in this order
+    const batch = writeBatch(db);
+
+    for (let i = 0; i < params.items.length; i++) {
+      const { inventoryId, quantity, unitPrice } = params.items[i];
+      const snap = snapshots[i];
+      const { sku, name, category, unitCost, currentStock } = snap.data()!;
+      const totalRevenue = quantity * unitPrice;
+      const totalCost    = quantity * unitCost;
+      const profit       = totalRevenue - totalCost;
+
+      // Sale record
+      const saleRef = doc(salesCol(uid));
+      batch.set(saleRef, {
+        saleOrderId,
+        inventoryId, sku,
+        productName: name,
+        category,
+        quantity, unitPrice, unitCost,
+        route: params.route, zone: params.zone, client: params.client,
+        paymentStatus: params.paymentStatus,
+        ...(dueDateTs ? { dueDate: dueDateTs } : {}),
+        saleDate: saleTs,
+        totalRevenue, totalCost, profit,
+      });
+
+      // Deduct inventory
+      batch.update(invItemDoc(uid, inventoryId), {
+        currentStock: Math.max(0, currentStock - quantity),
+        updatedAt: now,
+      });
+
+      // Movement log
+      batch.set(doc(movCol(uid)), {
+        inventoryId, sku,
+        productName: name,
+        movementType: "sale",
+        quantity: -quantity,
+        reference: `Venta ${saleOrderId.slice(-6)}`,
+        note: `${name} x${quantity} @ ${fmtCurrency(unitPrice)}`,
+        createdAt: now,
+      });
+    }
+
+    await batch.commit();
+    const total = params.items.reduce((s, it, i) => {
+      const { unitCost } = snapshots[i].data()!;
+      return s + it.quantity * it.unitPrice;
+    }, 0);
+    return { ok: true, message: `Venta registrada · ${params.items.length} producto(s) · Total ${fmtCurrency(total)}` };
+  } catch (e: unknown) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error desconocido" };
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtCurrency(v: number) {
+  return v.toLocaleString("es-DO", { style: "currency", currency: "DOP", minimumFractionDigits: 2 });
+}
+
 export async function getSales(uid: string, days: number): Promise<Sale[]> {
   const since = Timestamp.fromDate(
     new Date(Date.now() - days * 24 * 60 * 60 * 1000)
@@ -158,6 +249,25 @@ export function computeByProduct(sales: Sale[]): ProductStats[] {
     ...p,
     marginPct: p.revenue > 0 ? +(p.profit / p.revenue * 100).toFixed(1) : 0,
   })).sort((a, b) => b.profit - a.profit);
+}
+
+export function computeByClient(sales: Sale[]): ClientStats[] {
+  const map = new Map<string, ClientStats>();
+  for (const s of sales) {
+    const key = s.client?.trim() || "Sin cliente";
+    const cur = map.get(key) ?? {
+      client: key, numSales: 0, totalUnits: 0, revenue: 0, profit: 0, marginPct: 0,
+    };
+    cur.numSales++;
+    cur.totalUnits += s.quantity;
+    cur.revenue    += s.totalRevenue;
+    cur.profit     += s.profit;
+    map.set(key, cur);
+  }
+  return Array.from(map.values()).map((c) => ({
+    ...c,
+    marginPct: c.revenue > 0 ? +(c.profit / c.revenue * 100).toFixed(1) : 0,
+  })).sort((a, b) => b.revenue - a.revenue);
 }
 
 export function computeDailyStats(sales: Sale[]): DailyStat[] {

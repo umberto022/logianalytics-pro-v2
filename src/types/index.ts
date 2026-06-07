@@ -65,8 +65,11 @@ export interface InventoryMovement {
   createdAt: Timestamp;
 }
 
+export type PaymentStatus = "pagado" | "pendiente" | "credito";
+
 export interface Sale {
   id: string;
+  saleOrderId?: string;
   inventoryId: string;
   sku: string;
   productName: string;
@@ -77,10 +80,21 @@ export interface Sale {
   route: string;
   zone: string;
   client: string;
+  paymentStatus: PaymentStatus;
+  dueDate?: Timestamp;
   saleDate: Timestamp;
   totalRevenue: number;
   totalCost: number;
   profit: number;
+}
+
+export interface ClientStats {
+  client: string;
+  numSales: number;
+  totalUnits: number;
+  revenue: number;
+  profit: number;
+  marginPct: number;
 }
 
 export interface SalesSummary {
