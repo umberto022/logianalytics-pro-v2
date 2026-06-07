@@ -24,6 +24,8 @@ import { PeriodSelect } from "@/components/ui/PeriodSelect";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { InvoiceModal, type InvoiceData } from "@/components/ui/InvoiceModal";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePagination } from "@/hooks/usePagination";
 import { getCompany } from "@/lib/firestore/companies";
 import type { InventoryItem, Sale, Period, PaymentStatus } from "@/types";
 
@@ -523,8 +525,9 @@ export default function VentasPage() {
   // Invoice modal
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
 
-  // History filter
-  const [histPayFilter, setHistPayFilter] = useState<PaymentStatus | "all">("all");
+  // History filters
+  const [histPayFilter,  setHistPayFilter]  = useState<PaymentStatus | "all">("all");
+  const [histSearch,     setHistSearch]     = useState("");
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -710,9 +713,18 @@ export default function VentasPage() {
     a.click(); URL.revokeObjectURL(url);
   }
 
-  const filteredSales = histPayFilter === "all"
-    ? sales
-    : sales.filter((s) => (s.paymentStatus ?? "pagado") === histPayFilter);
+  const filteredSales = sales.filter((s) => {
+    const matchPay = histPayFilter === "all" || (s.paymentStatus ?? "pagado") === histPayFilter;
+    const q = histSearch.toLowerCase();
+    const matchSearch = !q ||
+      s.productName.toLowerCase().includes(q) ||
+      (s.client ?? "").toLowerCase().includes(q) ||
+      (s.route ?? "").toLowerCase().includes(q) ||
+      (s.sku ?? "").toLowerCase().includes(q);
+    return matchPay && matchSearch;
+  });
+
+  const histPagination = usePagination(filteredSales, 20);
 
   if (loading) return <FullPageSpinner />;
 
@@ -972,9 +984,18 @@ export default function VentasPage() {
         <div>
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <PeriodSelect value={period} onChange={setPeriod} />
+            <div className="relative flex-1 min-w-48 max-w-xs">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                value={histSearch}
+                onChange={(e) => { setHistSearch(e.target.value); histPagination.reset(); }}
+                placeholder="Buscar producto, cliente, ruta…"
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
             <div className="flex gap-1">
               {(["all", "pagado", "pendiente", "credito"] as const).map((f) => (
-                <button key={f} type="button" onClick={() => setHistPayFilter(f)}
+                <button key={f} type="button" onClick={() => { setHistPayFilter(f); histPagination.reset(); }}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition
                     ${histPayFilter === f ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
                   {f === "all" ? "Todos" : PAYMENT_STATUS[f].label}
@@ -992,7 +1013,7 @@ export default function VentasPage() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               {/* Mobile cards */}
               <div className="block sm:hidden divide-y divide-slate-50">
-                {filteredSales.map((s) => {
+                {histPagination.paged.map((s) => {
                   const psMeta = PAYMENT_STATUS[s.paymentStatus ?? "pagado"];
                   return (
                     <button key={s.id} type="button" onClick={() => openSaleInvoice(s)}
@@ -1033,7 +1054,7 @@ export default function VentasPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSales.map((s) => {
+                    {histPagination.paged.map((s) => {
                       const psMeta = PAYMENT_STATUS[s.paymentStatus ?? "pagado"];
                       return (
                         <tr key={s.id}
@@ -1066,6 +1087,13 @@ export default function VentasPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                page={histPagination.page}
+                totalPages={histPagination.totalPages}
+                total={histPagination.total}
+                pageSize={20}
+                onPage={histPagination.setPage}
+              />
             </div>
           )}
         </div>

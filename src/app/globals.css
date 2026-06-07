@@ -45,3 +45,11 @@
 .animate-slide-up   { animation: slide-up 0.25s ease-out; }
 .animate-fade-in    { animation: fade-in  0.2s  ease-out; }
 .animate-pulse-ring { animation: pulse-ring 2s infinite; }
+
+@media print {
+  nav, aside, header, footer, .print\:hidden { display: none !important; }
+  body { background: white !important; }
+  main { padding: 0 !important; }
+  .rounded-2xl { border-radius: 0 !important; }
+  .shadow-sm, .shadow { box-shadow: none !important; }
+}

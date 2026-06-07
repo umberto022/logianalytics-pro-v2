@@ -7,13 +7,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickSaleModal } from "@/components/ui/QuickSaleModal";
+import { ShortcutsModal } from "@/components/ui/ShortcutsModal";
 import { useStockNotifications } from "@/hooks/useStockNotifications";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   useStockNotifications();
   const { user, loading, logout, profile } = useAuth();
   const router = useRouter();
-  const [saleOpen, setSaleOpen] = useState(false);
+  const [saleOpen,      setSaleOpen]      = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -76,8 +78,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Zap size={22} className="transition-transform group-hover:scale-110 duration-150" />
       </button>
 
-      {/* Keyboard shortcut: V opens quick sale */}
-      <KeyboardShortcut onTrigger={() => setSaleOpen((v) => !v)} />
+      {/* Keyboard shortcuts */}
+      <KeyboardShortcut
+        onSale={() => setSaleOpen((v) => !v)}
+        onShortcuts={() => setShortcutsOpen((v) => !v)}
+      />
+      {shortcutsOpen && <ShortcutsModal onClose={() => setShortcutsOpen(false)} />}
 
       {/* Bottom navigation — mobile only */}
       <BottomNav />
@@ -90,15 +96,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function KeyboardShortcut({ onTrigger }: { onTrigger: () => void }) {
+function KeyboardShortcut({ onSale, onShortcuts }: { onSale: () => void; onShortcuts: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (e.key === "v" || e.key === "V") onTrigger();
+      if (e.key === "v" || e.key === "V") onSale();
+      if (e.key === "?") onShortcuts();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [onTrigger]);
+  }, [onSale, onShortcuts]);
   return null;
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { format, subDays } from "date-fns";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, Treemap, Cell, PieChart, Pie,
 } from "recharts";
 import {
-  DollarSign, TrendingUp, ShoppingCart, Package, AlertTriangle,
+  DollarSign, TrendingUp, ShoppingCart, Package, AlertTriangle, Printer,
 } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useSales } from "@/hooks/useSales";
@@ -23,9 +24,25 @@ const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6"
 
 export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>(30);
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo,   setCustomTo]   = useState("");
+  const [useCustom,  setUseCustom]  = useState(false);
 
   const { items, loading: loadingInv } = useInventory();
-  const { sales, loading: loadingSales } = useSales(period);
+  const { sales: allSales, loading: loadingSales } = useSales(180);
+
+  const sales = useMemo(() => {
+    if (!useCustom || !customFrom) return allSales.filter((s) => {
+      const d = s.saleDate.toDate();
+      return d >= subDays(new Date(), period);
+    });
+    const from = new Date(customFrom);
+    const to   = customTo ? new Date(customTo + "T23:59:59") : new Date();
+    return allSales.filter((s) => {
+      const d = s.saleDate.toDate();
+      return d >= from && d <= to;
+    });
+  }, [allSales, useCustom, customFrom, customTo, period]);
 
   if (loadingInv || loadingSales) return <DashboardSkeleton />;
 
@@ -65,7 +82,35 @@ export default function DashboardPage() {
       <PageHeader
         title="Dashboard"
         subtitle="Resumen de tu negocio en tiempo real"
-        action={<PeriodSelect value={period} onChange={setPeriod} />}
+        action={
+        <div className="flex items-center gap-2 flex-wrap">
+          {!useCustom && <PeriodSelect value={period} onChange={setPeriod} />}
+          {useCustom && (
+            <>
+              <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
+                max={format(new Date(), "yyyy-MM-dd")}
+                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <span className="text-slate-400 text-sm">→</span>
+              <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
+                max={format(new Date(), "yyyy-MM-dd")}
+                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </>
+          )}
+          <button
+            onClick={() => setUseCustom((v) => !v)}
+            className={`text-xs font-semibold px-3 py-2 rounded-lg border transition ${useCustom ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+          >
+            {useCustom ? "✕ Quitar rango" : "Personalizado"}
+          </button>
+          <button
+            onClick={() => window.print()}
+            title="Exportar PDF"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition print:hidden"
+          >
+            <Printer size={13} /> PDF
+          </button>
+        </div>
+      }
       />
 
       {/* KPIs */}

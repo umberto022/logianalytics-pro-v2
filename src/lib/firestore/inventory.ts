@@ -1,10 +1,10 @@
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, limit,
+  query, where, orderBy, limit, arrayUnion,
   Timestamp, writeBatch, getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { InventoryItem, InventoryMovement } from "@/types";
+import type { InventoryItem, InventoryMovement, PriceHistoryEntry } from "@/types";
 import { generateSku } from "@/lib/utils";
 
 const itemsCol = (uid: string) =>
@@ -75,7 +75,19 @@ export async function updateInventoryItem(
       });
     }
 
-    await updateDoc(ref, { ...data, updatedAt: now });
+    const priceChanged =
+      (data.unitCost !== undefined && data.unitCost !== prev.unitCost) ||
+      (data.salePrice !== undefined && data.salePrice !== prev.salePrice);
+
+    const priceEntry: PriceHistoryEntry | null = priceChanged
+      ? { date: now, unitCost: data.unitCost ?? prev.unitCost, salePrice: data.salePrice ?? prev.salePrice }
+      : null;
+
+    await updateDoc(ref, {
+      ...data,
+      updatedAt: now,
+      ...(priceEntry ? { priceHistory: arrayUnion(priceEntry) } : {}),
+    });
     return { ok: true, message: "Actualizado" };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error desconocido";

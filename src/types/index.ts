@@ -9,6 +9,7 @@ export interface UserProfile {
   subscriptionPlan: "free" | "basic" | "pro";
   companyId?: string;
   companyName?: string;
+  photoURL?: string;
   createdAt: Timestamp;
   lastLogin?: Timestamp;
 }
@@ -24,6 +25,12 @@ export interface Company {
   country: string;
   ownerId: string;
   createdAt: Timestamp;
+}
+
+export interface PriceHistoryEntry {
+  date: Timestamp;
+  unitCost: number;
+  salePrice: number;
 }
 
 export interface InventoryItem {
@@ -42,6 +49,7 @@ export interface InventoryItem {
   leadTimeDays: number;
   imageUrl?: string;
   updatedAt: Timestamp;
+  priceHistory?: PriceHistoryEntry[];
 }
 
 export type StockStatus = "critical" | "low" | "ok";

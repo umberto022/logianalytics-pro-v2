@@ -1638,6 +1638,29 @@ export default function InventarioPage() {
             <PhotoPicker current={form.imageUrl ?? ""}
               onChange={(url) => setForm((p) => ({ ...p, imageUrl: url }))}
               onUploading={setImageUploading} />
+
+            {/* Price history (only in edit mode) */}
+            {editing && editing.priceHistory && editing.priceHistory.length > 0 && (
+              <details className="rounded-xl border border-slate-100 overflow-hidden">
+                <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 transition list-none">
+                  <History size={14} className="text-slate-400" />
+                  Historial de precios ({editing.priceHistory.length})
+                  <ChevronDown size={14} className="ml-auto text-slate-400" />
+                </summary>
+                <div className="divide-y divide-slate-50">
+                  {[...editing.priceHistory].reverse().map((entry, i) => (
+                    <div key={i} className="px-4 py-2.5 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">{entry.date.toDate().toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                      <div className="flex gap-4">
+                        <span className="text-slate-600">Costo: <strong className="text-slate-800">${entry.unitCost.toFixed(2)}</strong></span>
+                        <span className="text-slate-600">Precio: <strong className="text-emerald-700">${entry.salePrice.toFixed(2)}</strong></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={saving || imageUploading}
                 className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">

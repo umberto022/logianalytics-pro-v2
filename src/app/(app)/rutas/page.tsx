@@ -2,9 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback } from "react";
-import { MapPin, TrendingUp, Navigation, BarChart2 } from "lucide-react";
+import { MapPin, TrendingUp, Navigation, BarChart2, Plus, Edit2, Trash2, X, CheckCircle2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSales, computeByRoute } from "@/lib/firestore/sales";
+import { listRoutes, addRoute, updateRoute, deleteRoute, type RouteRecord } from "@/lib/firestore/routes";
 import { fmtCurrency, fmt } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
@@ -21,19 +23,31 @@ const RouteMap = dynamic(() => import("@/components/map/RouteMap"), {
   ),
 });
 
+type Tab = "analytics" | "gestion";
+const EMPTY_ROUTE = { name: "", zone: "", description: "", active: true };
+
 export default function RutasPage() {
   const { user } = useAuth();
-  const [period, setPeriod] = useState<Period>(30);
-  const [loading, setLoading] = useState(true);
-  const [routes, setRoutes] = useState<RouteStats[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [tab,     setTab]    = useState<Tab>("analytics");
+  const [period,  setPeriod] = useState<Period>(30);
+  const [loading, setLoading]= useState(true);
+  const [routes,  setRoutes] = useState<RouteStats[]>([]);
+  const [selected,setSelected]= useState<string | null>(null);
+
+  // CRUD state
+  const [managed,      setManaged]      = useState<RouteRecord[]>([]);
+  const [showForm,     setShowForm]     = useState(false);
+  const [editing,      setEditing]      = useState<RouteRecord | null>(null);
+  const [form,         setForm]         = useState({ ...EMPTY_ROUTE });
+  const [saving,       setSaving]       = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const sl = await getSales(user.uid, period);
+      const [sl, rr] = await Promise.all([getSales(user.uid, period), listRoutes(user.uid)]);
       setRoutes(computeByRoute(sl));
+      setManaged(rr);
     } catch (e) {
       console.error("rutas load error:", e);
     } finally {
@@ -42,6 +56,38 @@ export default function RutasPage() {
   }, [user, period]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function handleSave() {
+    if (!form.name.trim() || !user) { toast.error("El nombre es obligatorio"); return; }
+    setSaving(true);
+    try {
+      if (editing) {
+        await updateRoute(user.uid, editing.id, form);
+        toast.success("Ruta actualizada");
+      } else {
+        await addRoute(user.uid, form);
+        toast.success("Ruta creada");
+      }
+      await load();
+      setShowForm(false);
+      setEditing(null);
+      setForm({ ...EMPTY_ROUTE });
+    } catch { toast.error("Error al guardar"); }
+    finally { setSaving(false); }
+  }
+
+  async function handleDelete(r: RouteRecord) {
+    if (!user || !confirm(`¿Eliminar la ruta "${r.name}"?`)) return;
+    await deleteRoute(user.uid, r.id);
+    toast.success("Ruta eliminada");
+    await load();
+  }
+
+  function openEdit(r: RouteRecord) {
+    setEditing(r);
+    setForm({ name: r.name, zone: r.zone, description: r.description, active: r.active });
+    setShowForm(true);
+  }
 
   if (loading) return <FullPageSpinner />;
 
@@ -67,11 +113,123 @@ export default function RutasPage() {
 
   return (
     <div>
+      {/* Route form modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-bold text-slate-800">{editing ? "Editar ruta" : "Nueva ruta"}</h2>
+              <button onClick={() => { setShowForm(false); setEditing(null); }} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition"><X size={18} /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre *</label>
+                <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="ej. Ruta Norte" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Zona / Ciudad</label>
+                <input value={form.zone} onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
+                  placeholder="ej. Santo Domingo Norte" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
+                <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                  placeholder="Clientes, días de visita, notas…" rows={2}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.active} onChange={(e) => setForm((p) => ({ ...p, active: e.target.checked }))}
+                  className="w-4 h-4 rounded accent-brand-600" />
+                <span className="text-sm font-medium text-slate-700">Ruta activa</span>
+              </label>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setShowForm(false); setEditing(null); }}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition">Cancelar</button>
+              <button onClick={handleSave} disabled={saving}
+                className="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50">
+                {saving ? "Guardando…" : (editing ? "Actualizar" : "Crear ruta")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title="Rutas"
-        subtitle={`${routes.length} ruta${routes.length !== 1 ? "s" : ""} activa${routes.length !== 1 ? "s" : ""} • haz clic en un punto del mapa para ver detalle`}
-        action={<PeriodSelect value={period} onChange={setPeriod} />}
+        subtitle={`${routes.length} ruta${routes.length !== 1 ? "s" : ""} activa${routes.length !== 1 ? "s" : ""} con datos de ventas`}
+        action={tab === "analytics" ? <PeriodSelect value={period} onChange={setPeriod} /> : (
+          <button onClick={() => { setEditing(null); setForm({ ...EMPTY_ROUTE }); setShowForm(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-xl hover:bg-brand-700 transition">
+            <Plus size={15} /> Nueva ruta
+          </button>
+        )}
       />
+
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
+        {([["analytics", "📊 Analíticas"], ["gestion", "🗺️ Mis rutas"]] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key as Tab)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap ${tab === key ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Gestión CRUD ── */}
+      {tab === "gestion" && (
+        <div>
+          {managed.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
+              <MapPin size={40} className="mx-auto mb-3 text-slate-300" />
+              <p className="text-slate-500 font-medium">No tienes rutas creadas</p>
+              <p className="text-slate-400 text-sm mt-1 mb-5">Crea rutas para organizar tus áreas de distribución</p>
+              <button onClick={() => { setEditing(null); setForm({ ...EMPTY_ROUTE }); setShowForm(true); }}
+                className="px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition">
+                Crear primera ruta
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+                    {["Nombre", "Zona", "Estado", "Descripción", ""].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {managed.map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-slate-800 flex items-center gap-2">
+                        <MapPin size={14} className="text-brand-500 flex-shrink-0" />{r.name}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{r.zone || "—"}</td>
+                      <td className="px-4 py-3">
+                        {r.active
+                          ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full"><CheckCircle2 size={10}/> Activa</span>
+                          : <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Inactiva</span>}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{r.description || "—"}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 justify-end">
+                          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition"><Edit2 size={14} /></button>
+                          <button onClick={() => handleDelete(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"><Trash2 size={14} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Analíticas ── */}
+      {tab === "analytics" && (<div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -230,6 +388,7 @@ export default function RutasPage() {
           </table>
         </div>
       </div>
+      </div>)}
     </div>
   );
 }

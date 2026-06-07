@@ -10,7 +10,7 @@ import { createCompany, getCompany, updateCompany } from "@/lib/firestore/compan
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
-import { CheckCircle2, Bell, BellOff } from "lucide-react";
+import { CheckCircle2, Bell, BellOff, Camera, User } from "lucide-react";
 import {
   isPushEnabled,
   setPushEnabled,
@@ -48,6 +48,7 @@ export default function ConfiguracionPage() {
     }
   }
 
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [savingProfile,  setSavingProfile]  = useState(false);
   const [savingCompany,  setSavingCompany]  = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -78,6 +79,35 @@ export default function ConfiguracionPage() {
       });
     }
   }, [profile]);
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+      fd.append("folder", "profile-photos");
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: "POST", body: fd }
+      );
+      const data = await res.json();
+      if (data.secure_url) {
+        await updateUserProfile(user.uid, { photoURL: data.secure_url });
+        await refreshProfile();
+        toast.success("Foto actualizada");
+      } else {
+        toast.error("Error al subir la foto");
+      }
+    } catch {
+      toast.error("Error al subir la foto");
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = "";
+    }
+  }
 
   function flashSaved(setter: (v: boolean) => void) {
     setter(true);
@@ -141,6 +171,30 @@ export default function ConfiguracionPage() {
         {/* Profile */}
         <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
           <h2 className="font-semibold text-slate-700 mb-5">Perfil de usuario</h2>
+
+          {/* Avatar */}
+          <div className="flex items-center gap-4 mb-5">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-2 border-slate-200">
+                {profile?.photoURL ? (
+                  <img src={profile.photoURL} alt="Foto de perfil" className="w-full h-full object-cover" />
+                ) : (
+                  <User size={28} className="text-slate-400" />
+                )}
+              </div>
+              <label className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center cursor-pointer hover:bg-brand-700 transition shadow-sm ${uploadingPhoto ? "opacity-50 pointer-events-none" : ""}`}>
+                {uploadingPhoto
+                  ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Camera size={13} />
+                }
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+              </label>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">{profile?.fullName || "Sin nombre"}</p>
+              <p className="text-xs text-slate-400 mt-0.5">Haz clic en la cámara para cambiar tu foto</p>
+            </div>
+          </div>
 
           <div className="mb-4 p-3 bg-slate-50 rounded-xl text-sm space-y-2">
             <div className="flex justify-between">
