@@ -66,10 +66,13 @@ export interface InventoryMovement {
 }
 
 export type PaymentStatus = "pagado" | "pendiente" | "credito";
+export type NcfType = "B01" | "B02" | "B14" | "B15";
 
 export interface Sale {
   id: string;
   saleOrderId?: string;
+  invoiceNumber?: string;
+  ncf?: string;
   inventoryId: string;
   sku: string;
   productName: string;
@@ -79,7 +82,13 @@ export interface Sale {
   unitCost: number;
   route: string;
   zone: string;
+  // Client details
   client: string;
+  clientRnc?: string;
+  clientAddress?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  notes?: string;
   paymentStatus: PaymentStatus;
   dueDate?: Timestamp;
   saleDate: Timestamp;

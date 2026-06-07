@@ -342,6 +342,12 @@ export default function VentasPage() {
   const [route,         setRoute]         = useState("");
   const [zone,          setZone]          = useState("");
   const [client,        setClient]        = useState("");
+  const [clientRnc,     setClientRnc]     = useState("");
+  const [clientAddress, setClientAddress] = useState("");
+  const [clientPhone,   setClientPhone]   = useState("");
+  const [clientEmail,   setClientEmail]   = useState("");
+  const [notes,         setNotes]         = useState("");
+  const [ncf,           setNcf]           = useState("");
   const [saleDate,      setSaleDate]      = useState(format(new Date(), "yyyy-MM-dd"));
 
   // Invoice modal
@@ -404,10 +410,10 @@ export default function VentasPage() {
     if (cart.length === 0) { toast.error("Agrega al menos un producto al carrito"); return; }
     setSaving(true);
     const cartSnapshot = [...cart];
-    const formSnapshot = { route, zone, client, saleDate, paymentStatus, dueDate };
+    const formSnapshot = { route, zone, client, clientRnc, clientAddress, clientPhone, clientEmail, notes, ncf, saleDate, paymentStatus, dueDate };
     const r = await registerSaleOrder(user.uid, {
       items: cart.map((c) => ({ inventoryId: c.inventoryId, quantity: c.quantity, unitPrice: c.unitPrice })),
-      route, zone, client,
+      route, zone, client, clientRnc, clientAddress, clientPhone, clientEmail, notes, ncf,
       saleDate: new Date(saleDate),
       paymentStatus,
       dueDate: dueDate ? new Date(dueDate) : undefined,
@@ -430,13 +436,19 @@ export default function VentasPage() {
         }
       } catch { /* use defaults */ }
       setInvoice({
-        invoiceNumber: r.invoiceNumber ?? `FAC-${Date.now()}`,
-        date:    new Date(formSnapshot.saleDate),
-        client:  formSnapshot.client,
-        route:   formSnapshot.route,
-        zone:    formSnapshot.zone,
-        paymentStatus: formSnapshot.paymentStatus,
-        dueDate: formSnapshot.dueDate ? new Date(formSnapshot.dueDate) : undefined,
+        invoiceNumber:  r.invoiceNumber ?? `FAC-${Date.now()}`,
+        ncf:            r.ncf,
+        date:           new Date(formSnapshot.saleDate),
+        client:         formSnapshot.client,
+        clientRnc:      formSnapshot.clientRnc,
+        clientAddress:  formSnapshot.clientAddress,
+        clientPhone:    formSnapshot.clientPhone,
+        clientEmail:    formSnapshot.clientEmail,
+        notes:          formSnapshot.notes,
+        route:          formSnapshot.route,
+        zone:           formSnapshot.zone,
+        paymentStatus:  formSnapshot.paymentStatus,
+        dueDate:        formSnapshot.dueDate ? new Date(formSnapshot.dueDate) : undefined,
         items: cartSnapshot.map((c) => ({
           name: c.name, sku: c.sku, category: c.category,
           quantity: c.quantity, unitPrice: c.unitPrice, unitCost: c.unitCost,
@@ -445,6 +457,8 @@ export default function VentasPage() {
       });
       setCart([]);
       setRoute(""); setZone(""); setClient("");
+      setClientRnc(""); setClientAddress(""); setClientPhone(""); setClientEmail("");
+      setNotes(""); setNcf("");
       setPaymentStatus("pagado"); setDueDate("");
       await load();
     } else {
@@ -479,13 +493,19 @@ export default function VentasPage() {
     } catch { /* use defaults */ }
 
     setInvoice({
-      invoiceNumber,
-      date:          d,
-      client:        sale.client,
-      route:         sale.route,
-      zone:          sale.zone,
-      paymentStatus: sale.paymentStatus ?? "pagado",
-      dueDate:       sale.dueDate?.toDate(),
+      invoiceNumber:  sale.invoiceNumber ?? invoiceNumber,
+      ncf:            sale.ncf,
+      date:           d,
+      client:         sale.client,
+      clientRnc:      sale.clientRnc,
+      clientAddress:  sale.clientAddress,
+      clientPhone:    sale.clientPhone,
+      clientEmail:    sale.clientEmail,
+      notes:          sale.notes,
+      route:          sale.route,
+      zone:           sale.zone,
+      paymentStatus:  sale.paymentStatus ?? "pagado",
+      dueDate:        sale.dueDate?.toDate(),
       items: orderItems.map((s) => ({
         name: s.productName, sku: s.sku, category: s.category,
         quantity: s.quantity, unitPrice: s.unitPrice, unitCost: s.unitCost,
@@ -637,21 +657,77 @@ export default function VentasPage() {
 
                 {/* Order details */}
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
-                  <h3 className="text-sm font-semibold text-slate-700">Detalles de la venta</h3>
-                  {([
-                    { label: "Cliente",       value: client,   set: setClient,   placeholder: "Nombre o código" },
-                    { label: "Ruta",          value: route,    set: setRoute,    placeholder: "ej. Norte, Sur" },
-                    { label: "Zona / Ciudad", value: zone,     set: setZone,     placeholder: "ej. Santo Domingo" },
-                  ] as const).map(({ label, value, set, placeholder }) => (
-                    <div key={label}>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
-                      <input value={value} onChange={(e) => set(e.target.value)} placeholder={placeholder}
+                  <h3 className="text-sm font-semibold text-slate-700">Datos del cliente</h3>
+
+                  {/* Client name — full width */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Nombre / Razón social *</label>
+                    <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="Nombre o empresa"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  </div>
+
+                  {/* RNC + Phone */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">RNC / Cédula</label>
+                      <input value={clientRnc} onChange={(e) => setClientRnc(e.target.value)} placeholder="000-0000000-0"
                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                     </div>
-                  ))}
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Teléfono</label>
+                      <input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="809-000-0000"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    </div>
+                  </div>
+
+                  {/* Email */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Fecha de venta</label>
-                    <input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)}
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+                    <input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="cliente@empresa.com"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Dirección</label>
+                    <input value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} placeholder="Calle, ciudad"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  </div>
+
+                  {/* Route + Zone */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Ruta</label>
+                      <input value={route} onChange={(e) => setRoute(e.target.value)} placeholder="ej. Norte, Sur"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Zona / Ciudad</label>
+                      <input value={zone} onChange={(e) => setZone(e.target.value)} placeholder="ej. Santo Domingo"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    </div>
+                  </div>
+
+                  {/* Date + NCF */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Fecha de venta</label>
+                      <input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                        NCF <span className="text-slate-400 font-normal">(auto si vacío)</span>
+                      </label>
+                      <input value={ncf} onChange={(e) => setNcf(e.target.value)} placeholder="B02XXXXXXXX"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Notas / Observaciones</label>
+                    <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales para la factura…"
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                   </div>
                 </div>

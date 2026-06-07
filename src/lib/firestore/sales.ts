@@ -103,11 +103,17 @@ export async function registerSaleOrder(
     route: string;
     zone: string;
     client: string;
+    clientRnc?: string;
+    clientAddress?: string;
+    clientPhone?: string;
+    clientEmail?: string;
+    notes?: string;
+    ncf?: string;
     saleDate: Date;
     paymentStatus: PaymentStatus;
     dueDate?: Date;
   }
-): Promise<{ ok: boolean; message: string; saleOrderId?: string; invoiceNumber?: string }> {
+): Promise<{ ok: boolean; message: string; saleOrderId?: string; invoiceNumber?: string; ncf?: string }> {
   try {
     // Validate all items first
     const snapshots = await Promise.all(
@@ -121,10 +127,24 @@ export async function registerSaleOrder(
         return { ok: false, message: `Stock insuficiente para "${name}": disponible ${currentStock}` };
     }
 
-    const now        = Timestamp.now();
-    const saleTs     = Timestamp.fromDate(params.saleDate);
-    const dueDateTs  = params.dueDate ? Timestamp.fromDate(params.dueDate) : undefined;
-    const saleOrderId = doc(salesCol(uid)).id; // shared ID for all items in this order
+    const now         = Timestamp.now();
+    const saleTs      = Timestamp.fromDate(params.saleDate);
+    const dueDateTs   = params.dueDate ? Timestamp.fromDate(params.dueDate) : undefined;
+    const saleOrderId = doc(salesCol(uid)).id;
+
+    // Build invoice number: FAC-YYMMDD-XXXX
+    const d   = params.saleDate;
+    const yy  = String(d.getFullYear()).slice(2);
+    const mm  = String(d.getMonth() + 1).padStart(2, "0");
+    const dd  = String(d.getDate()).padStart(2, "0");
+    const sfx = saleOrderId.slice(-4).toUpperCase();
+    const invoiceNumber = `FAC-${yy}${mm}${dd}-${sfx}`;
+
+    // Auto-generate NCF: B01 if client has RNC, B02 (consumidor final) otherwise
+    const ncfType = params.clientRnc ? "B01" : "B02";
+    const ncfSeq  = saleOrderId.slice(-8).toUpperCase();
+    const ncf     = params.ncf || `${ncfType}${yy}${mm}${dd}${ncfSeq}`;
+
     const batch = writeBatch(db);
 
     for (let i = 0; i < params.items.length; i++) {
@@ -138,12 +158,18 @@ export async function registerSaleOrder(
       // Sale record
       const saleRef = doc(salesCol(uid));
       batch.set(saleRef, {
-        saleOrderId,
+        saleOrderId, invoiceNumber, ncf,
         inventoryId, sku,
         productName: name,
         category,
         quantity, unitPrice, unitCost,
-        route: params.route, zone: params.zone, client: params.client,
+        route: params.route, zone: params.zone,
+        client:        params.client,
+        clientRnc:     params.clientRnc     ?? "",
+        clientAddress: params.clientAddress ?? "",
+        clientPhone:   params.clientPhone   ?? "",
+        clientEmail:   params.clientEmail   ?? "",
+        notes:         params.notes         ?? "",
         paymentStatus: params.paymentStatus,
         ...(dueDateTs ? { dueDate: dueDateTs } : {}),
         saleDate: saleTs,
@@ -170,14 +196,7 @@ export async function registerSaleOrder(
 
     await batch.commit();
     const total = params.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
-    // Build invoice number: FAC-YYMMDD-XXXX
-    const d   = params.saleDate;
-    const yy  = String(d.getFullYear()).slice(2);
-    const mm  = String(d.getMonth() + 1).padStart(2, "0");
-    const dd  = String(d.getDate()).padStart(2, "0");
-    const inv = saleOrderId.slice(-4).toUpperCase();
-    const invoiceNumber = `FAC-${yy}${mm}${dd}-${inv}`;
-    return { ok: true, message: `Venta registrada · ${params.items.length} producto(s) · Total ${fmtCurrency(total)}`, saleOrderId, invoiceNumber };
+    return { ok: true, message: `Venta registrada · ${params.items.length} producto(s) · Total ${fmtCurrency(total)}`, saleOrderId, invoiceNumber, ncf };
   } catch (e: unknown) {
     return { ok: false, message: e instanceof Error ? e.message : "Error desconocido" };
   }
