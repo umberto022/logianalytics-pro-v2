@@ -6,7 +6,7 @@ import {
 import {
   onAuthStateChanged, signOut, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, GoogleAuthProvider,
-  signInWithPopup, updateProfile, type User,
+  signInWithPopup, updateProfile, sendPasswordResetEmail, type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import {
@@ -21,7 +21,8 @@ interface AuthCtx {
   signIn:       (email: string, password: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
   register:     (email: string, password: string, fullName: string, phone: string) => Promise<void>;
-  logout:       () => Promise<void>;
+  logout:        () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -92,12 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }
 
+  async function resetPassword(email: string) {
+    await sendPasswordResetEmail(auth, email);
+  }
+
   async function refreshProfile() {
     if (user) await loadProfile(user);
   }
 
   return (
-    <Ctx.Provider value={{ user, profile, loading, signIn, signInGoogle, register, logout, refreshProfile }}>
+    <Ctx.Provider value={{ user, profile, loading, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
       {children}
     </Ctx.Provider>
   );

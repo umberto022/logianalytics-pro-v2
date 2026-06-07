@@ -656,61 +656,110 @@ export default function ComprasPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
-                  {["N° Orden","Proveedor","RNC","Productos","Subtotal","ITBIS","Total","Fecha esperada","Estado",""].map((h) => (
-                    <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((order) => (
-                  <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50 cursor-pointer"
-                    onClick={() => setDetailOrder(order)}>
-                    <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</td>
-                    <td className="py-3 px-4 font-medium">{order.supplierName}</td>
-                    <td className="py-3 px-4 text-slate-500 font-mono text-xs">{order.supplierRnc || "—"}</td>
-                    <td className="py-3 px-4 text-slate-600">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
-                    <td className="py-3 px-4 text-slate-600">{fmtCurrency(order.subtotal)}</td>
-                    <td className="py-3 px-4 text-slate-500">{fmtCurrency(order.tax)}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-900">{fmtCurrency(order.total)}</td>
-                    <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                      {order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) ?? "—"}
-                    </td>
-                    <td className="py-3 px-4"><StatusBadge status={order.status} /></td>
-                    <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex gap-1">
-                        {(order.status === "pendiente" || order.status === "parcial") && (
-                          <button onClick={() => setReceiveOrder(order)}
-                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Recibir">
-                            <PackageCheck size={14} />
-                          </button>
-                        )}
-                        {order.status === "pendiente" && (
-                          <>
-                            <button onClick={() => openEdit(order)}
-                              className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
-                              <Edit2 size={14} />
-                            </button>
-                            <button onClick={() => handleDelete(order.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
-                              <Trash2 size={14} />
-                            </button>
-                          </>
-                        )}
-                        <button onClick={() => printOrder(order)}
-                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Imprimir">
-                          <Printer size={14} />
+          <>
+            {/* Mobile cards */}
+            <div className="block sm:hidden divide-y divide-slate-50">
+              {filtered.map((order) => (
+                <div key={order.id} className="px-4 py-3 hover:bg-slate-50 cursor-pointer"
+                  onClick={() => setDetailOrder(order)}>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</span>
+                    <StatusBadge status={order.status} />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-900">{order.supplierName}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 flex-wrap">
+                    <span>{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</span>
+                    {order.expectedDate?.toDate?.() && (
+                      <span>{order.expectedDate.toDate().toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      {(order.status === "pendiente" || order.status === "parcial") && (
+                        <button onClick={() => setReceiveOrder(order)}
+                          className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg transition">
+                          <PackageCheck size={15} />
                         </button>
-                      </div>
-                    </td>
+                      )}
+                      {order.status === "pendiente" && (
+                        <>
+                          <button onClick={() => openEdit(order)}
+                            className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
+                            <Edit2 size={15} />
+                          </button>
+                          <button onClick={() => handleDelete(order.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
+                            <Trash2 size={15} />
+                          </button>
+                        </>
+                      )}
+                      <button onClick={() => printOrder(order)}
+                        className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition">
+                        <Printer size={15} />
+                      </button>
+                    </div>
+                    <span className="text-base font-bold text-slate-900">{fmtCurrency(order.total)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                    {["N° Orden","Proveedor","RNC","Productos","Subtotal","ITBIS","Total","Fecha esperada","Estado",""].map((h) => (
+                      <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filtered.map((order) => (
+                    <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => setDetailOrder(order)}>
+                      <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</td>
+                      <td className="py-3 px-4 font-medium">{order.supplierName}</td>
+                      <td className="py-3 px-4 text-slate-500 font-mono text-xs">{order.supplierRnc || "—"}</td>
+                      <td className="py-3 px-4 text-slate-600">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
+                      <td className="py-3 px-4 text-slate-600">{fmtCurrency(order.subtotal)}</td>
+                      <td className="py-3 px-4 text-slate-500">{fmtCurrency(order.tax)}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{fmtCurrency(order.total)}</td>
+                      <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                        {order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) ?? "—"}
+                      </td>
+                      <td className="py-3 px-4"><StatusBadge status={order.status} /></td>
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-1">
+                          {(order.status === "pendiente" || order.status === "parcial") && (
+                            <button onClick={() => setReceiveOrder(order)}
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Recibir">
+                              <PackageCheck size={14} />
+                            </button>
+                          )}
+                          {order.status === "pendiente" && (
+                            <>
+                              <button onClick={() => openEdit(order)}
+                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
+                                <Edit2 size={14} />
+                              </button>
+                              <button onClick={() => handleDelete(order.id)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                          <button onClick={() => printOrder(order)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Imprimir">
+                            <Printer size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

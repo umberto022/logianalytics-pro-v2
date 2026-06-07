@@ -1093,6 +1093,8 @@ export default function InventarioPage() {
   const [sortKey,      setSortKey]      = useState<SortKey>("name");
   const [sortDir,      setSortDir]      = useState<SortDir>("asc");
   const [supplierFilter, setSupplierFilter] = useState("all");
+  const [page,         setPage]         = useState(1);
+  const PAGE_SIZE = 50;
 
   // Modals
   const [adjustItem,   setAdjustItem]   = useState<InventoryItem | null>(null);
@@ -1108,6 +1110,7 @@ export default function InventarioPage() {
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { setPage(1); }, [search, supplierFilter, activeFilter]);
 
   function setF(k: keyof typeof EMPTY) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -1158,6 +1161,7 @@ export default function InventarioPage() {
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortKey(key); setSortDir("asc"); }
+    setPage(1);
   }
 
   function SortIcon({ k }: { k: SortKey }) {
@@ -1267,6 +1271,9 @@ export default function InventarioPage() {
         ? va - vb : String(va).localeCompare(String(vb));
       return sortDir === "asc" ? cmp : -cmp;
     });
+
+  const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "dashboard", label: "📊 Dashboard" },
@@ -1401,89 +1408,177 @@ export default function InventarioPage() {
                 <p>{items.length === 0 ? "Aún no tienes productos" : "Sin resultados"}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
-                      <th className="text-left py-3 px-4 font-medium">📷</th>
-                      <th className="text-left py-3 px-4 font-medium">SKU</th>
-                      {sortableCols.map(({ key, label }) => (
-                        <th key={key}
-                          className="text-left py-3 px-4 font-medium cursor-pointer hover:text-slate-800 whitespace-nowrap select-none"
-                          onClick={() => toggleSort(key)}>
-                          <span className="flex items-center gap-1">{label} <SortIcon k={key} /></span>
-                        </th>
-                      ))}
-                      <th className="text-left py-3 px-4 font-medium">Mín/Máx</th>
-                      <th className="text-left py-3 px-4 font-medium">Estado</th>
-                      <th className="text-left py-3 px-4 font-medium">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((item) => {
-                      const status = getStockStatus(item);
-                      const pct = item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0;
-                      return (
-                        <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
-                          <td className="py-3 px-4">
-                            <button onClick={() => setDetailItem(item)} className="hover:opacity-80 transition">
-                              <ProductThumb url={item.imageUrl} name={item.name} />
+              <>
+                {/* Mobile cards */}
+                <div className="block sm:hidden divide-y divide-slate-50">
+                  {paginated.map((item) => {
+                    const status = getStockStatus(item);
+                    const pct = item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0;
+                    return (
+                      <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+                        <button onClick={() => setDetailItem(item)} className="flex-shrink-0">
+                          <ProductThumb url={item.imageUrl} name={item.name} />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <button onClick={() => setDetailItem(item)} className="text-sm font-semibold text-slate-900 truncate w-full text-left">
+                            {item.name}
+                          </button>
+                          <p className="text-xs text-slate-400 font-mono">{item.sku} · {item.category}</p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <button onClick={() => setAdjustItem(item)}
+                              className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition text-slate-400">
+                              <Minus size={10} />
                             </button>
-                          </td>
-                          <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
-                          <td className="py-3 px-4">
-                            <button onClick={() => setDetailItem(item)}
-                              className="font-medium text-slate-900 hover:text-brand-600 transition text-left flex items-center gap-1 group">
-                              {item.name}
-                              <Eye size={12} className="opacity-0 group-hover:opacity-100 transition text-brand-400" />
-                            </button>
-                          </td>
-                          <td className="py-3 px-4 text-slate-600">{item.category}</td>
-                          <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <button onClick={() => setAdjustItem(item)}
-                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition text-slate-400">
-                                <Minus size={11} />
-                              </button>
-                              <div>
-                                <span className="font-semibold">{item.currentStock}</span>
-                                <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-0.5">
-                                  <div className={status === "critical" ? "bg-red-500" : status === "low" ? "bg-amber-400" : "bg-emerald-500"}
-                                    style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
-                                </div>
+                            <div>
+                              <span className="text-sm font-bold">{item.currentStock}</span>
+                              <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                                <div className={status === "critical" ? "bg-red-500" : status === "low" ? "bg-amber-400" : "bg-emerald-500"}
+                                  style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
                               </div>
-                              <button onClick={() => setAdjustItem(item)}
-                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition text-slate-400">
-                                <Plus size={11} />
-                              </button>
                             </div>
-                          </td>
-                          <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
-                          <td className="py-3 px-4 text-emerald-600 font-medium">{fmtCurrency(item.salePrice)}</td>
-                          <td className="py-3 px-4 text-slate-500">{item.minStock} / {item.maxStock}</td>
-                          <td className="py-3 px-4"><StockBadge status={status} /></td>
-                          <td className="py-3 px-4">
-                            <div className="flex gap-1">
-                              <button onClick={() => setQrItem(item)}
-                                className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="Ver QR">
-                                <QrCode size={14} />
+                            <button onClick={() => setAdjustItem(item)}
+                              className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 transition text-slate-400">
+                              <Plus size={10} />
+                            </button>
+                            <StockBadge status={status} />
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm font-bold text-emerald-600">{fmtCurrency(item.salePrice)}</p>
+                          <p className="text-xs text-slate-400">costo {fmtCurrency(item.unitCost)}</p>
+                          <div className="flex gap-1 mt-1.5 justify-end">
+                            <button onClick={() => setQrItem(item)}
+                              className="p-1.5 text-slate-400 hover:text-purple-600 rounded-lg transition">
+                              <QrCode size={13} />
+                            </button>
+                            <button onClick={() => startEdit(item)}
+                              className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
+                              <Edit2 size={13} />
+                            </button>
+                            <button onClick={() => handleDelete(item)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                        <th className="text-left py-3 px-4 font-medium">📷</th>
+                        <th className="text-left py-3 px-4 font-medium">SKU</th>
+                        {sortableCols.map(({ key, label }) => (
+                          <th key={key}
+                            className="text-left py-3 px-4 font-medium cursor-pointer hover:text-slate-800 whitespace-nowrap select-none"
+                            onClick={() => toggleSort(key)}>
+                            <span className="flex items-center gap-1">{label} <SortIcon k={key} /></span>
+                          </th>
+                        ))}
+                        <th className="text-left py-3 px-4 font-medium">Mín/Máx</th>
+                        <th className="text-left py-3 px-4 font-medium">Estado</th>
+                        <th className="text-left py-3 px-4 font-medium">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginated.map((item) => {
+                        const status = getStockStatus(item);
+                        const pct = item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0;
+                        return (
+                          <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
+                            <td className="py-3 px-4">
+                              <button onClick={() => setDetailItem(item)} className="hover:opacity-80 transition">
+                                <ProductThumb url={item.imageUrl} name={item.name} />
                               </button>
-                              <button onClick={() => startEdit(item)}
-                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
-                                <Edit2 size={14} />
+                            </td>
+                            <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
+                            <td className="py-3 px-4">
+                              <button onClick={() => setDetailItem(item)}
+                                className="font-medium text-slate-900 hover:text-brand-600 transition text-left flex items-center gap-1 group">
+                                {item.name}
+                                <Eye size={12} className="opacity-0 group-hover:opacity-100 transition text-brand-400" />
                               </button>
-                              <button onClick={() => handleDelete(item)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className="py-3 px-4 text-slate-600">{item.category}</td>
+                            <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => setAdjustItem(item)}
+                                  className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition text-slate-400">
+                                  <Minus size={11} />
+                                </button>
+                                <div>
+                                  <span className="font-semibold">{item.currentStock}</span>
+                                  <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                                    <div className={status === "critical" ? "bg-red-500" : status === "low" ? "bg-amber-400" : "bg-emerald-500"}
+                                      style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
+                                  </div>
+                                </div>
+                                <button onClick={() => setAdjustItem(item)}
+                                  className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition text-slate-400">
+                                  <Plus size={11} />
+                                </button>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
+                            <td className="py-3 px-4 text-emerald-600 font-medium">{fmtCurrency(item.salePrice)}</td>
+                            <td className="py-3 px-4 text-slate-500">{item.minStock} / {item.maxStock}</td>
+                            <td className="py-3 px-4"><StockBadge status={status} /></td>
+                            <td className="py-3 px-4">
+                              <div className="flex gap-1">
+                                <button onClick={() => setQrItem(item)}
+                                  className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="Ver QR">
+                                  <QrCode size={14} />
+                                </button>
+                                <button onClick={() => startEdit(item)}
+                                  className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
+                                  <Edit2 size={14} />
+                                </button>
+                                <button onClick={() => handleDelete(item)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+                <span className="text-xs text-slate-400">
+                  Página {page} de {totalPages} · {filtered.length} productos
+                </span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 transition">
+                    ← Anterior
+                  </button>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const p = page <= 3 ? i + 1 : page - 2 + i;
+                    if (p < 1 || p > totalPages) return null;
+                    return (
+                      <button key={p} onClick={() => setPage(p)}
+                        className={`w-8 h-8 text-xs rounded-lg border transition ${p === page ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 hover:bg-slate-50"}`}>
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 transition">
+                    Siguiente →
+                  </button>
+                </div>
               </div>
             )}
           </div>

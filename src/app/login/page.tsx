@@ -8,13 +8,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Truck, Mail, Lock, Chrome } from "lucide-react";
 
 export default function LoginPage() {
-  const { signIn, signInGoogle } = useAuth();
+  const { signIn, signInGoogle, resetPassword } = useAuth();
   const router = useRouter();
 
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
-  const [loading,  setLoading]  = useState(false);
+  const [email,         setEmail]         = useState("");
+  const [password,      setPassword]      = useState("");
+  const [loading,       setLoading]       = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [resetSent,     setResetSent]     = useState(false);
+  const [resetLoading,  setResetLoading]  = useState(false);
+
+  async function handleReset() {
+    if (!email) { toast.error("Ingresa tu email primero"); return; }
+    setResetLoading(true);
+    try {
+      await resetPassword(email);
+      setResetSent(true);
+      toast.success("Revisa tu email — te enviamos el enlace de recuperación");
+    } catch {
+      toast.error("No encontramos una cuenta con ese email");
+    } finally {
+      setResetLoading(false);
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -123,6 +139,17 @@ export default function LoginPage() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={resetLoading}
+                className="text-xs text-brand-600 hover:underline disabled:opacity-50 transition"
+              >
+                {resetSent ? "Email enviado ✓" : resetLoading ? "Enviando…" : "¿Olvidaste tu contraseña?"}
+              </button>
             </div>
 
             <button

@@ -990,7 +990,40 @@ export default function VentasPage() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
+              {/* Mobile cards */}
+              <div className="block sm:hidden divide-y divide-slate-50">
+                {filteredSales.map((s) => {
+                  const psMeta = PAYMENT_STATUS[s.paymentStatus ?? "pagado"];
+                  return (
+                    <button key={s.id} type="button" onClick={() => openSaleInvoice(s)}
+                      className="w-full text-left px-4 py-3 hover:bg-brand-50 transition-colors">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <p className="text-sm font-semibold text-slate-900 truncate flex-1">{s.productName}</p>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${psMeta.color}`}>
+                          {psMeta.icon} {psMeta.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                        <span>{fmtDate(s.saleDate)}</span>
+                        <span className="font-mono">{s.sku}</span>
+                        {s.client && <span>{s.client}</span>}
+                        {s.route  && <span>{s.route}</span>}
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-slate-500">{s.quantity} u × {fmtCurrency(s.unitPrice)}</span>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-sm font-semibold ${s.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {fmtCurrency(s.profit)}
+                          </span>
+                          <span className="text-sm font-bold text-indigo-600">{fmtCurrency(s.totalRevenue)}</span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
