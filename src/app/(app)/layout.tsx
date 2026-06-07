@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Zap } from "lucide-react";
+import { Zap, LogOut, Truck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -11,7 +11,7 @@ import { useStockNotifications } from "@/hooks/useStockNotifications";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   useStockNotifications();
-  const { user, loading } = useAuth();
+  const { user, loading, logout, profile } = useAuth();
   const router = useRouter();
   const [saleOpen, setSaleOpen] = useState(false);
 
@@ -40,7 +40,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main
         className="flex-1 min-h-screen bg-slate-50 lg:ml-[var(--sidebar-width)]"
       >
-        {/* Extra top padding on mobile to avoid notch/status bar */}
+        {/* Mobile top bar */}
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-sidebar border-b border-white/10 sticky top-0 z-20">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center">
+              <Truck size={14} className="text-white" />
+            </div>
+            <span className="text-white font-bold text-sm">LogiAnalytics</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-slate-400 text-xs truncate max-w-[120px]">
+              {profile?.fullName?.split(" ")[0] ?? ""}
+            </span>
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition"
+            >
+              <LogOut size={13} />
+              Salir
+            </button>
+          </div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 lg:px-6 py-5 lg:py-8 pb-24 lg:pb-8">
           {children}
         </div>
