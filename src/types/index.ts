@@ -142,3 +142,38 @@ export const PERIOD_OPTIONS = [7, 15, 30, 60, 90, 180] as const;
 export type Period = (typeof PERIOD_OPTIONS)[number];
 
 export const LOW_STOCK_THRESHOLD = 0.25;
+
+// ─── Compras ─────────────────────────────────────────────────────────────────
+
+export type PurchaseOrderStatus = "pendiente" | "recibida" | "parcial" | "cancelada";
+
+export interface PurchaseOrderItem {
+  inventoryId: string;
+  sku: string;
+  productName: string;
+  category: string;
+  qtyOrdered: number;
+  qtyReceived: number;
+  unitCost: number;
+  total: number;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  orderNumber: string;
+  supplierId: string;
+  supplierName: string;
+  supplierRnc: string;
+  supplierPhone: string;
+  supplierEmail: string;
+  status: PurchaseOrderStatus;
+  items: PurchaseOrderItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  note: string;
+  expectedDate: Timestamp;
+  receivedDate?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
