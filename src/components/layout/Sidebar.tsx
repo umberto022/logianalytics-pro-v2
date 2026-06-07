@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
-  Settings, LogOut, Truck, Building2, MapPin, ClipboardList,
+  Settings, LogOut, Truck, Building2, MapPin, ClipboardList, Zap,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
+import { usePlan } from "@/hooks/usePlan";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -24,6 +25,7 @@ export function Sidebar() {
   const pathname       = usePathname();
   const { profile, logout } = useAuth();
   const criticalCount  = useStockAlerts();
+  const { isFree }     = usePlan();
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[var(--sidebar-width)] bg-sidebar text-slate-200 flex-col z-20">
@@ -81,6 +83,17 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Upgrade CTA for free users */}
+      {isFree && (
+        <div className="px-3 pb-3">
+          <Link href="/precios"
+            className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-semibold bg-brand-500/20 text-brand-300 hover:bg-brand-500/30 transition-colors">
+            <Zap size={15} className="text-yellow-400" />
+            Upgrade a Pro
+          </Link>
+        </div>
+      )}
 
       {/* Logout */}
       <div className="px-3 pb-4 border-t border-white/10 pt-4">
