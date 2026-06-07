@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { QueryProvider } from "@/components/QueryProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} bg-slate-50 text-slate-900 antialiased`}>
         <ErrorBoundary>
+        <QueryProvider>
         <AuthProvider>
           {children}
           <Toaster
@@ -51,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
         </AuthProvider>
+        </QueryProvider>
         </ErrorBoundary>
         <ServiceWorkerRegistrar />
       </body>

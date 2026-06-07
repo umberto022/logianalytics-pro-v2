@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, Treemap, Cell, PieChart, Pie,
@@ -8,46 +8,26 @@ import {
 import {
   DollarSign, TrendingUp, ShoppingCart, Package, AlertTriangle,
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { listInventory } from "@/lib/firestore/inventory";
-import { getSales, computeSummary, computeByRoute, computeByProduct, computeDailyStats } from "@/lib/firestore/sales";
+import { useInventory } from "@/hooks/useInventory";
+import { useSales } from "@/hooks/useSales";
+import { computeSummary, computeByRoute, computeByProduct, computeDailyStats } from "@/lib/firestore/sales";
 import { getStockStatus, fmtCurrency, fmt, fmtDate } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { StockBadge } from "@/components/ui/StockBadge";
-import type { Period, InventoryItem, Sale, RouteStats, ProductStats, DailyStat, SalesSummary } from "@/types";
+import type { Period, RouteStats, ProductStats, DailyStat, SalesSummary } from "@/types";
 
 const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6"];
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [period, setPeriod]     = useState<Period>(30);
-  const [loading, setLoading]   = useState(true);
-  const [items, setItems]       = useState<InventoryItem[]>([]);
-  const [sales, setSales]       = useState<Sale[]>([]);
+  const [period, setPeriod] = useState<Period>(30);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const [inv, sl] = await Promise.all([
-        listInventory(user.uid),
-        getSales(user.uid, period),
-      ]);
-      setItems(inv);
-      setSales(sl);
-    } catch (e) {
-      console.error("dashboard load error:", e);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, period]);
+  const { items, loading: loadingInv } = useInventory();
+  const { sales, loading: loadingSales } = useSales(period);
 
-  useEffect(() => { load(); }, [load]);
-
-  if (loading) return <FullPageSpinner />;
+  if (loadingInv || loadingSales) return <FullPageSpinner />;
 
   const summary: SalesSummary = computeSummary(sales);
   const routes:  RouteStats[] = computeByRoute(sales);

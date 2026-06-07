@@ -1,5 +1,5 @@
 import {
-  collection, doc, addDoc, getDocs, query, orderBy,
+  collection, doc, addDoc, getDocs, query, orderBy, where, limit,
   Timestamp, updateDoc, getDoc, writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -212,11 +212,15 @@ export async function getSales(uid: string, days: number): Promise<Sale[]> {
   const since = Timestamp.fromDate(
     new Date(Date.now() - days * 24 * 60 * 60 * 1000)
   );
-  const q = query(salesCol(uid), orderBy("saleDate", "desc"));
+  // Filtro en Firestore — no trae todos los registros a memoria
+  const q = query(
+    salesCol(uid),
+    where("saleDate", ">=", since),
+    orderBy("saleDate", "desc"),
+    limit(1000)
+  );
   const snap = await getDocs(q);
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() } as Sale))
-    .filter((s) => s.saleDate >= since);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sale));
 }
 
 export function computeSummary(sales: Sale[]): SalesSummary {

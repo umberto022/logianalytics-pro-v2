@@ -1,5 +1,6 @@
 import {
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc,
+  query, where, orderBy, limit,
   Timestamp, writeBatch, getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -130,11 +131,15 @@ export async function listMovements(
   const since = Timestamp.fromDate(
     new Date(Date.now() - days * 24 * 60 * 60 * 1000)
   );
-  const snap = await getDocs(movementsCol(uid));
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() } as InventoryMovement))
-    .filter((m) => m.createdAt >= since)
-    .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+  // Filtro en Firestore — evita traer todo el historial a memoria
+  const q = query(
+    movementsCol(uid),
+    where("createdAt", ">=", since),
+    orderBy("createdAt", "desc"),
+    limit(500)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as InventoryMovement));
 }
 
 export async function adjustStock(
