@@ -10,7 +10,8 @@ import {
   Boxes, ShoppingBag, ChevronRight, ChevronUp, ChevronDown,
   Minus, History, ShoppingCart, QrCode, Printer,
   ArrowUpCircle, ArrowDownCircle, SlidersHorizontal,
-  Tag, Layers, Eye,
+  Tag, Layers, Eye, ExternalLink, CheckCircle2, Clock,
+  PackageCheck, XCircle,
 } from "lucide-react";
 import Papa from "papaparse";
 import {
@@ -21,16 +22,18 @@ import {
 const CLOUDINARY_CLOUD  = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME  ?? "").trim();
 const CLOUDINARY_PRESET = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
 
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   listInventory, addInventoryItem, updateInventoryItem,
   deleteInventoryItem, bulkAddInventory, listMovements, adjustStock,
 } from "@/lib/firestore/inventory";
+import { listPurchaseOrders } from "@/lib/firestore/purchases";
 import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
-import type { InventoryItem, InventoryMovement, StockStatus } from "@/types";
+import type { InventoryItem, InventoryMovement, PurchaseOrder, PurchaseOrderStatus, StockStatus } from "@/types";
 
 type Tab = "dashboard" | "list" | "add" | "historial" | "ordenes";
 type ActiveFilter = "all" | "critical" | "low" | "ok" | string;
@@ -763,7 +766,24 @@ function HistorialTab({ uid }: { uid: string }) {
 
 // ─── Órdenes de reabastecimiento ─────────────────────────────────────────────
 
-function OrdenesTab({ items }: { items: InventoryItem[] }) {
+const PO_STATUS: Record<PurchaseOrderStatus, { label: string; color: string; icon: React.ReactNode }> = {
+  pendiente: { label: "Pendiente", color: "bg-amber-50 text-amber-700 border-amber-200",     icon: <Clock size={11} /> },
+  recibida:  { label: "Recibida",  color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle2 size={11} /> },
+  parcial:   { label: "Parcial",   color: "bg-blue-50 text-blue-700 border-blue-200",        icon: <PackageCheck size={11} /> },
+  cancelada: { label: "Cancelada", color: "bg-red-50 text-red-700 border-red-200",           icon: <XCircle size={11} /> },
+};
+
+function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
+  const router = useRouter();
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    listPurchaseOrders(uid)
+      .then(setOrders)
+      .finally(() => setLoadingOrders(false));
+  }, [uid]);
+
   const needRestock = items
     .filter((i) => i.currentStock <= i.minStock)
     .map((i) => ({
@@ -776,7 +796,11 @@ function OrdenesTab({ items }: { items: InventoryItem[] }) {
 
   const totalCost = needRestock.reduce((s, i) => s + i.estimatedCost, 0);
 
-  function printOrder() {
+  // Active orders (pending or partial) that cover low-stock items
+  const activeOrders = orders.filter((o) => o.status === "pendiente" || o.status === "parcial");
+  const allOrders    = [...orders].sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+
+  function printNeedsList() {
     const rows = needRestock.map((i) =>
       `<tr><td>${i.sku}</td><td>${i.name}</td><td>${i.supplier || "—"}</td>
        <td style="text-align:center">${i.currentStock}</td>
@@ -787,21 +811,20 @@ function OrdenesTab({ items }: { items: InventoryItem[] }) {
     const win = window.open("", "_blank");
     if (!win) return;
     win.document.write(`
-      <html><head><title>Orden de reabastecimiento</title>
+      <html><head><title>Necesidades de reabastecimiento</title>
       <style>
         body{font-family:sans-serif;padding:24px;color:#1e293b}
-        h1{font-size:20px;margin-bottom:4px}
-        p{color:#64748b;font-size:13px;margin:0 0 16px}
+        h1{font-size:20px;margin-bottom:4px}p{color:#64748b;font-size:13px;margin:0 0 16px}
         table{width:100%;border-collapse:collapse;font-size:13px}
         th{background:#f1f5f9;padding:8px 12px;text-align:left;font-size:12px}
         td{padding:8px 12px;border-bottom:1px solid #f1f5f9}
         tfoot td{font-weight:bold;background:#f8fafc}
       </style></head>
       <body>
-        <h1>Orden de reabastecimiento</h1>
-        <p>Generado el ${new Date().toLocaleDateString("es-ES", { day:"2-digit",month:"long",year:"numeric" })}</p>
+        <h1>Necesidades de reabastecimiento</h1>
+        <p>Generado el ${new Date().toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})}</p>
         <table>
-          <thead><tr><th>SKU</th><th>Producto</th><th>Proveedor</th><th>Stock actual</th><th>Qty a pedir</th><th>Costo unit.</th><th>Total est.</th></tr></thead>
+          <thead><tr><th>SKU</th><th>Producto</th><th>Proveedor</th><th>Stock actual</th><th>A pedir</th><th>Costo unit.</th><th>Total est.</th></tr></thead>
           <tbody>${rows}</tbody>
           <tfoot><tr><td colspan="6">TOTAL ESTIMADO</td><td style="text-align:right">${fmtCurrency(totalCost)}</td></tr></tfoot>
         </table>
@@ -810,72 +833,221 @@ function OrdenesTab({ items }: { items: InventoryItem[] }) {
     win.print();
   }
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-base font-semibold text-slate-800">Órdenes de reabastecimiento</h2>
-          <p className="text-sm text-slate-500">Productos en o por debajo del stock mínimo</p>
+  function printPurchaseOrder(order: PurchaseOrder) {
+    const rows = order.items.map((i) =>
+      `<tr><td>${i.sku}</td><td>${i.productName}</td><td>${i.category}</td>
+       <td style="text-align:center">${i.qtyOrdered}</td>
+       <td style="text-align:center">${i.qtyReceived}</td>
+       <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
+       <td style="text-align:right">${fmtCurrency(i.total)}</td></tr>`
+    ).join("");
+    const statusMeta = PO_STATUS[order.status];
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>Orden ${order.orderNumber}</title>
+      <style>
+        body{font-family:sans-serif;padding:28px;color:#1e293b;font-size:13px}
+        h1{font-size:22px;margin:0}.header{display:flex;justify-content:space-between;margin-bottom:20px}
+        .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+          background:${order.status==="recibida"?"#d1fae5":order.status==="cancelada"?"#fee2e2":order.status==="parcial"?"#dbeafe":"#fef3c7"};
+          color:${order.status==="recibida"?"#065f46":order.status==="cancelada"?"#991b1b":order.status==="parcial"?"#1e40af":"#92400e"}}
+        .info{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+        .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}
+        .info-box p{margin:0;font-size:11px;color:#64748b}.info-box b{display:block;font-size:14px;color:#1e293b;margin-top:2px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase}
+        td{padding:8px 10px;border-bottom:1px solid #f1f5f9}
+        .totals{margin-top:16px;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+        .totals div{display:flex;gap:48px;font-size:13px}
+        .grand{font-weight:700;font-size:15px;border-top:2px solid #e2e8f0;padding-top:8px;margin-top:4px}
+      </style></head>
+      <body>
+        <div class="header">
+          <div>
+            <h1>Orden de Compra</h1>
+            <p style="color:#64748b;margin:4px 0 8px">${order.orderNumber}</p>
+            <span class="badge">${statusMeta.label}</span>
+          </div>
+          <div style="text-align:right">
+            <p style="margin:0;font-size:11px;color:#64748b">Fecha creación</p>
+            <p style="margin:0;font-weight:600">${order.createdAt?.toDate?.()?.toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})??""}</p>
+            <p style="margin:4px 0 0;font-size:11px;color:#64748b">Fecha esperada</p>
+            <p style="margin:0;font-weight:600">${order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})??""}</p>
+          </div>
         </div>
-        {needRestock.length > 0 && (
-          <button onClick={printOrder}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition">
-            <Printer size={14} /> Imprimir orden
-          </button>
+        <div class="info">
+          <div class="info-box"><p>Proveedor</p><b>${order.supplierName}</b>${order.supplierRnc?`<p style="margin-top:6px">RNC</p><b>${order.supplierRnc}</b>`:""}</div>
+          <div class="info-box">${order.supplierPhone?`<p>Teléfono</p><b>${order.supplierPhone}</b>`:""}${order.supplierEmail?`<p style="margin-top:6px">Email</p><b>${order.supplierEmail}</b>`:""}</div>
+        </div>
+        <table>
+          <thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>Pedido</th><th>Recibido</th><th>Costo unit.</th><th>Total</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="totals">
+          <div><span style="color:#64748b">Subtotal</span><span>${fmtCurrency(order.subtotal)}</span></div>
+          <div><span style="color:#64748b">ITBIS 18%</span><span>${fmtCurrency(order.tax)}</span></div>
+          <div class="grand"><span>TOTAL</span><span>${fmtCurrency(order.total)}</span></div>
+        </div>
+        ${order.note?`<p style="margin-top:16px;padding:10px;background:#f8fafc;border-radius:6px;color:#64748b;font-size:12px"><b>Nota:</b> ${order.note}</p>`:""}
+      </body></html>`);
+    win.document.close();
+    win.print();
+  }
+
+  function goToCreateOrder() {
+    // Pre-load low stock items into localStorage so compras page picks them up
+    const preload = needRestock.map((i) => ({
+      inventoryId: i.id, sku: i.sku, productName: i.name,
+      category: i.category, qtyOrdered: i.qtyNeeded, qtyReceived: 0,
+      unitCost: i.unitCost, total: i.qtyNeeded * i.unitCost,
+    }));
+    localStorage.setItem("compras_preload", JSON.stringify(preload));
+    router.push("/compras");
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* ── Necesidades actuales ── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-800">Necesidades de reabastecimiento</h2>
+            <p className="text-sm text-slate-500">Productos en o por debajo del stock mínimo</p>
+          </div>
+          <div className="flex gap-2">
+            {needRestock.length > 0 && (
+              <>
+                <button onClick={printNeedsList}
+                  className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
+                  <Printer size={14} /> Imprimir lista
+                </button>
+                <button onClick={goToCreateOrder}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition">
+                  <ShoppingCart size={14} /> Crear orden de compra
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {needRestock.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center shadow-sm">
+            <ShoppingCart size={40} className="mx-auto mb-3 text-emerald-400" />
+            <p className="text-slate-700 font-medium">Todo en orden ✓</p>
+            <p className="text-slate-400 text-sm mt-1">Ningún producto está por debajo del stock mínimo</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+                <p className="text-xs text-slate-400 mb-1">Productos a reabastecer</p>
+                <p className="text-2xl font-bold text-slate-900">{needRestock.length}</p>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+                <p className="text-xs text-slate-400 mb-1">Unidades a pedir</p>
+                <p className="text-2xl font-bold text-slate-900">{needRestock.reduce((s, i) => s + i.qtyNeeded, 0)}</p>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+                <p className="text-xs text-slate-400 mb-1">Costo estimado total</p>
+                <p className="text-2xl font-bold text-red-600">{fmtCurrency(totalCost)}</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                    {["SKU","Producto","Proveedor","Stock actual","Mínimo","A pedir","Costo unit.","Total est.","Estado"].map((h) => (
+                      <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {needRestock.map((item) => (
+                    <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
+                      <td className="py-3 px-4 font-medium">{item.name}</td>
+                      <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
+                      <td className="py-3 px-4 font-semibold text-red-600">{item.currentStock}</td>
+                      <td className="py-3 px-4 text-slate-500">{item.minStock}</td>
+                      <td className="py-3 px-4 font-semibold text-emerald-600">{item.qtyNeeded}</td>
+                      <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
+                      <td className="py-3 px-4 font-semibold">{fmtCurrency(item.estimatedCost)}</td>
+                      <td className="py-3 px-4"><StockBadge status={item.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
-      {needRestock.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-          <ShoppingCart size={40} className="mx-auto mb-3 text-emerald-400" />
-          <p className="text-slate-700 font-medium">Todo en orden ✓</p>
-          <p className="text-slate-400 text-sm mt-1">Ningún producto está por debajo del stock mínimo</p>
+      {/* ── Órdenes de compra registradas ── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-slate-800">
+            Órdenes de compra registradas
+            {activeOrders.length > 0 && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">
+                {activeOrders.length} activa{activeOrders.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </h2>
+          <button onClick={() => router.push("/compras")}
+            className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-800 font-medium transition">
+            Ver todas <ExternalLink size={12} />
+          </button>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <p className="text-xs text-slate-400 mb-1">Productos a reabastecer</p>
-              <p className="text-2xl font-bold text-slate-900">{needRestock.length}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <p className="text-xs text-slate-400 mb-1">Unidades a pedir</p>
-              <p className="text-2xl font-bold text-slate-900">{needRestock.reduce((s, i) => s + i.qtyNeeded, 0)}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <p className="text-xs text-slate-400 mb-1">Costo estimado total</p>
-              <p className="text-2xl font-bold text-red-600">{fmtCurrency(totalCost)}</p>
-            </div>
-          </div>
 
+        {loadingOrders ? (
+          <div className="text-center py-8 text-slate-400 text-sm">Cargando órdenes…</div>
+        ) : allOrders.length === 0 ? (
+          <div className="bg-slate-50 rounded-xl border border-slate-100 p-8 text-center text-slate-400 text-sm">
+            No hay órdenes de compra registradas aún
+          </div>
+        ) : (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
-                  {["SKU","Producto","Proveedor","Stock actual","Mínimo","A pedir","Costo unit.","Total est.","Estado"].map((h) => (
+                  {["N° Orden","Proveedor","RNC","Productos","Total","Fecha esperada","Estado",""].map((h) => (
                     <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {needRestock.map((item) => (
-                  <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
-                    <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
-                    <td className="py-3 px-4 font-medium">{item.name}</td>
-                    <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
-                    <td className="py-3 px-4 font-semibold text-red-600">{item.currentStock}</td>
-                    <td className="py-3 px-4 text-slate-500">{item.minStock}</td>
-                    <td className="py-3 px-4 font-semibold text-emerald-600">{item.qtyNeeded}</td>
-                    <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
-                    <td className="py-3 px-4 font-semibold">{fmtCurrency(item.estimatedCost)}</td>
-                    <td className="py-3 px-4"><StockBadge status={item.status} /></td>
-                  </tr>
-                ))}
+                {allOrders.map((order) => {
+                  const sm = PO_STATUS[order.status];
+                  return (
+                    <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</td>
+                      <td className="py-3 px-4 font-medium">{order.supplierName}</td>
+                      <td className="py-3 px-4 text-slate-400 font-mono text-xs">{order.supplierRnc || "—"}</td>
+                      <td className="py-3 px-4 text-slate-600">{order.items.length} prod.</td>
+                      <td className="py-3 px-4 font-semibold">{fmtCurrency(order.total)}</td>
+                      <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                        {order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES",{day:"2-digit",month:"short",year:"numeric"}) ?? "—"}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${sm.color}`}>
+                          {sm.icon} {sm.label}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button onClick={() => printPurchaseOrder(order)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Imprimir">
+                          <Printer size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -1349,7 +1521,7 @@ export default function InventarioPage() {
       {tab === "historial" && user && <HistorialTab uid={user.uid} />}
 
       {/* ── Órdenes ── */}
-      {tab === "ordenes" && <OrdenesTab items={items} />}
+      {tab === "ordenes" && user && <OrdenesTab items={items} uid={user.uid} />}
     </div>
   );
 }

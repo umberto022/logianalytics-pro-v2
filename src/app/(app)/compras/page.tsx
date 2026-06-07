@@ -325,9 +325,10 @@ const EMPTY_ORDER = {
   expectedDate: "", status: "pendiente" as PurchaseOrderStatus,
 };
 
-function OrderFormModal({ inventory, editOrder, onClose, onDone }: {
+function OrderFormModal({ inventory, editOrder, preloadItems, onClose, onDone }: {
   inventory: InventoryItem[];
   editOrder: PurchaseOrder | null;
+  preloadItems?: PurchaseOrder["items"] | null;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -343,8 +344,14 @@ function OrderFormModal({ inventory, editOrder, onClose, onDone }: {
     status: editOrder.status,
   } : EMPTY_ORDER);
 
+  const initialItems = editOrder
+    ? editOrder.items.map((i) => ({ ...i, _inventoryId: i.inventoryId }))
+    : preloadItems
+      ? preloadItems.map((i) => ({ ...i, _inventoryId: i.inventoryId }))
+      : [];
+
   const [items, setItems] = useState<(PurchaseOrderItem & { _inventoryId: string })[]>(
-    editOrder ? editOrder.items.map((i) => ({ ...i, _inventoryId: i.inventoryId })) : []
+    initialItems
   );
   const [saving, setSaving] = useState(false);
   const [productSearch, setProductSearch] = useState("");
@@ -582,6 +589,19 @@ export default function ComprasPage() {
     finally { setLoading(false); }
   }, [user]);
 
+  // Open form pre-filled when coming from inventario/reabastecer
+  const [preloadItems, setPreloadItems] = useState<PurchaseOrder["items"] | null>(null);
+  useEffect(() => {
+    const raw = localStorage.getItem("compras_preload");
+    if (raw) {
+      try {
+        setPreloadItems(JSON.parse(raw));
+        setShowForm(true);
+      } catch { /* ignore */ }
+      localStorage.removeItem("compras_preload");
+    }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
 
   async function handleDelete(id: string) {
@@ -617,7 +637,8 @@ export default function ComprasPage() {
     <div>
       {showForm && (
         <OrderFormModal inventory={inventory} editOrder={editOrder}
-          onClose={() => { setShowForm(false); setEditOrder(null); }}
+          preloadItems={preloadItems}
+          onClose={() => { setShowForm(false); setEditOrder(null); setPreloadItems(null); }}
           onDone={load} />
       )}
       {detailOrder && (
