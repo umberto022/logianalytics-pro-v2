@@ -13,7 +13,12 @@ import { usePlan } from "@/hooks/usePlan";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { UpgradeModal } from "@/components/ui/UpgradeModal";
 import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
-import { Zap, CheckCircle2 } from "lucide-react";
+import { Zap, CheckCircle2, Bell, BellOff } from "lucide-react";
+import {
+  isPushEnabled,
+  setPushEnabled,
+  requestNotificationPermission,
+} from "@/lib/notifications";
 
 export default function ConfiguracionPage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -35,6 +40,34 @@ export default function ConfiguracionPage() {
       })
       .catch(() => {});
   }, [searchParams, user, refreshProfile]);
+  const [pushEnabled, setPushEnabledState] = useState(false);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setPushEnabledState(isPushEnabled());
+      if ("Notification" in window) setPushPermission(Notification.permission);
+    }
+  }, []);
+
+  async function togglePush() {
+    if (!pushEnabled) {
+      const permission = await requestNotificationPermission();
+      setPushPermission(permission);
+      if (permission !== "granted") {
+        toast.error("Permite las notificaciones en tu navegador para activar esta función.");
+        return;
+      }
+      setPushEnabled(true);
+      setPushEnabledState(true);
+      toast.success("Notificaciones de stock crítico activadas");
+    } else {
+      setPushEnabled(false);
+      setPushEnabledState(false);
+      toast("Notificaciones desactivadas", { icon: "🔕" });
+    }
+  }
+
   const [savingProfile,  setSavingProfile]  = useState(false);
   const [savingCompany,  setSavingCompany]  = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -235,6 +268,46 @@ export default function ConfiguracionPage() {
             </button>
           </form>
         </div>
+        {/* Push Notifications */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-700 mb-1">Notificaciones de stock</h2>
+          <p className="text-sm text-slate-500 mb-5">
+            Recibe alertas del navegador cuando un producto caiga por debajo del stock mínimo.
+          </p>
+
+          <div className="flex items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl">
+            <div className="flex items-center gap-3">
+              {pushEnabled
+                ? <Bell size={20} className="text-brand-600" />
+                : <BellOff size={20} className="text-slate-400" />}
+              <div>
+                <p className="text-sm font-medium text-slate-700">
+                  {pushEnabled ? "Notificaciones activas" : "Notificaciones desactivadas"}
+                </p>
+                {pushPermission === "denied" && (
+                  <p className="text-xs text-red-500 mt-0.5">
+                    Bloqueadas en el navegador — actívalas desde la configuración del sitio.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={togglePush}
+              disabled={pushPermission === "denied"}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-40 ${
+                pushEnabled ? "bg-brand-600" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  pushEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );

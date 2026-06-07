@@ -7,8 +7,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickSaleModal } from "@/components/ui/QuickSaleModal";
+import { useStockNotifications } from "@/hooks/useStockNotifications";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  useStockNotifications();
   const { user, loading } = useAuth();
   const router = useRouter();
   const [saleOpen, setSaleOpen] = useState(false);
