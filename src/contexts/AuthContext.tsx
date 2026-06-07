@@ -6,7 +6,8 @@ import {
 import {
   onAuthStateChanged, signOut, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, GoogleAuthProvider,
-  signInWithPopup, updateProfile, sendPasswordResetEmail,
+  signInWithPopup, signInWithRedirect, getRedirectResult,
+  updateProfile, sendPasswordResetEmail,
   setPersistence, browserSessionPersistence, type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -46,6 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Handle redirect result from Google sign-in on mobile
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
+        const exists = await getUserProfile(result.user.uid).catch(() => null);
+        if (!exists) {
+          await createUserProfile(result.user.uid, {
+            email:    result.user.email!,
+            fullName: result.user.displayName ?? "",
+          });
+        }
+      }
+    }).catch(console.error);
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       try {
@@ -70,6 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signInGoogle() {
     await setPersistence(auth, browserSessionPersistence);
     const provider = new GoogleAuthProvider();
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobile) {
+      await signInWithRedirect(auth, provider);
+      return; // page will reload after redirect
+    }
     const cred = await signInWithPopup(auth, provider);
     const exists = await getUserProfile(cred.user.uid).catch(() => null);
     if (!exists) {
