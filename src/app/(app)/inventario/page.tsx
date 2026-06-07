@@ -11,7 +11,7 @@ import {
   Minus, History, ShoppingCart, QrCode, Printer,
   ArrowUpCircle, ArrowDownCircle, SlidersHorizontal,
   Tag, Layers, Eye, ExternalLink, CheckCircle2, Clock,
-  PackageCheck, XCircle,
+  PackageCheck, XCircle, FileText,
 } from "lucide-react";
 import Papa from "papaparse";
 import {
@@ -1174,6 +1174,16 @@ export default function InventarioPage() {
     return sortDir === "asc" ? <ChevronUp size={12} className="text-brand-500" /> : <ChevronDown size={12} className="text-brand-500" />;
   }
 
+  function downloadCSVTemplate() {
+    const headers = ["producto", "tipo", "color", "proveedor", "stock", "stock_minimo", "stock_maximo", "costo", "precio_venta", "leadtime_dias"];
+    const example = ["Producto Ejemplo", "Categoria", "Rojo", "Proveedor S.A.", "100", "10", "200", "50.00", "80.00", "7"];
+    const csv = [headers.join(","), example.join(",")].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a"); a.href = url;
+    a.download = "plantilla_inventario.csv";
+    a.click(); URL.revokeObjectURL(url);
+  }
+
   function exportCSV() {
     const rows = items.map(({ sku, name, category, color, currentStock, minStock, maxStock, unitCost, salePrice, supplier }) =>
       ({ sku, producto: name, tipo: category, color, stock: currentStock, stock_minimo: minStock, stock_maximo: maxStock, costo: unitCost, precio_venta: salePrice, proveedor: supplier })
@@ -1335,6 +1345,11 @@ export default function InventarioPage() {
             <button onClick={exportPDF}
               className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
               <Printer size={15} /> PDF
+            </button>
+            <button onClick={downloadCSVTemplate}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+              title="Descargar plantilla CSV para importación masiva">
+              <FileText size={15} /> Plantilla
             </button>
             <label className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer">
               <Upload size={15} /> Importar CSV

@@ -10,8 +10,14 @@
   * { box-sizing: border-box; }
 
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100;
   }
+
+  /* ── Dark mode surfaces ─────────────────────────────────────── */
+  .dark .card-surface  { @apply bg-slate-800 border-slate-700; }
+  .dark .page-bg       { @apply bg-slate-900; }
+  .dark .input-base    { @apply bg-slate-700 border-slate-600 text-slate-100 placeholder-slate-400; }
+  .dark .text-muted    { @apply text-slate-400; }
 
   h1 { @apply text-2xl font-bold; }
   h2 { @apply text-xl font-semibold; }

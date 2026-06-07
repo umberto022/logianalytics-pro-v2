@@ -11,10 +11,10 @@ import { useCustomers, useInvalidateCustomers } from "@/hooks/useCustomers";
 import { useSales } from "@/hooks/useSales";
 import { addCustomer, updateCustomer, deleteCustomer } from "@/lib/firestore/customers";
 import { computeByClient } from "@/lib/firestore/sales";
-import { fmtCurrency, fmt } from "@/lib/utils";
+import { fmtCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { useUndoDelete } from "@/hooks/useUndoDelete";
 import type { Customer } from "@/types";
 
 const EMPTY: Omit<Customer, "id" | "createdAt" | "updatedAt"> = {
@@ -25,16 +25,15 @@ export default function ClientesPage() {
   const { user } = useAuth();
   const { customers, loading } = useCustomers();
   const { sales } = useSales(90);
-  const invalidate = useInvalidateCustomers();
+  const invalidate  = useInvalidateCustomers();
+  const undoDelete  = useUndoDelete();
 
-  const [search, setSearch]         = useState("");
-  const [showModal, setShowModal]   = useState(false);
-  const [editing, setEditing]       = useState<Customer | null>(null);
-  const [form, setForm]             = useState({ ...EMPTY });
-  const [saving, setSaving]         = useState(false);
-  const [deleting, setDeleting]     = useState<Customer | null>(null);
-  const [deletingLoading, setDeletingLoading] = useState(false);
-  const [detail, setDetail]         = useState<Customer | null>(null);
+  const [search, setSearch]       = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing]     = useState<Customer | null>(null);
+  const [form, setForm]           = useState({ ...EMPTY });
+  const [saving, setSaving]       = useState(false);
+  const [detail, setDetail]       = useState<Customer | null>(null);
 
   // Stats por cliente desde ventas de los últimos 90 días
   const clientStats = useMemo(() => {
@@ -80,18 +79,13 @@ export default function ClientesPage() {
     setSaving(false);
   }
 
-  async function handleDelete() {
-    if (!deleting || !user) return;
-    setDeletingLoading(true);
-    const result = await deleteCustomer(user.uid, deleting.id);
-    if (result.ok) {
-      toast.success(result.message);
-      invalidate();
-    } else {
-      toast.error(result.message);
-    }
-    setDeletingLoading(false);
-    setDeleting(null);
+  function handleDelete(c: Customer) {
+    if (!user) return;
+    undoDelete(`"${c.name}" eliminado`, async () => {
+      const result = await deleteCustomer(user.uid, c.id);
+      if (result.ok) invalidate();
+      else toast.error(result.message);
+    });
   }
 
   const inp = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
@@ -192,7 +186,7 @@ export default function ClientesPage() {
                             className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
                             <Edit2 size={15} />
                           </button>
-                          <button onClick={() => setDeleting(c)}
+                          <button onClick={() => handleDelete(c)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
                             <Trash2 size={15} />
                           </button>
@@ -331,7 +325,7 @@ export default function ClientesPage() {
                 className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition flex items-center justify-center gap-2">
                 <Edit2 size={14} /> Editar
               </button>
-              <button onClick={() => { setDetail(null); setDeleting(detail); }}
+              <button onClick={() => { handleDelete(detail); setDetail(null); }}
                 className="flex-1 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2">
                 <Trash2 size={14} /> Eliminar
               </button>
@@ -340,17 +334,6 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* Confirm delete */}
-      <ConfirmModal
-        isOpen={!!deleting}
-        title="Eliminar cliente"
-        description={`¿Eliminar a "${deleting?.name}"? Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
-        danger
-        loading={deletingLoading}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleting(null)}
-      />
     </div>
   );
 }
