@@ -10,11 +10,12 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { listInventory } from "@/lib/firestore/inventory";
 import {
   listPurchaseOrders, createPurchaseOrder,
-  deletePurchaseOrder, receivePurchaseOrder, updatePurchaseOrder,
+  deletePurchaseOrder, updatePurchaseOrder,
 } from "@/lib/firestore/purchases";
 import { fmtCurrency, fmt } from "@/lib/utils";
 import { Timestamp } from "firebase/firestore";
@@ -243,79 +244,7 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit }: {
 
 // ─── Receive modal ────────────────────────────────────────────────────────────
 
-function ReceiveModal({ order, onClose, onDone }: {
-  order: PurchaseOrder;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const { user } = useAuth();
-  const [items, setItems] = useState<PurchaseOrderItem[]>(
-    order.items.map((i) => ({ ...i, qtyReceived: i.qtyOrdered - i.qtyReceived }))
-  );
-  const [saving, setSaving] = useState(false);
-
-  function setQty(idx: number, val: number) {
-    setItems((prev) => prev.map((it, i) => i === idx ? { ...it, qtyReceived: Math.max(0, val) } : it));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user) return;
-    setSaving(true);
-    const merged = order.items.map((orig, i) => ({
-      ...orig,
-      qtyReceived: orig.qtyReceived + items[i].qtyReceived,
-    }));
-    const r = await receivePurchaseOrder(user.uid, order.id, merged);
-    setSaving(false);
-    if (r.ok) { toast.success(r.message); onDone(); onClose(); }
-    else toast.error(r.message);
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-slate-900">Registrar recepción</h3>
-            <p className="text-xs text-slate-400">{order.orderNumber} · {order.supplierName}</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <p className="text-sm text-slate-500">Ingresa la cantidad recibida de cada producto. El stock se actualizará automáticamente.</p>
-          <div className="space-y-3">
-            {items.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{item.productName}</p>
-                  <p className="text-xs text-slate-400">Pedido: {order.items[idx].qtyOrdered} · Ya recibido: {order.items[idx].qtyReceived}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">Recibir:</span>
-                  <input type="number" value={item.qtyReceived} min={0}
-                    max={order.items[idx].qtyOrdered - order.items[idx].qtyReceived}
-                    onChange={(e) => setQty(idx, Number(e.target.value))}
-                    className="w-20 text-center border border-slate-200 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button type="submit" disabled={saving}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-50">
-              {saving ? "Guardando…" : "Confirmar recepción"}
-            </button>
-            <button type="button" onClick={onClose}
-              className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm hover:bg-slate-50 transition">
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
+// ReceiveModal replaced by ReceiveOrderModal component
 
 // ─── New / Edit order modal ───────────────────────────────────────────────────
 
@@ -657,7 +586,7 @@ export default function ComprasPage() {
           onEdit={openEdit} />
       )}
       {receiveOrder && (
-        <ReceiveModal order={receiveOrder}
+        <ReceiveOrderModal order={receiveOrder}
           onClose={() => setReceiveOrder(null)}
           onDone={load} />
       )}

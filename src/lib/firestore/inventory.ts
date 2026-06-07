@@ -142,7 +142,8 @@ export async function adjustStock(
   itemId: string,
   delta: number,
   note: string,
-  type: InventoryMovement["movementType"]
+  type: InventoryMovement["movementType"],
+  extra?: { serialNumber?: string; batchCode?: string; receiptPhotoUrl?: string; reference?: string }
 ): Promise<{ ok: boolean; message: string }> {
   try {
     const ref = doc(itemsCol(uid), itemId);
@@ -158,8 +159,11 @@ export async function adjustStock(
       productName: prev.name,
       movementType: type,
       quantity: delta,
-      reference: "",
+      reference: extra?.reference ?? "",
       note,
+      serialNumber: extra?.serialNumber ?? "",
+      batchCode: extra?.batchCode ?? "",
+      receiptPhotoUrl: extra?.receiptPhotoUrl ?? "",
       createdAt: now,
     });
     return { ok: true, message: `Stock actualizado: ${newStock} unidades` };

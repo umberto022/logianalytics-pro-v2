@@ -59,6 +59,9 @@ export interface InventoryMovement {
   quantity: number;
   reference: string;
   note: string;
+  serialNumber?: string;
+  batchCode?: string;
+  receiptPhotoUrl?: string;
   createdAt: Timestamp;
 }
 
@@ -156,6 +159,10 @@ export interface PurchaseOrderItem {
   qtyReceived: number;
   unitCost: number;
   total: number;
+  // Reception metadata
+  serialNumber?: string;
+  batchCode?: string;
+  receiptPhotoUrl?: string;
 }
 
 export interface PurchaseOrder {

@@ -74,7 +74,12 @@ export async function receivePurchaseOrder(
     for (const item of receivedItems) {
       if (item.qtyReceived > 0) {
         await adjustStock(uid, item.inventoryId, item.qtyReceived,
-          `Recepción OC ${snap.data().orderNumber}`, "purchase");
+          `Recepción OC ${snap.data().orderNumber}`, "purchase", {
+            serialNumber: item.serialNumber,
+            batchCode: item.batchCode,
+            receiptPhotoUrl: item.receiptPhotoUrl,
+            reference: snap.data().orderNumber,
+          });
       }
     }
 
