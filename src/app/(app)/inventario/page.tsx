@@ -29,6 +29,7 @@ import {
   deleteInventoryItem, bulkAddInventory, listMovements, adjustStock,
 } from "@/lib/firestore/inventory";
 import { listPurchaseOrders } from "@/lib/firestore/purchases";
+import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -777,12 +778,16 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
   const router = useRouter();
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
 
-  useEffect(() => {
+  function reloadOrders() {
+    setLoadingOrders(true);
     listPurchaseOrders(uid)
       .then(setOrders)
       .finally(() => setLoadingOrders(false));
-  }, [uid]);
+  }
+
+  useEffect(() => { reloadOrders(); }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const needRestock = items
     .filter((i) => i.currentStock <= i.minStock)
@@ -908,6 +913,13 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
 
   return (
     <div className="space-y-6">
+      {receivingOrder && (
+        <ReceiveOrderModal
+          order={receivingOrder}
+          onClose={() => setReceivingOrder(null)}
+          onDone={() => { setReceivingOrder(null); reloadOrders(); }}
+        />
+      )}
       {/* ── Necesidades actuales ── */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -1011,7 +1023,7 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
-                  {["N° Orden","Proveedor","RNC","Productos","Total","Fecha esperada","Estado",""].map((h) => (
+                  {["N° Orden","Proveedor","RNC","Productos","Total","Fecha esperada","Estado","Acciones"].map((h) => (
                     <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -1035,10 +1047,21 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <button onClick={() => printPurchaseOrder(order)}
-                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Imprimir">
-                          <Printer size={14} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          {(order.status === "pendiente" || order.status === "parcial") && (
+                            <button
+                              onClick={() => setReceivingOrder(order)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition font-medium"
+                              title="Recepcionar mercancía"
+                            >
+                              <PackageCheck size={13} /> Recepcionar
+                            </button>
+                          )}
+                          <button onClick={() => printPurchaseOrder(order)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Imprimir">
+                            <Printer size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
