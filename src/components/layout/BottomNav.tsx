@@ -4,17 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Package,
-  ClipboardList, BarChart2,
+  ClipboardList, Users,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard",    label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/ventas",       label: "Ventas",     icon: ShoppingCart },
-  { href: "/compras",      label: "Compras",    icon: ClipboardList, badge: false },
-  { href: "/inventario",   label: "Inventario", icon: Package,       badge: true },
-  { href: "/rentabilidad", label: "Análisis",   icon: BarChart2 },
+  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/ventas",     label: "Ventas",     icon: ShoppingCart },
+  { href: "/clientes",   label: "Clientes",   icon: Users,        badge: false },
+  { href: "/compras",    label: "Compras",    icon: ClipboardList, badge: false },
+  { href: "/inventario", label: "Inventario", icon: Package,       badge: true  },
 ];
 
 export function BottomNav() {

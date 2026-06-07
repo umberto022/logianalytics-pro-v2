@@ -169,6 +169,20 @@ export type Period = (typeof PERIOD_OPTIONS)[number];
 
 export const LOW_STOCK_THRESHOLD = 0.25;
 
+// ─── Clientes ────────────────────────────────────────────────────────────────
+
+export interface Customer {
+  id: string;
+  name: string;
+  rnc: string;
+  phone: string;
+  email: string;
+  address: string;
+  notes: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 // ─── Compras ─────────────────────────────────────────────────────────────────
 
 export type PurchaseOrderStatus = "pendiente" | "recibida" | "parcial" | "cancelada";

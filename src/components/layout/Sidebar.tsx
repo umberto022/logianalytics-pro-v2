@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
-  Settings, LogOut, Truck, Building2, MapPin, ClipboardList, Zap,
+  Settings, LogOut, Truck, Building2, MapPin, ClipboardList, Zap, Users,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
@@ -14,9 +14,10 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/dashboard",     label: "Dashboard",     icon: LayoutDashboard, badge: null },
   { href: "/ventas",        label: "Ventas",        icon: ShoppingCart,    badge: null },
+  { href: "/clientes",      label: "Clientes",      icon: Users,           badge: null },
   { href: "/rutas",         label: "Rutas",         icon: MapPin,          badge: null },
   { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp,      badge: null },
-  { href: "/compras",        label: "Compras",        icon: ClipboardList,   badge: null },
+  { href: "/compras",       label: "Compras",       icon: ClipboardList,   badge: null },
   { href: "/inventario",    label: "Inventario",    icon: Package,         badge: "stock" as const },
   { href: "/configuracion", label: "Configuración", icon: Settings,        badge: null },
 ];
