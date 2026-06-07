@@ -26,7 +26,7 @@ export function Sidebar() {
   const criticalCount  = useStockAlerts();
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-[var(--sidebar-width)] bg-sidebar text-slate-200 flex flex-col z-20">
+    <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[var(--sidebar-width)] bg-sidebar text-slate-200 flex-col z-20">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
         <div className="w-9 h-9 bg-brand-500 rounded-lg flex items-center justify-center shadow-md">

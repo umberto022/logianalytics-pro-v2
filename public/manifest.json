@@ -1,13 +1,43 @@
 {
   "name": "LogiAnalytics Pro",
   "short_name": "LogiPro",
-  "description": "Plataforma de analítica logística",
-  "start_url": "/",
+  "description": "Plataforma de analítica logística — inventario, ventas, rutas y más",
+  "id": "/",
+  "start_url": "/dashboard/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#4f46e5",
+  "lang": "es",
+  "categories": ["business", "productivity"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Inventario",
+      "short_name": "Inventario",
+      "description": "Ver y gestionar inventario",
+      "url": "/inventario/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Nueva Venta",
+      "short_name": "Vender",
+      "description": "Registrar venta rápida",
+      "url": "/ventas/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ver KPIs y métricas",
+      "url": "/dashboard/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

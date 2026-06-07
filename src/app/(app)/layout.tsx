@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickSaleModal } from "@/components/ui/QuickSaleModal";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -31,27 +32,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
+      {/* Sidebar — desktop only */}
       <Sidebar />
+
       <main
-        className="flex-1 min-h-screen bg-slate-50"
-        style={{ marginLeft: "var(--sidebar-width)" }}
+        className="flex-1 min-h-screen bg-slate-50 lg:ml-[var(--sidebar-width)]"
       >
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Extra top padding on mobile to avoid notch/status bar */}
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-5 lg:py-8 pb-24 lg:pb-8">
           {children}
         </div>
       </main>
 
-      {/* Floating Action Button */}
+      {/* FAB venta rápida — subido en móvil para no quedar detrás del BottomNav */}
       <button
         onClick={() => setSaleOpen(true)}
         title="Venta rápida (V)"
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-brand-600 hover:bg-brand-700 active:scale-95 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center group animate-pulse-ring"
+        className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40 w-14 h-14 bg-brand-600 hover:bg-brand-700 active:scale-95 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center group animate-pulse-ring"
       >
         <Zap size={22} className="transition-transform group-hover:scale-110 duration-150" />
       </button>
 
       {/* Keyboard shortcut: V opens quick sale */}
       <KeyboardShortcut onTrigger={() => setSaleOpen((v) => !v)} />
+
+      {/* Bottom navigation — mobile only */}
+      <BottomNav />
 
       <QuickSaleModal
         isOpen={saleOpen}

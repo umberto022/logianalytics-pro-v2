@@ -1,16 +1,34 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 const inter = Inter({ subsets: ["latin"] });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#4f46e5",
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "LogiAnalytics Pro",
   description: "Plataforma de analítica logística para tu empresa",
   manifest: "/manifest.json",
-  themeColor: "#4f46e5",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LogiPro",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -31,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
         </AuthProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
