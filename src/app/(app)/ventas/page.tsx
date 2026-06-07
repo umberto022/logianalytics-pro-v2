@@ -452,6 +452,48 @@ export default function VentasPage() {
     }
   }
 
+  async function openSaleInvoice(sale: Sale) {
+    // Group all items of the same order (shared saleOrderId)
+    const orderItems = sale.saleOrderId
+      ? sales.filter((s) => s.saleOrderId === sale.saleOrderId)
+      : [sale];
+
+    // Generate invoice number from sale date + id
+    const d   = sale.saleDate.toDate();
+    const yy  = String(d.getFullYear()).slice(2);
+    const mm  = String(d.getMonth() + 1).padStart(2, "0");
+    const dd  = String(d.getDate()).padStart(2, "0");
+    const ref = (sale.saleOrderId ?? sale.id).slice(-4).toUpperCase();
+    const invoiceNumber = `FAC-${yy}${mm}${dd}-${ref}`;
+
+    let companyName, companyRif, companyPhone, companyEmail, companyAddress;
+    try {
+      if (profile?.companyId) {
+        const co = await getCompany(profile.companyId);
+        if (co) {
+          companyName = co.name; companyRif = co.rif;
+          companyPhone = co.phone; companyEmail = co.email;
+          companyAddress = co.address;
+        }
+      }
+    } catch { /* use defaults */ }
+
+    setInvoice({
+      invoiceNumber,
+      date:          d,
+      client:        sale.client,
+      route:         sale.route,
+      zone:          sale.zone,
+      paymentStatus: sale.paymentStatus ?? "pagado",
+      dueDate:       sale.dueDate?.toDate(),
+      items: orderItems.map((s) => ({
+        name: s.productName, sku: s.sku, category: s.category,
+        quantity: s.quantity, unitPrice: s.unitPrice, unitCost: s.unitCost,
+      })),
+      companyName, companyRif, companyPhone, companyEmail, companyAddress,
+    });
+  }
+
   function exportCSV() {
     const csv = Papa.unparse(sales.map((s) => ({
       fecha:         fmtDate(s.saleDate),
@@ -694,7 +736,7 @@ export default function VentasPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
-                      {["Fecha","Producto","SKU","Cant.","Precio u.","Ruta","Cliente","Pago","Ingreso","Ganancia"].map((h) => (
+                      {["Fecha","Producto","SKU","Cant.","Precio u.","Ruta","Cliente","Pago","Ingreso","Ganancia","FC"].map((h) => (
                         <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -703,7 +745,9 @@ export default function VentasPage() {
                     {filteredSales.map((s) => {
                       const psMeta = PAYMENT_STATUS[s.paymentStatus ?? "pagado"];
                       return (
-                        <tr key={s.id} className="border-t border-slate-50 hover:bg-slate-50">
+                        <tr key={s.id}
+                          onClick={() => openSaleInvoice(s)}
+                          className="border-t border-slate-50 hover:bg-brand-50 cursor-pointer transition-colors">
                           <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">{fmtDate(s.saleDate)}</td>
                           <td className="py-2.5 px-4 font-medium max-w-[140px] truncate">{s.productName}</td>
                           <td className="py-2.5 px-4 font-mono text-xs text-slate-500">{s.sku}</td>
@@ -719,6 +763,11 @@ export default function VentasPage() {
                           <td className="py-2.5 px-4 text-indigo-600 font-medium whitespace-nowrap">{fmtCurrency(s.totalRevenue)}</td>
                           <td className={`py-2.5 px-4 font-medium whitespace-nowrap ${s.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                             {fmtCurrency(s.profit)}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-brand-600 bg-brand-50 rounded-lg border border-brand-100 hover:bg-brand-100 transition">
+                              <Receipt size={11} /> Ver
+                            </span>
                           </td>
                         </tr>
                       );
