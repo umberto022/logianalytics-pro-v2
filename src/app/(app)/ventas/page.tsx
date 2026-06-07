@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import {
   ShoppingCart, Download, Search, Plus, Minus, Trash2, X,
   TrendingUp, Users, Package, DollarSign, CreditCard,
-  CheckCircle2, Clock, BarChart2, Award, Receipt,
+  CheckCircle2, Clock, BarChart2, Award, Receipt, LayoutGrid, ImageOff,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -48,12 +48,174 @@ interface CartItem {
   maxStock: number;
 }
 
+// ── Product Picker Modal ───────────────────────────────────────────────────────
+
+function ProductPickerModal({ items, cart, onConfirm, onClose }: {
+  items: InventoryItem[];
+  cart: CartItem[];
+  onConfirm: (selected: InventoryItem[]) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch]   = useState("");
+  const [picked, setPicked]   = useState<Set<string>>(
+    () => new Set(cart.map((c) => c.inventoryId))
+  );
+  const [catFilter, setCatFilter] = useState("Todas");
+
+  const categories = ["Todas", ...Array.from(new Set(items.map((i) => i.category))).sort()];
+
+  const filtered = items.filter((i) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      !q ||
+      i.name.toLowerCase().includes(q) ||
+      i.sku.toLowerCase().includes(q) ||
+      i.category.toLowerCase().includes(q);
+    const matchCat = catFilter === "Todas" || i.category === catFilter;
+    return matchSearch && matchCat;
+  });
+
+  function toggle(id: string) {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function confirm() {
+    onConfirm(items.filter((i) => picked.has(i.id)));
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Catálogo de productos</h2>
+            <p className="text-xs text-slate-400 mt-0.5">{picked.size} seleccionado{picked.size !== 1 ? "s" : ""}</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="px-6 py-3 border-b border-slate-50 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre, SKU o categoría…"
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {categories.map((c) => (
+              <button key={c} type="button" onClick={() => setCatFilter(c)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition
+                  ${catFilter === c ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <Package size={36} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No se encontraron productos</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {filtered.map((item) => {
+                const isSelected = picked.has(item.id);
+                const noStock    = item.currentStock === 0;
+                return (
+                  <button
+                    key={item.id} type="button"
+                    disabled={noStock}
+                    onClick={() => !noStock && toggle(item.id)}
+                    className={`relative flex flex-col rounded-2xl border-2 text-left transition overflow-hidden
+                      ${noStock ? "opacity-40 cursor-not-allowed border-slate-100" :
+                        isSelected ? "border-brand-500 shadow-md shadow-brand-100" : "border-slate-100 hover:border-brand-300 hover:shadow-sm"}`}
+                  >
+                    {/* Checkbox badge */}
+                    <div className={`absolute top-2 right-2 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center transition
+                      ${isSelected ? "bg-brand-600 border-brand-600" : "bg-white border-slate-300"}`}>
+                      {isSelected && (
+                        <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+
+                    {/* Image */}
+                    <div className="w-full aspect-square bg-slate-50 flex items-center justify-center overflow-hidden">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name}
+                          className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageOff size={28} className="text-slate-200" />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="p-3 flex flex-col gap-1">
+                      <p className="text-xs font-semibold text-slate-900 leading-tight line-clamp-2">{item.name}
+                        {item.color ? <span className="text-slate-400 font-normal"> · {item.color}</span> : ""}
+                      </p>
+                      <p className="text-xs text-slate-400 font-mono">{item.sku}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-sm font-bold text-brand-700">{fmtCurrency(item.salePrice)}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium
+                          ${item.currentStock === 0 ? "bg-red-50 text-red-600" :
+                            item.currentStock <= item.minStock ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}>
+                          {item.currentStock} uds
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 truncate">{item.category}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 rounded-b-2xl">
+          <p className="text-sm text-slate-500">
+            {picked.size > 0
+              ? `${picked.size} producto${picked.size !== 1 ? "s" : ""} seleccionado${picked.size !== 1 ? "s" : ""}`
+              : "Selecciona productos para agregar al carrito"}
+          </p>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose}
+              className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-white transition">
+              Cancelar
+            </button>
+            <button type="button" onClick={confirm} disabled={picked.size === 0}
+              className="px-5 py-2 text-sm font-semibold bg-brand-600 text-white rounded-xl hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              Agregar {picked.size > 0 ? `(${picked.size})` : ""} al carrito
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Product search with live dropdown ─────────────────────────────────────────
 
-function ProductSearch({ items, cart, onAdd }: {
+function ProductSearch({ items, cart, onAdd, onOpenPicker }: {
   items: InventoryItem[];
   cart: CartItem[];
   onAdd: (item: InventoryItem) => void;
+  onOpenPicker: () => void;
 }) {
   const [search, setSearch] = useState("");
   const [open,   setOpen]   = useState(false);
@@ -76,61 +238,77 @@ function ProductSearch({ items, cart, onAdd }: {
     : [];
 
   return (
-    <div ref={wrapRef} className="relative">
-      <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-        <input
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          placeholder="Buscar por nombre, SKU o categoría…"
-          className="w-full pl-9 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-        {search && (
-          <button type="button" onClick={() => { setSearch(""); setOpen(false); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
-            <X size={14} />
-          </button>
-        )}
-      </div>
+    <div className="space-y-2">
+      <div ref={wrapRef} className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            placeholder="Buscar por nombre, SKU o categoría…"
+            className="w-full pl-9 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          {search && (
+            <button type="button" onClick={() => { setSearch(""); setOpen(false); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
+              <X size={14} />
+            </button>
+          )}
 
-      {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
-          {results.map((item) => {
-            const inCart    = cart.find((c) => c.inventoryId === item.id);
-            const noStock   = item.currentStock === 0;
-            return (
-              <button key={item.id} type="button" disabled={noStock}
-                onClick={() => { onAdd(item); setSearch(""); setOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-brand-50 transition border-b border-slate-50 last:border-0
-                  ${noStock ? "opacity-40 cursor-not-allowed" : ""}`}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">
-                    {item.name}{item.color ? <span className="text-slate-400 font-normal"> · {item.color}</span> : ""}
-                  </p>
-                  <p className="text-xs text-slate-400">{item.sku} · {item.category}</p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold text-emerald-600">{fmtCurrency(item.salePrice)}</p>
-                  <p className={`text-xs ${item.currentStock <= item.minStock ? "text-red-500" : "text-slate-400"}`}>
-                    Stock: {item.currentStock}
-                  </p>
-                </div>
-                {inCart && (
-                  <span className="w-5 h-5 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {inCart.quantity}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+          {open && results.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+              {results.map((item) => {
+                const inCart  = cart.find((c) => c.inventoryId === item.id);
+                const noStock = item.currentStock === 0;
+                return (
+                  <button key={item.id} type="button" disabled={noStock}
+                    onClick={() => { onAdd(item); setSearch(""); setOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-brand-50 transition border-b border-slate-50 last:border-0
+                      ${noStock ? "opacity-40 cursor-not-allowed" : ""}`}>
+                    {/* Thumbnail */}
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                      {item.imageUrl
+                        ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        : <ImageOff size={14} className="text-slate-300" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {item.name}{item.color ? <span className="text-slate-400 font-normal"> · {item.color}</span> : ""}
+                      </p>
+                      <p className="text-xs text-slate-400">{item.sku} · {item.category}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-bold text-brand-700">{fmtCurrency(item.salePrice)}</p>
+                      <p className={`text-xs ${item.currentStock <= item.minStock ? "text-red-500" : "text-slate-400"}`}>
+                        {item.currentStock} en stock
+                      </p>
+                    </div>
+                    {inCart && (
+                      <span className="w-5 h-5 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        {inCart.quantity}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {open && search.trim().length >= 1 && results.length === 0 && (
+            <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-4 text-center text-sm text-slate-400">
+              No se encontraron productos
+            </div>
+          )}
         </div>
-      )}
-      {open && search.trim().length >= 1 && results.length === 0 && (
-        <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-4 text-center text-sm text-slate-400">
-          No se encontraron productos
-        </div>
-      )}
+
+        {/* Catalog button */}
+        <button type="button" onClick={onOpenPicker}
+          className="flex items-center gap-1.5 px-3 py-2.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-xl text-sm font-medium hover:bg-brand-100 transition flex-shrink-0">
+          <LayoutGrid size={15} />
+          <span className="hidden sm:inline">Catálogo</span>
+        </button>
+      </div>
+      <p className="text-xs text-slate-400">Escribe para buscar · o abre el catálogo para ver todos los productos</p>
     </div>
   );
 }
@@ -143,8 +321,6 @@ function CartRow({ item, onChange, onRemove }: {
   onRemove: () => void;
 }) {
   const subtotal = item.quantity * item.unitPrice;
-  const profit   = item.quantity * (item.unitPrice - item.unitCost);
-  const margin   = item.unitPrice > 0 ? ((item.unitPrice - item.unitCost) / item.unitPrice * 100) : 0;
 
   return (
     <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 hover:border-slate-200 transition group">
@@ -154,16 +330,11 @@ function CartRow({ item, onChange, onRemove }: {
       </div>
 
       {/* Unit price */}
-      <div className="flex flex-col items-end gap-0.5">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-slate-400">$</span>
-          <input type="number" min={0} step="0.01" value={item.unitPrice}
-            onChange={(e) => onChange({ unitPrice: Number(e.target.value) })}
-            className="w-20 text-right text-sm font-semibold border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500" />
-        </div>
-        <p className={`text-xs font-medium ${margin >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-          {margin.toFixed(0)}% margen
-        </p>
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-slate-400">$</span>
+        <input type="number" min={0} step="0.01" value={item.unitPrice}
+          onChange={(e) => onChange({ unitPrice: Number(e.target.value) })}
+          className="w-20 text-right text-sm font-semibold border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500" />
       </div>
 
       {/* Quantity */}
@@ -186,9 +357,7 @@ function CartRow({ item, onChange, onRemove }: {
       {/* Subtotal */}
       <div className="text-right w-24 flex-shrink-0">
         <p className="text-sm font-bold text-slate-900">{fmtCurrency(subtotal)}</p>
-        <p className={`text-xs ${profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-          {profit >= 0 ? "+" : ""}{fmtCurrency(profit)}
-        </p>
+        <p className="text-xs text-slate-400">{item.quantity} × {fmtCurrency(item.unitPrice)}</p>
       </div>
 
       <button type="button" onClick={onRemove}
@@ -336,6 +505,7 @@ export default function VentasPage() {
   const [saving,  setSaving]  = useState(false);
 
   // Cart state
+  const [showPicker,    setShowPicker]    = useState(false);
   const [cart,          setCart]          = useState<CartItem[]>([]);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("pagado");
   const [dueDate,       setDueDate]       = useState("");
@@ -388,6 +558,11 @@ export default function VentasPage() {
         maxStock: item.currentStock,
       }];
     });
+  }
+
+  function handlePickerConfirm(selected: InventoryItem[]) {
+    selected.forEach((item) => addToCart(item));
+    setShowPicker(false);
   }
 
   function updateCartItem(inventoryId: string, patch: Partial<CartItem>) {
@@ -552,6 +727,14 @@ export default function VentasPage() {
       {invoice && (
         <InvoiceModal data={invoice} onClose={() => setInvoice(null)} />
       )}
+      {showPicker && (
+        <ProductPickerModal
+          items={items}
+          cart={cart}
+          onConfirm={handlePickerConfirm}
+          onClose={() => setShowPicker(false)}
+        />
+      )}
 
       <PageHeader
         title="Ventas"
@@ -593,8 +776,7 @@ export default function VentasPage() {
               <div className="lg:col-span-3 space-y-4">
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                   <h2 className="text-base font-semibold text-slate-800 mb-3">Agregar productos</h2>
-                  <ProductSearch items={items} cart={cart} onAdd={addToCart} />
-                  <p className="text-xs text-slate-400 mt-2">Escribe para buscar · haz clic para agregar al carrito</p>
+                  <ProductSearch items={items} cart={cart} onAdd={addToCart} onOpenPicker={() => setShowPicker(true)} />
                 </div>
 
                 {cart.length === 0 ? (
