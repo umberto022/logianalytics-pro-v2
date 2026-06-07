@@ -35,5 +35,10 @@ service cloud.firestore {
     match /sales/{userId}/records/{saleId} {
       allow read, write: if isOwner(userId);
     }
+
+    // Purchase orders: scoped per user
+    match /purchaseOrders/{userId}/orders/{orderId} {
+      allow read, write: if isOwner(userId);
+    }
   }
 }
