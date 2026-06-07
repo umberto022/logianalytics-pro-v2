@@ -469,20 +469,28 @@ function OrderFormModal({ inventory, editOrder, preloadItems, onClose, onDone }:
             </h3>
 
             {/* Product search */}
-            <div className="relative mb-3">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
-                placeholder="Buscar producto del inventario…"
-                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              {productSearch && filteredInv.length > 0 && (
-                <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-44 overflow-y-auto">
-                  {filteredInv.slice(0, 8).map((p) => (
-                    <button key={p.id} type="button" onClick={() => addProduct(p)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm flex items-center justify-between">
-                      <span className="font-medium">{p.name} <span className="text-slate-400 font-mono text-xs">· {p.sku}</span></span>
-                      <span className="text-slate-500 text-xs">{fmtCurrency(p.unitCost)}</span>
-                    </button>
-                  ))}
+            <div className="mb-3">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="Buscar producto del inventario…"
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
+              {productSearch && (
+                <div className="mt-1 border border-slate-200 rounded-xl overflow-hidden">
+                  {filteredInv.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-slate-400">Sin resultados</p>
+                  ) : (
+                    filteredInv.slice(0, 8).map((p) => (
+                      <button key={p.id} type="button" onClick={() => addProduct(p)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-brand-50 text-sm flex items-center justify-between border-b border-slate-100 last:border-0 transition-colors">
+                        <span className="font-medium text-slate-800">{p.name}
+                          <span className="text-slate-400 font-mono text-xs ml-1.5">· {p.sku}</span>
+                        </span>
+                        <span className="text-slate-500 text-xs ml-4 flex-shrink-0">{fmtCurrency(p.unitCost)}</span>
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
