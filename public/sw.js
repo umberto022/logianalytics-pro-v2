@@ -1,13 +1,7 @@
-const CACHE_NAME = "logipro-v2";
+const CACHE_NAME = "logipro-v3";
 const STATIC_ASSETS = [
   "/",
-  "/dashboard/",
-  "/inventario/",
-  "/ventas/",
-  "/compras/",
-  "/rutas/",
-  "/rentabilidad/",
-  "/configuracion/",
+  "/offline.html",
   "/manifest.json",
   "/icon.svg",
 ];
@@ -35,7 +29,7 @@ self.addEventListener("fetch", (event) => {
   // Skip non-GET and cross-origin (Firebase, Cloudinary)
   if (request.method !== "GET" || url.origin !== location.origin) return;
 
-  // Network-first for HTML pages (always fresh)
+  // Network-first for HTML pages — fall back to offline.html
   if (request.headers.get("accept")?.includes("text/html")) {
     event.respondWith(
       fetch(request)
@@ -44,7 +38,9 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((c) => c.put(request, clone));
           return res;
         })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/dashboard/")))
+        .catch(() =>
+          caches.match(request).then((r) => r || caches.match("/offline.html"))
+        )
     );
     return;
   }

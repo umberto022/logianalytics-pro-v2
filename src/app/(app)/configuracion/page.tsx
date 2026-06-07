@@ -51,6 +51,9 @@ export default function ConfiguracionPage() {
   const [savingProfile,  setSavingProfile]  = useState(false);
   const [savingCompany,  setSavingCompany]  = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [savedProfile,   setSavedProfile]   = useState(false);
+  const [savedCompany,   setSavedCompany]   = useState(false);
+  const [savedPassword,  setSavedPassword]  = useState(false);
 
   const [prof, setProf] = useState({ fullName: "", phone: "" });
   const [comp, setComp] = useState<{
@@ -76,13 +79,18 @@ export default function ConfiguracionPage() {
     }
   }, [profile]);
 
+  function flashSaved(setter: (v: boolean) => void) {
+    setter(true);
+    setTimeout(() => setter(false), 3000);
+  }
+
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
     setSavingProfile(true);
     await updateUserProfile(user.uid, { fullName: prof.fullName, phone: prof.phone });
     await refreshProfile();
-    toast.success("Perfil actualizado");
+    flashSaved(setSavedProfile);
     setSavingProfile(false);
   }
 
@@ -92,13 +100,13 @@ export default function ConfiguracionPage() {
     setSavingCompany(true);
     if (company) {
       await updateCompany(company.id, comp);
-      toast.success("Empresa actualizada");
+      flashSaved(setSavedCompany);
     } else {
       const r = await createCompany(user.uid, comp);
       if (r.ok) {
         await updateUserProfile(user.uid, { companyId: r.id, companyName: comp.name });
         await refreshProfile();
-        toast.success("Empresa registrada");
+        flashSaved(setSavedCompany);
       } else {
         toast.error(r.message);
       }
@@ -113,8 +121,8 @@ export default function ConfiguracionPage() {
     setSavingPassword(true);
     try {
       await updatePassword(auth.currentUser as User, pw.next);
-      toast.success("Contraseña actualizada");
       setPw({ current: "", next: "", confirm: "" });
+      flashSaved(setSavedPassword);
     } catch {
       toast.error("Re-inicia sesión para cambiar la contraseña");
     }
@@ -155,8 +163,8 @@ export default function ConfiguracionPage() {
               <input value={prof.phone} onChange={(e) => setProf((p) => ({ ...p, phone: e.target.value }))} className={inputCls} />
             </div>
             <button type="submit" disabled={savingProfile}
-              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">
-              {savingProfile ? "Guardando…" : "Guardar perfil"}
+              className={`w-full font-semibold py-2.5 rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2 ${savedProfile ? "bg-emerald-600 text-white" : "bg-brand-600 hover:bg-brand-700 text-white"}`}>
+              {savingProfile ? "Guardando…" : savedProfile ? <><CheckCircle2 size={16} /> Guardado</> : "Guardar perfil"}
             </button>
           </form>
         </div>
@@ -175,8 +183,8 @@ export default function ConfiguracionPage() {
               </div>
             ))}
             <button type="submit" disabled={savingPassword}
-              className="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">
-              {savingPassword ? "Actualizando…" : "Cambiar contraseña"}
+              className={`w-full font-semibold py-2.5 rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2 ${savedPassword ? "bg-emerald-600 text-white" : "bg-slate-800 hover:bg-slate-900 text-white"}`}>
+              {savingPassword ? "Actualizando…" : savedPassword ? <><CheckCircle2 size={16} /> Actualizada</> : "Cambiar contraseña"}
             </button>
           </form>
         </div>
@@ -224,8 +232,8 @@ export default function ConfiguracionPage() {
             </div>
 
             <button type="submit" disabled={savingCompany}
-              className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2.5 rounded-lg transition disabled:opacity-50">
-              {savingCompany ? "Guardando…" : (company ? "Actualizar empresa" : "Registrar empresa")}
+              className={`font-semibold px-6 py-2.5 rounded-lg transition disabled:opacity-50 flex items-center gap-2 ${savedCompany ? "bg-emerald-600 text-white" : "bg-brand-600 hover:bg-brand-700 text-white"}`}>
+              {savingCompany ? "Guardando…" : savedCompany ? <><CheckCircle2 size={16} /> Guardado</> : (company ? "Actualizar empresa" : "Registrar empresa")}
             </button>
           </form>
         </div>

@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import {
   Users, Plus, Search, Edit2, Trash2, Phone, Mail, MapPin,
-  FileText, X, TrendingUp, ShoppingCart, DollarSign, ChevronRight,
+  FileText, X, TrendingUp, ShoppingCart, DollarSign, ChevronRight, Download,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomers, useInvalidateCustomers } from "@/hooks/useCustomers";
@@ -32,8 +32,29 @@ export default function ClientesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing]     = useState<Customer | null>(null);
   const [form, setForm]           = useState({ ...EMPTY });
+  const [initialForm, setInitialForm] = useState({ ...EMPTY });
   const [saving, setSaving]       = useState(false);
   const [detail, setDetail]       = useState<Customer | null>(null);
+
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+
+  function exportCSV() {
+    const headers = ["Nombre", "RNC/Cédula", "Teléfono", "Email", "Dirección", "Notas"];
+    const rows = filtered.map((c) => [
+      c.name, c.rnc, c.phone, c.email, c.address, c.notes,
+    ].map((v) => `"${(v ?? "").replace(/"/g, '""')}"`));
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "clientes.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function tryCloseModal() {
+    if (isDirty && !confirm("Hay cambios sin guardar. ¿Cerrar de todas formas?")) return;
+    setShowModal(false);
+  }
 
   // Stats por cliente desde ventas de los últimos 90 días
   const clientStats = useMemo(() => {
@@ -53,12 +74,15 @@ export default function ClientesPage() {
   function openAdd() {
     setEditing(null);
     setForm({ ...EMPTY });
+    setInitialForm({ ...EMPTY });
     setShowModal(true);
   }
 
   function openEdit(c: Customer) {
     setEditing(c);
-    setForm({ name: c.name, rnc: c.rnc, phone: c.phone, email: c.email, address: c.address, notes: c.notes });
+    const f = { name: c.name, rnc: c.rnc, phone: c.phone, email: c.email, address: c.address, notes: c.notes };
+    setForm(f);
+    setInitialForm(f);
     setShowModal(true);
   }
 
@@ -130,6 +154,10 @@ export default function ClientesPage() {
             className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
+        <button onClick={exportCSV}
+          className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition">
+          <Download size={16} /> Exportar CSV
+        </button>
         <button onClick={openAdd}
           className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition">
           <Plus size={16} /> Nuevo cliente
@@ -204,13 +232,13 @@ export default function ClientesPage() {
       {/* Add / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={tryCloseModal} />
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold text-slate-800">
                 {editing ? "Editar cliente" : "Nuevo cliente"}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition">
+              <button onClick={tryCloseModal} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition">
                 <X size={18} />
               </button>
             </div>
@@ -246,7 +274,7 @@ export default function ClientesPage() {
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition">
+              <button onClick={tryCloseModal} className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition">
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving}

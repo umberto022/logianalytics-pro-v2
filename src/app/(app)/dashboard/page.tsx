@@ -15,7 +15,7 @@ import { getStockStatus, fmtCurrency, fmt, fmtDate } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { FullPageSpinner } from "@/components/ui/Spinner";
+import { DashboardSkeleton } from "@/components/ui/DashboardSkeleton";
 import { StockBadge } from "@/components/ui/StockBadge";
 import type { Period, RouteStats, ProductStats, DailyStat, SalesSummary } from "@/types";
 
@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const { items, loading: loadingInv } = useInventory();
   const { sales, loading: loadingSales } = useSales(period);
 
-  if (loadingInv || loadingSales) return <FullPageSpinner />;
+  if (loadingInv || loadingSales) return <DashboardSkeleton />;
 
   const summary: SalesSummary = computeSummary(sales);
   const routes:  RouteStats[] = computeByRoute(sales);

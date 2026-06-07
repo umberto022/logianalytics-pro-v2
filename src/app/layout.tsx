@@ -19,8 +19,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "LogiAnalytics Pro",
-  description: "Plataforma de analítica logística para tu empresa",
+  title: "LogiAnalytics Pro — Gestión logística en tiempo real",
+  description:
+    "Gestiona inventario, ventas, compras y rentabilidad de tu negocio en una sola plataforma. Datos en tiempo real, desde cualquier dispositivo.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -30,6 +31,20 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.svg",
     apple: "/icon-192.png",
+  },
+  openGraph: {
+    title: "LogiAnalytics Pro — Gestión logística en tiempo real",
+    description:
+      "Inventario, ventas, compras y rentabilidad en una sola plataforma. En tiempo real, desde cualquier dispositivo.",
+    type: "website",
+    locale: "es_LA",
+    siteName: "LogiAnalytics Pro",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LogiAnalytics Pro",
+    description:
+      "Gestión logística y analítica para negocios latinoamericanos. Gratis para empezar.",
   },
 };
 

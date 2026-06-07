@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Truck, Mail, Lock, User, Phone } from "lucide-react";
+import { Truck, Mail, Lock, User, Phone, Eye, EyeOff } from "lucide-react";
 
 function GoogleIcon() {
   return (
@@ -25,8 +25,10 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "", password: "", confirm: "",
   });
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [loading,      setLoading]      = useState(false);
+  const [googleLoading,setGoogleLoading]= useState(false);
+  const [showPw,       setShowPw]       = useState(false);
+  const [showConfirm,  setShowConfirm]  = useState(false);
 
   useEffect(() => {
     if (!authLoading && user) router.replace("/dashboard");
@@ -73,92 +75,118 @@ export default function RegisterPage() {
     }
   }
 
+  const inputCls = "w-full pl-9 pr-10 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400";
+  const labelCls = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-6">
+      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
         <div className="flex items-center gap-2 mb-8">
           <Truck size={28} className="text-brand-600" />
           <span className="text-xl font-bold text-brand-600">LogiAnalytics Pro</span>
         </div>
 
-        <h1 className="text-2xl font-bold mb-1">Crear cuenta gratis</h1>
-        <p className="text-slate-500 mb-6 text-sm">Sin tarjeta de crédito requerida</p>
+        <h1 className="text-2xl font-bold mb-1 dark:text-slate-100">Crear cuenta gratis</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">Sin tarjeta de crédito requerida</p>
 
         <button
           type="button"
           onClick={handleGoogle}
           disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 border border-slate-200 rounded-xl py-3 px-4 mb-4 hover:bg-slate-50 transition font-medium disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition font-medium disabled:opacity-50 dark:text-slate-200"
         >
           <GoogleIcon />
           {googleLoading ? "Conectando…" : "Continuar con Google"}
         </button>
 
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-slate-200" />
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
           <span className="text-slate-400 text-sm">o con email</span>
-          <div className="flex-1 h-px bg-slate-200" />
+          <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Nombre completo *</label>
+              <label htmlFor="reg-fullname" className={labelCls}>Nombre completo *</label>
               <div className="relative">
                 <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
+                  id="reg-fullname"
                   value={form.fullName} onChange={set("fullName")}
                   placeholder="Ana García"
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className={inputCls}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
+              <label htmlFor="reg-email" className={labelCls}>Email *</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
+                  id="reg-email"
                   type="email" value={form.email} onChange={set("email")}
                   placeholder="ana@empresa.com"
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className={inputCls}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
+              <label htmlFor="reg-phone" className={labelCls}>Teléfono</label>
               <div className="relative">
                 <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
+                  id="reg-phone"
                   value={form.phone} onChange={set("phone")}
                   placeholder="+58 412 000 0000"
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className={inputCls}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña *</label>
+              <label htmlFor="reg-password" className={labelCls}>Contraseña *</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  type="password" value={form.password} onChange={set("password")}
+                  id="reg-password"
+                  type={showPw ? "text" : "password"}
+                  value={form.password} onChange={set("password")}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className={inputCls}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                  aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Confirmar contraseña *</label>
+              <label htmlFor="reg-confirm" className={labelCls}>Confirmar contraseña *</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  type="password" value={form.confirm} onChange={set("confirm")}
+                  id="reg-confirm"
+                  type={showConfirm ? "text" : "password"}
+                  value={form.confirm} onChange={set("confirm")}
                   placeholder="Repite la contraseña"
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className={inputCls}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                  aria-label={showConfirm ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
             </div>
           </div>
@@ -172,7 +200,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <p className="text-center text-slate-500 text-sm mt-4">
+        <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-4">
           ¿Ya tienes cuenta?{" "}
           <Link href="/login" className="text-brand-600 font-medium hover:underline">
             Iniciar sesión

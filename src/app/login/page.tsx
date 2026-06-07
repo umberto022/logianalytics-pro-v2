@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Truck, Mail, Lock } from "lucide-react";
+import { Truck, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 function GoogleIcon() {
   return (
@@ -22,13 +22,13 @@ export default function LoginPage() {
   const { signIn, signInGoogle, resetPassword, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect if already authenticated (handles post-redirect Google auth on mobile too)
   useEffect(() => {
     if (!authLoading && user) router.replace("/dashboard");
   }, [user, authLoading, router]);
 
   const [email,         setEmail]         = useState("");
   const [password,      setPassword]      = useState("");
+  const [showPw,        setShowPw]        = useState(false);
   const [loading,       setLoading]       = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetSent,     setResetSent]     = useState(false);
@@ -74,8 +74,11 @@ export default function LoginPage() {
     }
   }
 
+  const inputCls = "w-full pl-9 pr-10 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400";
+  const labelCls = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1";
+
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex dark:bg-slate-900">
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 flex-col justify-between p-12 text-white">
         <div className="flex items-center gap-3">
@@ -108,52 +111,62 @@ export default function LoginPage() {
             <span className="text-xl font-bold text-brand-600">LogiAnalytics Pro</span>
           </div>
 
-          <h1 className="text-3xl font-bold mb-2">Bienvenido de vuelta</h1>
-          <p className="text-slate-500 mb-8">Ingresa a tu cuenta para continuar</p>
+          <h1 className="text-3xl font-bold mb-2 dark:text-slate-100">Bienvenido de vuelta</h1>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">Ingresa a tu cuenta para continuar</p>
 
           <button
             onClick={handleGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 border border-slate-200 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 transition font-medium disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 dark:hover:bg-slate-800 transition font-medium disabled:opacity-50 dark:text-slate-200"
           >
             <GoogleIcon />
             {googleLoading ? "Conectando…" : "Continuar con Google"}
           </button>
 
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
             <span className="text-slate-400 text-sm">o con email</span>
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label htmlFor="login-email" className={labelCls}>Email</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@empresa.com"
-                  className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  className={inputCls}
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+              <label htmlFor="login-password" className={labelCls}>Contraseña</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  type="password"
+                  id="login-password"
+                  type={showPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  className={inputCls}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                  aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
@@ -177,7 +190,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-slate-500 text-sm mt-6">
+          <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-6">
             ¿No tienes cuenta?{" "}
             <Link href="/register" className="text-brand-600 font-medium hover:underline">
               Crear cuenta gratis
