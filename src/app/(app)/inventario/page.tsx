@@ -2,32 +2,39 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
+import QRCode from "qrcode";
 import {
   Plus, Download, Upload, Edit2, Trash2, Package,
   Search, Camera, X, Image as ImageIcon,
   BarChart2, AlertTriangle, TrendingDown, DollarSign,
-  Boxes, ShoppingBag, ChevronRight,
+  Boxes, ShoppingBag, ChevronRight, ChevronUp, ChevronDown,
+  Minus, History, ShoppingCart, QrCode, Printer,
+  ArrowUpCircle, ArrowDownCircle, SlidersHorizontal,
 } from "lucide-react";
 import Papa from "papaparse";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
-  Cell, PieChart, Pie, Legend,
+  Cell, PieChart, Pie,
 } from "recharts";
+
 const CLOUDINARY_CLOUD  = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME  ?? "").trim();
 const CLOUDINARY_PRESET = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
+
 import { useAuth } from "@/contexts/AuthContext";
 import {
   listInventory, addInventoryItem, updateInventoryItem,
-  deleteInventoryItem, bulkAddInventory,
+  deleteInventoryItem, bulkAddInventory, listMovements, adjustStock,
 } from "@/lib/firestore/inventory";
 import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
-import type { InventoryItem, StockStatus } from "@/types";
+import type { InventoryItem, InventoryMovement, StockStatus } from "@/types";
 
-type Tab = "dashboard" | "list" | "add";
-type ActiveFilter = "all" | "critical" | "low" | "ok" | string; // string = category name
+type Tab = "dashboard" | "list" | "add" | "historial" | "ordenes";
+type ActiveFilter = "all" | "critical" | "low" | "ok" | string;
+type SortKey = "name" | "category" | "currentStock" | "unitCost" | "salePrice" | "supplier";
+type SortDir = "asc" | "desc";
 
 const EMPTY: Omit<InventoryItem, "id" | "sku" | "updatedAt"> = {
   name: "", category: "", color: "", supplier: "",
@@ -35,7 +42,7 @@ const EMPTY: Omit<InventoryItem, "id" | "sku" | "updatedAt"> = {
   unitCost: 0, salePrice: 0, leadTimeDays: 7, imageUrl: "",
 };
 
-// ─────────────────────── Animated counter ────────────────────────────────────
+// ─── Animated counter ────────────────────────────────────────────────────────
 
 function useCounter(target: number, duration = 600) {
   const [value, setValue] = useState(0);
@@ -52,26 +59,22 @@ function useCounter(target: number, duration = 600) {
   return value;
 }
 
-// ─────────────────────── Stat card (clickable) ───────────────────────────────
+// ─── Stat card ───────────────────────────────────────────────────────────────
 
-function StatCard({
-  label, value, sub, icon: Icon, color, active, onClick,
-}: {
+function StatCard({ label, value, sub, icon: Icon, color, active, onClick }: {
   label: string; value: string; sub?: string;
   icon: React.ElementType; color: string;
   active: boolean; onClick: () => void;
 }) {
   return (
-    <button
-      onClick={onClick}
+    <button onClick={onClick}
       className={`w-full text-left bg-white rounded-2xl border p-5 shadow-sm
         hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative overflow-hidden
-        ${active ? "ring-2 ring-brand-500 border-brand-200" : "border-slate-100"}`}
-    >
+        ${active ? "ring-2 ring-brand-500 border-brand-200" : "border-slate-100"}`}>
       <div className={`absolute top-0 left-0 right-0 h-0.5 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-60"} ${color} transition-opacity`} />
       <div className="flex items-start justify-between mb-3">
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${color.replace("bg-", "bg-").replace("500","50")} ${color.replace("bg-","text-").replace("500","600")}`}>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${color.replace("bg-","bg-").replace("500","50")} ${color.replace("bg-","text-").replace("500","600")}`}>
           <Icon size={17} />
         </div>
       </div>
@@ -86,12 +89,12 @@ function StatCard({
   );
 }
 
-// ─────────────────────── Photo picker ────────────────────────────────────────
+// ─── Photo picker ─────────────────────────────────────────────────────────────
 
 function PhotoPicker({ current, onChange, onUploading }: {
   current: string;
   onChange: (url: string) => void;
-  onUploading?: (uploading: boolean) => void;
+  onUploading?: (v: boolean) => void;
 }) {
   const fileRef   = useRef<HTMLInputElement>(null);
   const videoRef  = useRef<HTMLVideoElement>(null);
@@ -222,19 +225,16 @@ function PhotoPicker({ current, onChange, onUploading }: {
   );
 }
 
-// ─────────────────────── Product thumbnail ───────────────────────────────────
+// ─── Product thumbnail ────────────────────────────────────────────────────────
 
 function ProductThumb({ url, name }: { url?: string; name: string }) {
   const [err, setErr] = useState(false);
   if (url && !err) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
-        alt={name}
+      <img src={url} alt={name}
         className="w-10 h-10 object-cover rounded-lg border border-slate-200"
-        onError={() => setErr(true)}
-      />
+        onError={() => setErr(true)} />
     );
   }
   return (
@@ -244,7 +244,158 @@ function ProductThumb({ url, name }: { url?: string; name: string }) {
   );
 }
 
-// ─────────────────────── Dashboard panel ─────────────────────────────────────
+// ─── Quick adjust modal ───────────────────────────────────────────────────────
+
+function QuickAdjustModal({ item, onClose, onDone }: {
+  item: InventoryItem;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const { user } = useAuth();
+  const [delta, setDelta] = useState(1);
+  const [note,  setNote]  = useState("");
+  const [type,  setType]  = useState<"purchase" | "adjustment" | "sale">("purchase");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user || delta === 0) return;
+    setSaving(true);
+    const actualDelta = type === "sale" || (type === "adjustment" && delta < 0) ? -Math.abs(delta) : Math.abs(delta);
+    const r = await adjustStock(user.uid, item.id, actualDelta, note || "Ajuste manual", type);
+    setSaving(false);
+    if (r.ok) { toast.success(r.message); onDone(); onClose(); }
+    else toast.error(r.message);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold text-slate-900">Ajuste rápido de stock</h3>
+            <p className="text-sm text-slate-500">{item.name} · Stock actual: <b>{item.currentStock}</b></p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de movimiento</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { v: "purchase", label: "Entrada", color: "emerald" },
+                { v: "sale",     label: "Salida",  color: "red" },
+                { v: "adjustment", label: "Ajuste", color: "amber" },
+              ] as const).map(({ v, label, color }) => (
+                <button key={v} type="button" onClick={() => setType(v)}
+                  className={`py-2 rounded-lg text-sm font-medium border transition
+                    ${type === v
+                      ? color === "emerald" ? "bg-emerald-50 border-emerald-400 text-emerald-700"
+                        : color === "red"   ? "bg-red-50 border-red-400 text-red-700"
+                        : "bg-amber-50 border-amber-400 text-amber-700"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad</label>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setDelta(d => Math.max(1, d - 1))}
+                className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
+                <Minus size={14} />
+              </button>
+              <input type="number" value={delta} min={1}
+                onChange={(e) => setDelta(Math.max(1, Number(e.target.value)))}
+                className="flex-1 text-center border border-slate-200 rounded-lg py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              <button type="button" onClick={() => setDelta(d => d + 1)}
+                className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
+                <Plus size={14} />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Nuevo stock estimado: <b className={
+                type === "sale" ? "text-red-600" : type === "purchase" ? "text-emerald-600" : "text-amber-600"
+              }>
+                {type === "sale" ? Math.max(0, item.currentStock - delta)
+                  : type === "purchase" ? item.currentStock + delta
+                  : item.currentStock + delta}
+              </b>
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nota <span className="text-slate-400 font-normal">(opcional)</span></label>
+            <input value={note} onChange={(e) => setNote(e.target.value)}
+              placeholder="ej. Recepción de proveedor, merma…"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="submit" disabled={saving}
+              className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">
+              {saving ? "Guardando…" : "Confirmar ajuste"}
+            </button>
+            <button type="button" onClick={onClose}
+              className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm hover:bg-slate-50 transition">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── QR Modal ────────────────────────────────────────────────────────────────
+
+function QRModal({ item, onClose }: { item: InventoryItem; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    QRCode.toCanvas(canvasRef.current, item.sku, { width: 200, margin: 2 });
+  }, [item.sku]);
+
+  function handlePrint() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>QR ${item.sku}</title>
+      <style>body{font-family:sans-serif;text-align:center;padding:20px}
+      h2{margin:8px 0 4px}p{color:#666;margin:2px 0}</style></head>
+      <body>
+        <img src="${canvas.toDataURL()}" width="200" />
+        <h2>${item.name}</h2>
+        <p>SKU: ${item.sku}</p>
+        <p>Stock: ${item.currentStock} · Precio: ${fmtCurrency(item.salePrice)}</p>
+      </body></html>`);
+    win.document.close();
+    win.print();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6 text-center">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-slate-900">Código QR</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
+        </div>
+        <canvas ref={canvasRef} className="mx-auto rounded-xl" />
+        <p className="text-sm font-medium text-slate-900 mt-3">{item.name}</p>
+        <p className="text-xs text-slate-500 font-mono">{item.sku}</p>
+        <p className="text-xs text-slate-400 mt-1">Stock: {item.currentStock} · {fmtCurrency(item.salePrice)}</p>
+        <button onClick={handlePrint}
+          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition">
+          <Printer size={14} /> Imprimir etiqueta
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dashboard panel ─────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<StockStatus, string> = {
   critical: "#ef4444",
@@ -257,9 +408,7 @@ const CHART_COLORS = [
   "#8b5cf6","#ec4899","#14b8a6","#f97316","#84cc16",
 ];
 
-function InventoryDashboard({
-  items, activeFilter, onFilter,
-}: {
+function InventoryDashboard({ items, activeFilter, onFilter }: {
   items: InventoryItem[];
   activeFilter: ActiveFilter;
   onFilter: (f: ActiveFilter) => void;
@@ -271,13 +420,11 @@ function InventoryDashboard({
   const totalPotential = items.reduce((s, i) => s + i.currentStock * i.salePrice, 0);
   const totalUnits = items.reduce((s, i) => s + i.currentStock, 0);
 
-  // animated counters
   const cTotal    = useCounter(items.length);
   const cUnits    = useCounter(totalUnits);
   const cCritical = useCounter(critical.length);
   const cLow      = useCounter(low.length);
 
-  // Category breakdown
   const byCategory = Object.entries(
     items.reduce<Record<string, { units: number; value: number; count: number }>>((acc, i) => {
       const cat = i.category || "Sin categoría";
@@ -287,18 +434,14 @@ function InventoryDashboard({
       acc[cat].count += 1;
       return acc;
     }, {})
-  )
-    .map(([name, d]) => ({ name, ...d }))
-    .sort((a, b) => b.value - a.value);
+  ).map(([name, d]) => ({ name, ...d })).sort((a, b) => b.value - a.value);
 
-  // Status distribution for pie
   const pieData = [
-    { name: "Óptimo",   value: ok.length,       color: "#10b981" },
-    { name: "Bajo",     value: low.length,       color: "#f59e0b" },
-    { name: "Crítico",  value: critical.length,  color: "#ef4444" },
+    { name: "Óptimo",  value: ok.length,       color: "#10b981" },
+    { name: "Bajo",    value: low.length,       color: "#f59e0b" },
+    { name: "Crítico", value: critical.length,  color: "#ef4444" },
   ].filter((d) => d.value > 0);
 
-  // Top 8 products by value
   const topProducts = [...items]
     .sort((a, b) => b.currentStock * b.unitCost - a.currentStock * a.unitCost)
     .slice(0, 8)
@@ -312,34 +455,22 @@ function InventoryDashboard({
 
   return (
     <div className="space-y-6">
-      {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total productos" value={fmt(cTotal, 0)} icon={Boxes} color="bg-indigo-500"
+        <StatCard label="Total productos" value={fmt(cTotal, 0)} icon={Boxes} color="bg-indigo-500"
           sub={`${fmt(cUnits, 0)} unidades en stock`}
-          active={activeFilter === "all"} onClick={() => onFilter("all")}
-        />
-        <StatCard
-          label="Valor del inventario" value={fmtCurrency(totalVal)} icon={DollarSign} color="bg-emerald-500"
+          active={activeFilter === "all"} onClick={() => onFilter("all")} />
+        <StatCard label="Valor del inventario" value={fmtCurrency(totalVal)} icon={DollarSign} color="bg-emerald-500"
           sub={`Potencial venta ${fmtCurrency(totalPotential)}`}
-          active={false} onClick={() => {}}
-        />
-        <StatCard
-          label="Stock crítico" value={fmt(cCritical, 0)} icon={AlertTriangle} color="bg-red-500"
+          active={false} onClick={() => {}} />
+        <StatCard label="Stock crítico" value={fmt(cCritical, 0)} icon={AlertTriangle} color="bg-red-500"
           sub={critical.length > 0 ? `${critical.map(i => i.name).slice(0,2).join(", ")}…` : "Todo en orden ✓"}
-          active={activeFilter === "critical"} onClick={() => toggle("critical")}
-        />
-        <StatCard
-          label="Stock bajo" value={fmt(cLow, 0)} icon={TrendingDown} color="bg-amber-500"
+          active={activeFilter === "critical"} onClick={() => toggle("critical")} />
+        <StatCard label="Stock bajo" value={fmt(cLow, 0)} icon={TrendingDown} color="bg-amber-500"
           sub={low.length > 0 ? "Reabastecer pronto" : "Sin alertas"}
-          active={activeFilter === "low"} onClick={() => toggle("low")}
-        />
+          active={activeFilter === "low"} onClick={() => toggle("low")} />
       </div>
 
-      {/* ── Charts row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Top productos por valor */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <BarChart2 size={16} className="text-indigo-500" />
@@ -353,10 +484,8 @@ function InventoryDashboard({
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false}
                   tickFormatter={(v) => `$${v >= 1000 ? (v/1000).toFixed(1)+"k" : v}`} />
-                <Tooltip
-                  contentStyle={{ borderRadius: 10, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,.1)", fontSize: 12 }}
-                  formatter={(v: number) => [`$${fmt(v)}`, "Valor"]}
-                />
+                <Tooltip contentStyle={{ borderRadius: 10, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,.1)", fontSize: 12 }}
+                  formatter={(v: number) => [`$${fmt(v)}`, "Valor"]} />
                 <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
                   {topProducts.map((entry, i) => (
                     <Cell key={i} fill={STATUS_COLORS[entry.status]} fillOpacity={0.85} />
@@ -365,17 +494,8 @@ function InventoryDashboard({
               </BarChart>
             </ResponsiveContainer>
           )}
-          <div className="flex gap-4 mt-2 justify-center">
-            {Object.entries(STATUS_COLORS).map(([s, c]) => (
-              <span key={s} className="flex items-center gap-1 text-xs text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: c }} />
-                {s === "critical" ? "Crítico" : s === "low" ? "Bajo" : "Óptimo"}
-              </span>
-            ))}
-          </div>
         </div>
 
-        {/* Estado del stock - donut */}
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <ShoppingBag size={16} className="text-emerald-500" />
@@ -388,12 +508,8 @@ function InventoryDashboard({
               <PieChart>
                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={75}
                   dataKey="value" paddingAngle={3}
-                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                  labelLine={false}
-                >
-                  {pieData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
                 <Tooltip contentStyle={{ borderRadius: 10, border: "none", fontSize: 12 }}
                   formatter={(v: number) => [`${v} productos`, ""]} />
@@ -414,7 +530,6 @@ function InventoryDashboard({
         </div>
       </div>
 
-      {/* ── Por categoría ── */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-700 mb-4">Stock por categoría</h3>
         {byCategory.length === 0 ? (
@@ -426,11 +541,8 @@ function InventoryDashboard({
               const pct = maxVal > 0 ? (value / maxVal) * 100 : 0;
               const isActive = activeFilter === name;
               return (
-                <button
-                  key={name}
-                  onClick={() => toggle(name)}
-                  className={`w-full text-left group transition-all rounded-xl p-2 -mx-2 ${isActive ? "bg-indigo-50" : "hover:bg-slate-50"}`}
-                >
+                <button key={name} onClick={() => toggle(name)}
+                  className={`w-full text-left group transition-all rounded-xl p-2 -mx-2 ${isActive ? "bg-indigo-50" : "hover:bg-slate-50"}`}>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className={`text-sm font-medium flex items-center gap-2 ${isActive ? "text-indigo-700" : "text-slate-700"}`}>
                       <span className="w-2.5 h-2.5 rounded-full" style={{ background: CHART_COLORS[idx % CHART_COLORS.length] }} />
@@ -440,10 +552,8 @@ function InventoryDashboard({
                     <span className="text-sm font-semibold text-slate-800">{fmt(units, 0)} u · {fmtCurrency(value)}</span>
                   </div>
                   <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%`, background: CHART_COLORS[idx % CHART_COLORS.length] }}
-                    />
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%`, background: CHART_COLORS[idx % CHART_COLORS.length] }} />
                   </div>
                 </button>
               );
@@ -455,7 +565,209 @@ function InventoryDashboard({
   );
 }
 
-// ─────────────────────── Main page ───────────────────────────────────────────
+// ─── Historial tab ────────────────────────────────────────────────────────────
+
+function HistorialTab({ uid }: { uid: string }) {
+  const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [days, setDays]           = useState(30);
+
+  useEffect(() => {
+    setLoading(true);
+    listMovements(uid, days)
+      .then(setMovements)
+      .finally(() => setLoading(false));
+  }, [uid, days]);
+
+  const typeLabel: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    purchase:   { label: "Entrada",  icon: <ArrowUpCircle size={14} />,   color: "text-emerald-600 bg-emerald-50" },
+    sale:       { label: "Venta",    icon: <ArrowDownCircle size={14} />, color: "text-red-600 bg-red-50" },
+    adjustment: { label: "Ajuste",   icon: <SlidersHorizontal size={14} />, color: "text-amber-600 bg-amber-50" },
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-slate-800">Historial de movimientos</h2>
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))}
+          className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value={7}>Últimos 7 días</option>
+          <option value={15}>Últimos 15 días</option>
+          <option value={30}>Últimos 30 días</option>
+          <option value={60}>Últimos 60 días</option>
+          <option value={90}>Últimos 90 días</option>
+        </select>
+      </div>
+      {loading ? (
+        <div className="text-center py-12 text-slate-400">Cargando…</div>
+      ) : movements.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
+          <History size={40} className="mx-auto mb-3 text-slate-300" />
+          <p className="text-slate-500">No hay movimientos en este período</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                {["Tipo","Producto","SKU","Cantidad","Nota","Fecha"].map((h) => (
+                  <th key={h} className="text-left py-3 px-4 font-medium">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {movements.map((m) => {
+                const t = typeLabel[m.movementType] ?? typeLabel.adjustment;
+                const date = m.createdAt?.toDate?.() ?? new Date();
+                return (
+                  <tr key={m.id} className="border-t border-slate-50 hover:bg-slate-50">
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${t.color}`}>
+                        {t.icon} {t.label}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-slate-800">{m.productName}</td>
+                    <td className="py-3 px-4 font-mono text-xs text-slate-500">{m.sku}</td>
+                    <td className={`py-3 px-4 font-semibold ${m.quantity > 0 ? "text-emerald-600" : "text-red-600"}`}>
+                      {m.quantity > 0 ? "+" : ""}{m.quantity}
+                    </td>
+                    <td className="py-3 px-4 text-slate-500">{m.note || "—"}</td>
+                    <td className="py-3 px-4 text-slate-400 text-xs whitespace-nowrap">
+                      {date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
+                      {" "}
+                      {date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Órdenes de reabastecimiento ─────────────────────────────────────────────
+
+function OrdenesTab({ items }: { items: InventoryItem[] }) {
+  const needRestock = items
+    .filter((i) => i.currentStock <= i.minStock)
+    .map((i) => ({
+      ...i,
+      status: getStockStatus(i),
+      qtyNeeded: i.maxStock - i.currentStock,
+      estimatedCost: (i.maxStock - i.currentStock) * i.unitCost,
+    }))
+    .sort((a, b) => a.currentStock - b.currentStock);
+
+  const totalCost = needRestock.reduce((s, i) => s + i.estimatedCost, 0);
+
+  function printOrder() {
+    const rows = needRestock.map((i) =>
+      `<tr><td>${i.sku}</td><td>${i.name}</td><td>${i.supplier || "—"}</td>
+       <td style="text-align:center">${i.currentStock}</td>
+       <td style="text-align:center">${i.qtyNeeded}</td>
+       <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
+       <td style="text-align:right">${fmtCurrency(i.estimatedCost)}</td></tr>`
+    ).join("");
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>Orden de reabastecimiento</title>
+      <style>
+        body{font-family:sans-serif;padding:24px;color:#1e293b}
+        h1{font-size:20px;margin-bottom:4px}
+        p{color:#64748b;font-size:13px;margin:0 0 16px}
+        table{width:100%;border-collapse:collapse;font-size:13px}
+        th{background:#f1f5f9;padding:8px 12px;text-align:left;font-size:12px}
+        td{padding:8px 12px;border-bottom:1px solid #f1f5f9}
+        tfoot td{font-weight:bold;background:#f8fafc}
+      </style></head>
+      <body>
+        <h1>Orden de reabastecimiento</h1>
+        <p>Generado el ${new Date().toLocaleDateString("es-ES", { day:"2-digit",month:"long",year:"numeric" })}</p>
+        <table>
+          <thead><tr><th>SKU</th><th>Producto</th><th>Proveedor</th><th>Stock actual</th><th>Qty a pedir</th><th>Costo unit.</th><th>Total est.</th></tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr><td colspan="6">TOTAL ESTIMADO</td><td style="text-align:right">${fmtCurrency(totalCost)}</td></tr></tfoot>
+        </table>
+      </body></html>`);
+    win.document.close();
+    win.print();
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-semibold text-slate-800">Órdenes de reabastecimiento</h2>
+          <p className="text-sm text-slate-500">Productos en o por debajo del stock mínimo</p>
+        </div>
+        {needRestock.length > 0 && (
+          <button onClick={printOrder}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition">
+            <Printer size={14} /> Imprimir orden
+          </button>
+        )}
+      </div>
+
+      {needRestock.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
+          <ShoppingCart size={40} className="mx-auto mb-3 text-emerald-400" />
+          <p className="text-slate-700 font-medium">Todo en orden ✓</p>
+          <p className="text-slate-400 text-sm mt-1">Ningún producto está por debajo del stock mínimo</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+              <p className="text-xs text-slate-400 mb-1">Productos a reabastecer</p>
+              <p className="text-2xl font-bold text-slate-900">{needRestock.length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+              <p className="text-xs text-slate-400 mb-1">Unidades a pedir</p>
+              <p className="text-2xl font-bold text-slate-900">{needRestock.reduce((s, i) => s + i.qtyNeeded, 0)}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+              <p className="text-xs text-slate-400 mb-1">Costo estimado total</p>
+              <p className="text-2xl font-bold text-red-600">{fmtCurrency(totalCost)}</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                  {["SKU","Producto","Proveedor","Stock actual","Mínimo","A pedir","Costo unit.","Total est.","Estado"].map((h) => (
+                    <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {needRestock.map((item) => (
+                  <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
+                    <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
+                    <td className="py-3 px-4 font-medium">{item.name}</td>
+                    <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
+                    <td className="py-3 px-4 font-semibold text-red-600">{item.currentStock}</td>
+                    <td className="py-3 px-4 text-slate-500">{item.minStock}</td>
+                    <td className="py-3 px-4 font-semibold text-emerald-600">{item.qtyNeeded}</td>
+                    <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
+                    <td className="py-3 px-4 font-semibold">{fmtCurrency(item.estimatedCost)}</td>
+                    <td className="py-3 px-4"><StockBadge status={item.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function InventarioPage() {
   const { user } = useAuth();
@@ -469,17 +781,21 @@ export default function InventarioPage() {
   const [editing,        setEditing]        = useState<InventoryItem | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
 
+  // Advanced filters
+  const [sortKey,      setSortKey]      = useState<SortKey>("name");
+  const [sortDir,      setSortDir]      = useState<SortDir>("asc");
+  const [supplierFilter, setSupplierFilter] = useState("all");
+
+  // Modals
+  const [adjustItem,   setAdjustItem]   = useState<InventoryItem | null>(null);
+  const [qrItem,       setQrItem]       = useState<InventoryItem | null>(null);
+
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    try {
-      setItems(await listInventory(user.uid));
-    } catch (e) {
-      console.error("inventario load error:", e);
-      toast.error("Error al cargar inventario");
-    } finally {
-      setLoading(false);
-    }
+    try { setItems(await listInventory(user.uid)); }
+    catch { toast.error("Error al cargar inventario"); }
+    finally { setLoading(false); }
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
@@ -498,7 +814,7 @@ export default function InventarioPage() {
     const r = await addInventoryItem(user.uid, form);
     setSaving(false);
     if (r.ok) { toast.success(r.message); setForm(EMPTY); await load(); setTab("list"); }
-    else        toast.error(r.message);
+    else toast.error(r.message);
   }
 
   async function handleUpdate(e: React.FormEvent) {
@@ -508,14 +824,14 @@ export default function InventarioPage() {
     const r = await updateInventoryItem(user.uid, editing.id, form);
     setSaving(false);
     if (r.ok) { toast.success(r.message); setEditing(null); await load(); setTab("list"); }
-    else        toast.error(r.message);
+    else toast.error(r.message);
   }
 
   async function handleDelete(item: InventoryItem) {
     if (!confirm(`¿Eliminar "${item.name}"?`) || !user) return;
     const r = await deleteInventoryItem(user.uid, item.id);
     if (r.ok) { toast.success(r.message); await load(); }
-    else        toast.error(r.message);
+    else toast.error(r.message);
   }
 
   function startEdit(item: InventoryItem) {
@@ -530,6 +846,16 @@ export default function InventarioPage() {
     setTab("add");
   }
 
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  }
+
+  function SortIcon({ k }: { k: SortKey }) {
+    if (sortKey !== k) return <ChevronDown size={12} className="text-slate-300" />;
+    return sortDir === "asc" ? <ChevronUp size={12} className="text-brand-500" /> : <ChevronDown size={12} className="text-brand-500" />;
+  }
+
   function exportCSV() {
     const rows = items.map(({ sku, name, category, color, currentStock, minStock, maxStock, unitCost, salePrice, supplier }) =>
       ({ sku, producto: name, tipo: category, color, stock: currentStock, stock_minimo: minStock, stock_maximo: maxStock, costo: unitCost, precio_venta: salePrice, proveedor: supplier })
@@ -539,6 +865,48 @@ export default function InventarioPage() {
     const a = document.createElement("a"); a.href = url;
     a.download = `inventario_${new Date().toISOString().slice(0,10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
+  }
+
+  function exportPDF() {
+    const rows = filtered.map((i) =>
+      `<tr>
+        <td>${i.sku}</td><td>${i.name}</td><td>${i.category}</td>
+        <td style="text-align:center">${i.currentStock}</td>
+        <td style="text-align:center">${i.minStock}</td>
+        <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
+        <td style="text-align:right">${fmtCurrency(i.salePrice)}</td>
+        <td style="text-align:center">${getStockStatus(i) === "critical" ? "🔴 Crítico" : getStockStatus(i) === "low" ? "🟡 Bajo" : "🟢 Óptimo"}</td>
+      </tr>`
+    ).join("");
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>Inventario</title>
+      <style>
+        body{font-family:sans-serif;padding:24px;color:#1e293b;font-size:13px}
+        h1{font-size:20px;margin-bottom:4px}p{color:#64748b;margin:0 0 16px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+        td{padding:8px 10px;border-bottom:1px solid #f1f5f9}
+        .kpi{display:flex;gap:24px;margin-bottom:16px}
+        .kpi div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 16px}
+        .kpi p{font-size:11px;margin:0 0 2px}.kpi b{font-size:18px}
+      </style></head>
+      <body>
+        <h1>Reporte de Inventario</h1>
+        <p>Generado el ${new Date().toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})}</p>
+        <div class="kpi">
+          <div><p>Total productos</p><b>${items.length}</b></div>
+          <div><p>Valor inventario</p><b>${fmtCurrency(items.reduce((s,i)=>s+i.currentStock*i.unitCost,0))}</b></div>
+          <div><p>Stock crítico</p><b>${items.filter(i=>getStockStatus(i)==="critical").length}</b></div>
+        </div>
+        <table>
+          <thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mín.</th><th>Costo</th><th>P.Venta</th><th>Estado</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body></html>`);
+    win.document.close();
+    win.print();
   }
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -561,54 +929,83 @@ export default function InventarioPage() {
         const { imported, errors } = await bulkAddInventory(user.uid, rows);
         toast.success(`${imported} productos importados`);
         if (errors.length) toast.error(`${errors.length} errores`);
-        await load();
-        setTab("list");
+        await load(); setTab("list");
       },
     });
     e.target.value = "";
   }
 
-  // Apply active filter to product list
-  const filtered = items.filter((i) => {
-    const matchSearch = !search || i.name.toLowerCase().includes(search.toLowerCase()) ||
-      i.sku.toLowerCase().includes(search.toLowerCase());
-    const status = getStockStatus(i);
-    const matchFilter =
-      activeFilter === "all"      ? true :
-      activeFilter === "critical" ? status === "critical" :
-      activeFilter === "low"      ? status === "low" :
-      activeFilter === "ok"       ? status === "ok" :
-      i.category === activeFilter;
-    return matchSearch && matchFilter;
-  });
+  const suppliers = ["all", ...Array.from(new Set(items.map(i => i.supplier).filter(Boolean)))];
+
+  const filtered = items
+    .filter((i) => {
+      const matchSearch = !search || i.name.toLowerCase().includes(search.toLowerCase()) ||
+        i.sku.toLowerCase().includes(search.toLowerCase()) ||
+        i.category.toLowerCase().includes(search.toLowerCase());
+      const status = getStockStatus(i);
+      const matchFilter =
+        activeFilter === "all"      ? true :
+        activeFilter === "critical" ? status === "critical" :
+        activeFilter === "low"      ? status === "low" :
+        activeFilter === "ok"       ? status === "ok" :
+        i.category === activeFilter;
+      const matchSupplier = supplierFilter === "all" || i.supplier === supplierFilter;
+      return matchSearch && matchFilter && matchSupplier;
+    })
+    .sort((a, b) => {
+      const va = a[sortKey]; const vb = b[sortKey];
+      const cmp = typeof va === "number" && typeof vb === "number"
+        ? va - vb : String(va).localeCompare(String(vb));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "dashboard", label: "📊 Dashboard" },
     { key: "list",      label: `📋 Productos (${items.length})` },
     { key: "add",       label: editing ? "✏️ Editar" : "➕ Agregar" },
+    { key: "historial", label: "📜 Historial" },
+    { key: "ordenes",   label: `🛒 Reabastecer${items.filter(i=>getStockStatus(i)!=="ok").length > 0 ? ` (${items.filter(i=>getStockStatus(i)!=="ok").length})` : ""}` },
+  ];
+
+  const sortableCols: { key: SortKey; label: string }[] = [
+    { key: "name", label: "Producto" },
+    { key: "category", label: "Tipo" },
+    { key: "supplier", label: "Proveedor" },
+    { key: "currentStock", label: "Stock" },
+    { key: "unitCost", label: "Costo" },
+    { key: "salePrice", label: "P.Venta" },
   ];
 
   if (loading) return <FullPageSpinner />;
 
   return (
     <div>
+      {adjustItem && (
+        <QuickAdjustModal item={adjustItem} onClose={() => setAdjustItem(null)} onDone={load} />
+      )}
+      {qrItem && (
+        <QRModal item={qrItem} onClose={() => setQrItem(null)} />
+      )}
+
       <PageHeader
         title="Inventario"
         subtitle="Gestiona tus productos y niveles de stock"
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button onClick={exportCSV}
               className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
-              <Download size={15} /> Exportar
+              <Download size={15} /> CSV
+            </button>
+            <button onClick={exportPDF}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              <Printer size={15} /> PDF
             </button>
             <label className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer">
               <Upload size={15} /> Importar CSV
               <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
             </label>
-            <button
-              onClick={() => { setEditing(null); setForm(EMPTY); setTab("add"); }}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium"
-            >
+            <button onClick={() => { setEditing(null); setForm(EMPTY); setTab("add"); }}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium">
               <Plus size={15} /> Agregar
             </button>
           </div>
@@ -616,44 +1013,36 @@ export default function InventarioPage() {
       />
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit overflow-x-auto">
         {TABS.map((t) => (
-          <button
-            key={t.key}
+          <button key={t.key}
             onClick={() => { setTab(t.key); if (t.key !== "add") { setEditing(null); setForm(EMPTY); } }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${tab === t.key ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}
-          >
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap ${tab === t.key ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* ── Dashboard tab ── */}
+      {/* ── Dashboard ── */}
       {tab === "dashboard" && (
-        <div>
-          {items.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-              <Package size={48} className="mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-500 mb-4">Agrega productos para ver tu dashboard</p>
-              <button onClick={() => setTab("add")}
-                className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition">
-                Agregar primer producto
-              </button>
-            </div>
-          ) : (
-            <InventoryDashboard
-              items={items}
-              activeFilter={activeFilter}
-              onFilter={(f) => { setActiveFilter(f); setTab("list"); }}
-            />
-          )}
-        </div>
+        items.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
+            <Package size={48} className="mx-auto mb-4 text-slate-300" />
+            <p className="text-slate-500 mb-4">Agrega productos para ver tu dashboard</p>
+            <button onClick={() => setTab("add")}
+              className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition">
+              Agregar primer producto
+            </button>
+          </div>
+        ) : (
+          <InventoryDashboard items={items} activeFilter={activeFilter}
+            onFilter={(f) => { setActiveFilter(f); setTab("list"); }} />
+        )
       )}
 
-      {/* ── List tab ── */}
+      {/* ── Lista ── */}
       {tab === "list" && (
         <div>
-          {/* Active filter pill */}
           {activeFilter !== "all" && (
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xs text-slate-500">Filtrando por:</span>
@@ -661,21 +1050,32 @@ export default function InventarioPage() {
                 {activeFilter === "critical" ? "🔴 Stock crítico" :
                  activeFilter === "low"      ? "🟡 Stock bajo" :
                  activeFilter === "ok"       ? "🟢 Óptimo" : `📦 ${activeFilter}`}
-                <button onClick={() => setActiveFilter("all")} className="hover:text-brand-900 transition">
-                  <X size={12} />
-                </button>
+                <button onClick={() => setActiveFilter("all")}><X size={12} /></button>
               </span>
             </div>
           )}
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="flex gap-3 p-4 border-b border-slate-100">
-              <div className="relative flex-1 max-w-sm">
+            {/* Filters row */}
+            <div className="flex flex-wrap gap-3 p-4 border-b border-slate-100">
+              <div className="relative flex-1 min-w-48 max-w-sm">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input value={search} onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nombre o SKU…"
+                  placeholder="Buscar por nombre, SKU o categoría…"
                   className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
+              {suppliers.length > 1 && (
+                <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <option value="all">Todos los proveedores</option>
+                  {suppliers.filter(s => s !== "all").map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              )}
+              <span className="flex items-center gap-1 text-xs text-slate-400 ml-auto">
+                <SlidersHorizontal size={12} /> {filtered.length} resultados
+              </span>
             </div>
 
             {filtered.length === 0 ? (
@@ -687,10 +1087,19 @@ export default function InventarioPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-slate-500 bg-slate-50">
-                      {["📷","SKU","Producto","Tipo","Color","Stock","Mín/Máx","Costo","P.Venta","Estado",""].map((h) => (
-                        <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
+                    <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                      <th className="text-left py-3 px-4 font-medium">📷</th>
+                      <th className="text-left py-3 px-4 font-medium">SKU</th>
+                      {sortableCols.map(({ key, label }) => (
+                        <th key={key}
+                          className="text-left py-3 px-4 font-medium cursor-pointer hover:text-slate-800 whitespace-nowrap select-none"
+                          onClick={() => toggleSort(key)}>
+                          <span className="flex items-center gap-1">{label} <SortIcon k={key} /></span>
+                        </th>
                       ))}
+                      <th className="text-left py-3 px-4 font-medium">Mín/Máx</th>
+                      <th className="text-left py-3 px-4 font-medium">Estado</th>
+                      <th className="text-left py-3 px-4 font-medium">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -705,28 +1114,42 @@ export default function InventarioPage() {
                           <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
                           <td className="py-3 px-4 font-medium">{item.name}</td>
                           <td className="py-3 px-4 text-slate-600">{item.category}</td>
-                          <td className="py-3 px-4 text-slate-500">{item.color || "—"}</td>
+                          <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold">{item.currentStock}</span>
-                              <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className={status === "critical" ? "bg-red-500" : status === "low" ? "bg-amber-400" : "bg-emerald-500"}
-                                  style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }}
-                                />
+                              <button onClick={() => setAdjustItem(item)}
+                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition text-slate-400">
+                                <Minus size={11} />
+                              </button>
+                              <div>
+                                <span className="font-semibold">{item.currentStock}</span>
+                                <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                                  <div className={status === "critical" ? "bg-red-500" : status === "low" ? "bg-amber-400" : "bg-emerald-500"}
+                                    style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
+                                </div>
                               </div>
+                              <button onClick={() => setAdjustItem(item)}
+                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition text-slate-400">
+                                <Plus size={11} />
+                              </button>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-slate-500">{item.minStock} / {item.maxStock}</td>
                           <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
                           <td className="py-3 px-4 text-emerald-600 font-medium">{fmtCurrency(item.salePrice)}</td>
+                          <td className="py-3 px-4 text-slate-500">{item.minStock} / {item.maxStock}</td>
                           <td className="py-3 px-4"><StockBadge status={status} /></td>
                           <td className="py-3 px-4">
                             <div className="flex gap-1">
-                              <button onClick={() => startEdit(item)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
+                              <button onClick={() => setQrItem(item)}
+                                className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="Ver QR">
+                                <QrCode size={14} />
+                              </button>
+                              <button onClick={() => startEdit(item)}
+                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
                                 <Edit2 size={14} />
                               </button>
-                              <button onClick={() => handleDelete(item)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                              <button onClick={() => handleDelete(item)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
                                 <Trash2 size={14} />
                               </button>
                             </div>
@@ -742,7 +1165,7 @@ export default function InventarioPage() {
         </div>
       )}
 
-      {/* ── Add / Edit tab ── */}
+      {/* ── Agregar / Editar ── */}
       {tab === "add" && (
         <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm max-w-2xl">
           <h2 className="text-lg font-semibold mb-5">{editing ? "Editar producto" : "Registrar nuevo producto"}</h2>
@@ -775,11 +1198,9 @@ export default function InventarioPage() {
                 </div>
               ))}
             </div>
-            <PhotoPicker
-              current={form.imageUrl ?? ""}
+            <PhotoPicker current={form.imageUrl ?? ""}
               onChange={(url) => setForm((p) => ({ ...p, imageUrl: url }))}
-              onUploading={setImageUploading}
-            />
+              onUploading={setImageUploading} />
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={saving || imageUploading}
                 className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">
@@ -793,6 +1214,12 @@ export default function InventarioPage() {
           </form>
         </div>
       )}
+
+      {/* ── Historial ── */}
+      {tab === "historial" && user && <HistorialTab uid={user.uid} />}
+
+      {/* ── Órdenes ── */}
+      {tab === "ordenes" && <OrdenesTab items={items} />}
     </div>
   );
 }

@@ -136,3 +136,35 @@ export async function listMovements(
     .filter((m) => m.createdAt >= since)
     .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
 }
+
+export async function adjustStock(
+  uid: string,
+  itemId: string,
+  delta: number,
+  note: string,
+  type: InventoryMovement["movementType"]
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    const ref = doc(itemsCol(uid), itemId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return { ok: false, message: "Producto no encontrado" };
+    const prev = snap.data() as InventoryItem;
+    const newStock = Math.max(0, prev.currentStock + delta);
+    const now = Timestamp.now();
+    await updateDoc(ref, { currentStock: newStock, updatedAt: now });
+    await addDoc(movementsCol(uid), {
+      inventoryId: itemId,
+      sku: prev.sku,
+      productName: prev.name,
+      movementType: type,
+      quantity: delta,
+      reference: "",
+      note,
+      createdAt: now,
+    });
+    return { ok: true, message: `Stock actualizado: ${newStock} unidades` };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Error desconocido";
+    return { ok: false, message: msg };
+  }
+}
