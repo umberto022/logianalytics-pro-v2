@@ -107,7 +107,7 @@ export async function registerSaleOrder(
     paymentStatus: PaymentStatus;
     dueDate?: Date;
   }
-): Promise<{ ok: boolean; message: string }> {
+): Promise<{ ok: boolean; message: string; saleOrderId?: string; invoiceNumber?: string }> {
   try {
     // Validate all items first
     const snapshots = await Promise.all(
@@ -169,11 +169,15 @@ export async function registerSaleOrder(
     }
 
     await batch.commit();
-    const total = params.items.reduce((s, it, i) => {
-      const { unitCost } = snapshots[i].data()!;
-      return s + it.quantity * it.unitPrice;
-    }, 0);
-    return { ok: true, message: `Venta registrada · ${params.items.length} producto(s) · Total ${fmtCurrency(total)}` };
+    const total = params.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+    // Build invoice number: FAC-YYMMDD-XXXX
+    const d   = params.saleDate;
+    const yy  = String(d.getFullYear()).slice(2);
+    const mm  = String(d.getMonth() + 1).padStart(2, "0");
+    const dd  = String(d.getDate()).padStart(2, "0");
+    const inv = saleOrderId.slice(-4).toUpperCase();
+    const invoiceNumber = `FAC-${yy}${mm}${dd}-${inv}`;
+    return { ok: true, message: `Venta registrada · ${params.items.length} producto(s) · Total ${fmtCurrency(total)}`, saleOrderId, invoiceNumber };
   } catch (e: unknown) {
     return { ok: false, message: e instanceof Error ? e.message : "Error desconocido" };
   }

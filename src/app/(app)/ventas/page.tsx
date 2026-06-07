@@ -23,6 +23,8 @@ import { fmtCurrency, fmt, fmtDate } from "@/lib/utils";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { InvoiceModal, type InvoiceData } from "@/components/ui/InvoiceModal";
+import { getCompany } from "@/lib/firestore/companies";
 import type { InventoryItem, Sale, Period, PaymentStatus } from "@/types";
 
 type Tab = "register" | "analytics" | "history";
@@ -325,7 +327,7 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function VentasPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [tab,     setTab]     = useState<Tab>("register");
   const [items,   setItems]   = useState<InventoryItem[]>([]);
   const [sales,   setSales]   = useState<Sale[]>([]);
@@ -341,6 +343,9 @@ export default function VentasPage() {
   const [zone,          setZone]          = useState("");
   const [client,        setClient]        = useState("");
   const [saleDate,      setSaleDate]      = useState(format(new Date(), "yyyy-MM-dd"));
+
+  // Invoice modal
+  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
 
   // History filter
   const [histPayFilter, setHistPayFilter] = useState<PaymentStatus | "all">("all");
@@ -398,6 +403,8 @@ export default function VentasPage() {
     if (!user) return;
     if (cart.length === 0) { toast.error("Agrega al menos un producto al carrito"); return; }
     setSaving(true);
+    const cartSnapshot = [...cart];
+    const formSnapshot = { route, zone, client, saleDate, paymentStatus, dueDate };
     const r = await registerSaleOrder(user.uid, {
       items: cart.map((c) => ({ inventoryId: c.inventoryId, quantity: c.quantity, unitPrice: c.unitPrice })),
       route, zone, client,
@@ -408,6 +415,34 @@ export default function VentasPage() {
     setSaving(false);
     if (r.ok) {
       toast.success(r.message);
+      // Build invoice data before clearing cart
+      let companyName, companyRif, companyPhone, companyEmail, companyAddress;
+      try {
+        if (profile?.companyId) {
+          const co = await getCompany(profile.companyId);
+          if (co) {
+            companyName    = co.name;
+            companyRif     = co.rif;
+            companyPhone   = co.phone;
+            companyEmail   = co.email;
+            companyAddress = co.address;
+          }
+        }
+      } catch { /* use defaults */ }
+      setInvoice({
+        invoiceNumber: r.invoiceNumber ?? `FAC-${Date.now()}`,
+        date:    new Date(formSnapshot.saleDate),
+        client:  formSnapshot.client,
+        route:   formSnapshot.route,
+        zone:    formSnapshot.zone,
+        paymentStatus: formSnapshot.paymentStatus,
+        dueDate: formSnapshot.dueDate ? new Date(formSnapshot.dueDate) : undefined,
+        items: cartSnapshot.map((c) => ({
+          name: c.name, sku: c.sku, category: c.category,
+          quantity: c.quantity, unitPrice: c.unitPrice, unitCost: c.unitCost,
+        })),
+        companyName, companyRif, companyPhone, companyEmail, companyAddress,
+      });
       setCart([]);
       setRoute(""); setZone(""); setClient("");
       setPaymentStatus("pagado"); setDueDate("");
@@ -452,6 +487,10 @@ export default function VentasPage() {
 
   return (
     <div>
+      {invoice && (
+        <InvoiceModal data={invoice} onClose={() => setInvoice(null)} />
+      )}
+
       <PageHeader
         title="Ventas"
         subtitle="Registra transacciones y analiza tu desempeño"
