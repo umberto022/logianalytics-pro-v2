@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} bg-slate-50 text-slate-900 antialiased`}>
+        <ErrorBoundary>
         <AuthProvider>
           {children}
           <Toaster
@@ -49,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
         </AuthProvider>
+        </ErrorBoundary>
         <ServiceWorkerRegistrar />
       </body>
     </html>
