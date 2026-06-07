@@ -10,6 +10,7 @@ import {
   Boxes, ShoppingBag, ChevronRight, ChevronUp, ChevronDown,
   Minus, History, ShoppingCart, QrCode, Printer,
   ArrowUpCircle, ArrowDownCircle, SlidersHorizontal,
+  Tag, Layers, Eye,
 } from "lucide-react";
 import Papa from "papaparse";
 import {
@@ -240,6 +241,118 @@ function ProductThumb({ url, name }: { url?: string; name: string }) {
   return (
     <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300">
       <Package size={16} />
+    </div>
+  );
+}
+
+// ─── Product detail modal ─────────────────────────────────────────────────────
+
+function ProductDetailModal({ item, onClose, onEdit, onAdjust }: {
+  item: InventoryItem;
+  onClose: () => void;
+  onEdit: () => void;
+  onAdjust: () => void;
+}) {
+  const status = getStockStatus(item);
+  const margin = item.salePrice > 0
+    ? (((item.salePrice - item.unitCost) / item.salePrice) * 100).toFixed(1)
+    : "0";
+  const [imgErr, setImgErr] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Image header */}
+        <div className="relative bg-slate-100 h-56 flex items-center justify-center">
+          {item.imageUrl && !imgErr ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.imageUrl} alt={item.name}
+              className="w-full h-full object-cover"
+              onError={() => setImgErr(true)} />
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-slate-300">
+              <Package size={56} />
+              <span className="text-sm">Sin foto</span>
+            </div>
+          )}
+          <button onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition shadow">
+            <X size={15} />
+          </button>
+          <div className="absolute bottom-3 left-3">
+            <StockBadge status={status} />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="mb-4">
+            <p className="text-xs font-mono text-slate-400 mb-1">{item.sku}</p>
+            <h2 className="text-xl font-bold text-slate-900 leading-tight">{item.name}</h2>
+            {item.category && (
+              <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1">
+                <Layers size={12} /> {item.category}
+                {item.color ? ` · ${item.color}` : ""}
+              </p>
+            )}
+            {item.supplier && (
+              <p className="text-xs text-slate-400 mt-0.5">Proveedor: {item.supplier}</p>
+            )}
+          </div>
+
+          {/* Price & stock grid */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <p className="text-xs text-emerald-600 font-medium mb-1 flex items-center justify-center gap-1">
+                <Tag size={11} /> Precio venta
+              </p>
+              <p className="text-lg font-bold text-emerald-700">{fmtCurrency(item.salePrice)}</p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-3 text-center">
+              <p className="text-xs text-slate-500 font-medium mb-1">Costo</p>
+              <p className="text-lg font-bold text-slate-700">{fmtCurrency(item.unitCost)}</p>
+            </div>
+            <div className="bg-indigo-50 rounded-xl p-3 text-center">
+              <p className="text-xs text-indigo-600 font-medium mb-1">Margen</p>
+              <p className="text-lg font-bold text-indigo-700">{margin}%</p>
+            </div>
+          </div>
+
+          {/* Stock bar */}
+          <div className="mb-5">
+            <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+              <span>Stock actual</span>
+              <span>{item.currentStock} / {item.maxStock} unidades</span>
+            </div>
+            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  status === "critical" ? "bg-red-500" :
+                  status === "low"      ? "bg-amber-400" : "bg-emerald-500"
+                }`}
+                style={{ width: `${item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-slate-400 mt-1">
+              <span>Mín: {item.minStock}</span>
+              <span>Lead time: {item.leadTimeDays}d</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <button onClick={() => { onAdjust(); onClose(); }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
+              <SlidersHorizontal size={14} /> Ajustar stock
+            </button>
+            <button onClick={() => { onEdit(); onClose(); }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition">
+              <Edit2 size={14} /> Editar
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -789,6 +902,7 @@ export default function InventarioPage() {
   // Modals
   const [adjustItem,   setAdjustItem]   = useState<InventoryItem | null>(null);
   const [qrItem,       setQrItem]       = useState<InventoryItem | null>(null);
+  const [detailItem,   setDetailItem]   = useState<InventoryItem | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -980,6 +1094,14 @@ export default function InventarioPage() {
 
   return (
     <div>
+      {detailItem && (
+        <ProductDetailModal
+          item={detailItem}
+          onClose={() => setDetailItem(null)}
+          onEdit={() => { startEdit(detailItem); }}
+          onAdjust={() => setAdjustItem(detailItem)}
+        />
+      )}
       {adjustItem && (
         <QuickAdjustModal item={adjustItem} onClose={() => setAdjustItem(null)} onDone={load} />
       )}
@@ -1109,10 +1231,18 @@ export default function InventarioPage() {
                       return (
                         <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
                           <td className="py-3 px-4">
-                            <ProductThumb url={item.imageUrl} name={item.name} />
+                            <button onClick={() => setDetailItem(item)} className="hover:opacity-80 transition">
+                              <ProductThumb url={item.imageUrl} name={item.name} />
+                            </button>
                           </td>
                           <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
-                          <td className="py-3 px-4 font-medium">{item.name}</td>
+                          <td className="py-3 px-4">
+                            <button onClick={() => setDetailItem(item)}
+                              className="font-medium text-slate-900 hover:text-brand-600 transition text-left flex items-center gap-1 group">
+                              {item.name}
+                              <Eye size={12} className="opacity-0 group-hover:opacity-100 transition text-brand-400" />
+                            </button>
+                          </td>
                           <td className="py-3 px-4 text-slate-600">{item.category}</td>
                           <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
                           <td className="py-3 px-4">
