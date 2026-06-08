@@ -185,17 +185,29 @@ export default function DashboardPage() {
 
       {/* KPI detail panel */}
       {activeKPI && (
-        <div className="bg-white rounded-2xl border border-brand-100 shadow-sm p-5 mb-6 animate-slide-up">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-              <ChevronDown size={16} className="text-brand-500" />
+        <div className={`bg-white rounded-2xl border shadow-md p-5 mb-6 animate-slide-up ${
+          activeKPI === "revenue"   ? "border-indigo-200" :
+          activeKPI === "profit"    ? "border-emerald-200" :
+          activeKPI === "sales"     ? "border-blue-200" :
+          activeKPI === "inventory" ? "border-amber-200" :
+                                      "border-red-200"
+        }`}>
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+              <span className={`w-2 h-2 rounded-full ${
+                activeKPI === "revenue"   ? "bg-indigo-500" :
+                activeKPI === "profit"    ? "bg-emerald-500" :
+                activeKPI === "sales"     ? "bg-blue-500" :
+                activeKPI === "inventory" ? "bg-amber-500" :
+                                            "bg-red-500"
+              }`} />
               {activeKPI === "revenue"   && `Desglose de ingresos — últimos ${period} días`}
               {activeKPI === "profit"    && `Desglose de ganancia — últimos ${period} días`}
               {activeKPI === "sales"     && `Desglose de ventas — últimos ${period} días`}
               {activeKPI === "inventory" && "Desglose de inventario por valor"}
               {activeKPI === "alerts"    && "Productos con stock bajo o crítico"}
             </h3>
-            <button onClick={() => setActiveKPI(null)} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => setActiveKPI(null)} className="text-slate-400 hover:text-slate-600 transition rounded-lg hover:bg-slate-100 p-1">
               <X size={16} />
             </button>
           </div>
@@ -374,7 +386,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <p className="text-xs text-slate-400 mb-6 text-center">Haz clic en una tarjeta para ver el desglose</p>
+      <p className="text-xs text-slate-300 mb-6 text-center select-none">↑ clic en cualquier tarjeta para ver el desglose</p>
 
       {/* Stock alerts */}
       {(criticalItems.length > 0 || lowItems.length > 0) && (
