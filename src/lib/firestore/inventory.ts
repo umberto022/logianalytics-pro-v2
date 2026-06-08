@@ -6,6 +6,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { InventoryItem, InventoryMovement, PriceHistoryEntry } from "@/types";
 import { generateSku } from "@/lib/utils";
+import { logAudit } from "./auditLog";
 
 const itemsCol = (uid: string) =>
   collection(db, "inventory", uid, "items");
@@ -41,6 +42,7 @@ export async function addInventoryItem(
         createdAt: now,
       });
     }
+    void logAudit(uid, "inventory_add", ref.id, data.name, `Stock inicial: ${data.currentStock}`);
     return { ok: true, message: `'${data.name}' agregado`, id: ref.id };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error desconocido";
@@ -88,6 +90,7 @@ export async function updateInventoryItem(
       updatedAt: now,
       ...(priceEntry ? { priceHistory: arrayUnion(priceEntry) } : {}),
     });
+    void logAudit(uid, "inventory_update", itemId, prev.name, priceChanged ? "Precios actualizados" : "Datos actualizados");
     return { ok: true, message: "Actualizado" };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error desconocido";
@@ -100,7 +103,10 @@ export async function deleteInventoryItem(
   itemId: string
 ): Promise<{ ok: boolean; message: string }> {
   try {
+    const snap = await getDoc(doc(itemsCol(uid), itemId));
+    const name = snap.exists() ? (snap.data() as InventoryItem).name : itemId;
     await deleteDoc(doc(itemsCol(uid), itemId));
+    void logAudit(uid, "inventory_delete", itemId, name, "Producto eliminado");
     return { ok: true, message: "Eliminado" };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error";
@@ -143,10 +149,25 @@ export async function listMovements(
   const since = Timestamp.fromDate(
     new Date(Date.now() - days * 24 * 60 * 60 * 1000)
   );
-  // Filtro en Firestore — evita traer todo el historial a memoria
   const q = query(
     movementsCol(uid),
     where("createdAt", ">=", since),
+    orderBy("createdAt", "desc"),
+    limit(500)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as InventoryMovement));
+}
+
+export async function listMovementsByRange(
+  uid: string,
+  from: Date,
+  to: Date
+): Promise<InventoryMovement[]> {
+  const q = query(
+    movementsCol(uid),
+    where("createdAt", ">=", Timestamp.fromDate(from)),
+    where("createdAt", "<=", Timestamp.fromDate(to)),
     orderBy("createdAt", "desc"),
     limit(500)
   );
@@ -183,6 +204,7 @@ export async function adjustStock(
       receiptPhotoUrl: extra?.receiptPhotoUrl ?? "",
       createdAt: now,
     });
+    void logAudit(uid, "stock_adjust", itemId, prev.name, `${type}: ${delta > 0 ? "+" : ""}${delta} → ${newStock} uds. ${note ? `(${note})` : ""}`);
     return { ok: true, message: `Stock actualizado: ${newStock} unidades` };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error desconocido";

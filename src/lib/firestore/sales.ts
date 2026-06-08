@@ -212,10 +212,21 @@ export async function getSales(uid: string, days: number): Promise<Sale[]> {
   const since = Timestamp.fromDate(
     new Date(Date.now() - days * 24 * 60 * 60 * 1000)
   );
-  // Filtro en Firestore — no trae todos los registros a memoria
   const q = query(
     salesCol(uid),
     where("saleDate", ">=", since),
+    orderBy("saleDate", "desc"),
+    limit(1000)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Sale));
+}
+
+export async function getSalesByRange(uid: string, from: Date, to: Date): Promise<Sale[]> {
+  const q = query(
+    salesCol(uid),
+    where("saleDate", ">=", Timestamp.fromDate(from)),
+    where("saleDate", "<=", Timestamp.fromDate(to)),
     orderBy("saleDate", "desc"),
     limit(1000)
   );

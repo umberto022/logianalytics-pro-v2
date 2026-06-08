@@ -19,6 +19,8 @@ import {
   deletePurchaseOrder, updatePurchaseOrder,
 } from "@/lib/firestore/purchases";
 import { fmtCurrency, fmt } from "@/lib/utils";
+import { usePagination } from "@/hooks/usePagination";
+import { Pagination } from "@/components/ui/Pagination";
 import { Timestamp } from "firebase/firestore";
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, InventoryItem } from "@/types";
 
@@ -580,6 +582,9 @@ export default function ComprasPage() {
     return matchSearch && matchStatus;
   });
 
+  const { paged: pagedOrders, page: ordersPage, totalPages: ordersTotalPages,
+          setPage: setOrdersPage, total: ordersTotal } = usePagination(filtered, 20);
+
   // KPIs
   const totalSpent    = orders.filter(o => o.status === "recibida").reduce((s, o) => s + o.total, 0);
   const pending       = orders.filter(o => o.status === "pendiente").length;
@@ -680,7 +685,7 @@ export default function ComprasPage() {
           <>
             {/* Mobile cards */}
             <div className="block sm:hidden divide-y divide-slate-50">
-              {filtered.map((order) => (
+              {pagedOrders.map((order) => (
                 <div key={order.id} className="px-4 py-3 hover:bg-slate-50 cursor-pointer"
                   onClick={() => setDetailOrder(order)}>
                   <div className="flex items-start justify-between gap-2 mb-1">
@@ -735,7 +740,7 @@ export default function ComprasPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((order) => (
+                  {pagedOrders.map((order) => (
                     <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50 cursor-pointer"
                       onClick={() => setDetailOrder(order)}>
                       <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</td>
@@ -780,6 +785,13 @@ export default function ComprasPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              page={ordersPage}
+              totalPages={ordersTotalPages}
+              total={ordersTotal}
+              pageSize={20}
+              onPage={setOrdersPage}
+            />
           </>
         )}
       </div>

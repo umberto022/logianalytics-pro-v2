@@ -54,25 +54,19 @@ export default function ProveedoresPage() {
     e.preventDefault();
     if (!user || !form.name.trim()) { toast.error("El nombre es obligatorio"); return; }
     setSaving(true);
-    try {
-      if (editing) {
-        await updateSupplier(user.uid, editing.id, form);
-        toast.success("Proveedor actualizado");
-      } else {
-        await addSupplier(user.uid, form);
-        toast.success("Proveedor creado");
-      }
-      await load();
-      setShowForm(false);
-    } catch { toast.error("Error al guardar"); }
-    finally { setSaving(false); }
+    const r = editing
+      ? await updateSupplier(user.uid, editing.id, form)
+      : await addSupplier(user.uid, form);
+    setSaving(false);
+    if (r.ok) { toast.success(r.message); await load(); setShowForm(false); }
+    else toast.error(r.message);
   }
 
   async function handleDelete(s: Supplier) {
     if (!user || !confirm(`¿Eliminar "${s.name}"?`)) return;
-    await deleteSupplier(user.uid, s.id);
-    toast.success("Proveedor eliminado");
-    await load();
+    const r = await deleteSupplier(user.uid, s.id);
+    if (r.ok) { toast.success(r.message); await load(); }
+    else toast.error(r.message);
   }
 
   function exportCSV() {

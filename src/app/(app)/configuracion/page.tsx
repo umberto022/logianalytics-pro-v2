@@ -10,7 +10,7 @@ import { createCompany, getCompany, updateCompany } from "@/lib/firestore/compan
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
-import { CheckCircle2, Bell, BellOff, Camera, User } from "lucide-react";
+import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon } from "lucide-react";
 import {
   isPushEnabled,
   setPushEnabled,
@@ -179,7 +179,7 @@ export default function ConfiguracionPage() {
                 {profile?.photoURL ? (
                   <img src={profile.photoURL} alt="Foto de perfil" className="w-full h-full object-cover" />
                 ) : (
-                  <User size={28} className="text-slate-400" />
+                  <UserIcon size={28} className="text-slate-400" />
                 )}
               </div>
               <label className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center cursor-pointer hover:bg-brand-700 transition shadow-sm ${uploadingPhoto ? "opacity-50 pointer-events-none" : ""}`}>

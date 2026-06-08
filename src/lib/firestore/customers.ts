@@ -4,6 +4,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Customer } from "@/types";
+import { logAudit } from "./auditLog";
 
 const col = (uid: string) => collection(db, "customers", uid, "records");
 
@@ -20,6 +21,7 @@ export async function addCustomer(
   try {
     const now = Timestamp.now();
     const ref = await addDoc(col(uid), { ...data, createdAt: now, updatedAt: now });
+    void logAudit(uid, "customer_add", ref.id, data.name, data.rnc ? `RNC: ${data.rnc}` : "Sin RNC");
     return { ok: true, message: `Cliente "${data.name}" agregado`, id: ref.id };
   } catch (e: unknown) {
     return { ok: false, message: e instanceof Error ? e.message : "Error desconocido" };
@@ -33,6 +35,7 @@ export async function updateCustomer(
 ): Promise<{ ok: boolean; message: string }> {
   try {
     await updateDoc(doc(col(uid), customerId), { ...data, updatedAt: Timestamp.now() });
+    void logAudit(uid, "customer_update", customerId, data.name ?? customerId, "Datos actualizados");
     return { ok: true, message: "Cliente actualizado" };
   } catch (e: unknown) {
     return { ok: false, message: e instanceof Error ? e.message : "Error desconocido" };
@@ -45,6 +48,7 @@ export async function deleteCustomer(
 ): Promise<{ ok: boolean; message: string }> {
   try {
     await deleteDoc(doc(col(uid), customerId));
+    void logAudit(uid, "customer_delete", customerId, customerId, "Cliente eliminado");
     return { ok: true, message: "Cliente eliminado" };
   } catch (e: unknown) {
     return { ok: false, message: e instanceof Error ? e.message : "Error" };

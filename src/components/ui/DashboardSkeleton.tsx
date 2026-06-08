@@ -1,6 +1,9 @@
-function Bone({ className }: { className?: string }) {
+import React from "react";
+
+function Bone({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <div
+      style={style}
       className={`bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse ${className ?? ""}`}
     />
   );

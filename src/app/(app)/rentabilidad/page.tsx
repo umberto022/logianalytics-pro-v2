@@ -1,15 +1,17 @@
 "use client";
 
+"use client";
+
 import { useEffect, useState, useCallback } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ScatterChart, Scatter, Cell, Treemap,
   PieChart, Pie,
 } from "recharts";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, CalendarRange } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSales, computeSummary, computeByRoute, computeByProduct } from "@/lib/firestore/sales";
-import { listMovements } from "@/lib/firestore/inventory";
+import { getSales, getSalesByRange, computeSummary, computeByRoute, computeByProduct } from "@/lib/firestore/sales";
+import { listMovements, listMovementsByRange } from "@/lib/firestore/inventory";
 import { fmtCurrency, fmt, fmtDatetime } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
@@ -19,31 +21,52 @@ import type { Period, Sale, RouteStats, ProductStats, InventoryMovement } from "
 
 const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6", "#ec4899"];
 type Tab = "routes" | "products" | "movements";
+type DateMode = "preset" | "custom";
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+function daysAgoStr(n: number) {
+  return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+}
 
 export default function RentabilidadPage() {
   const { user } = useAuth();
-  const [period,  setPeriod]    = useState<Period>(30);
-  const [tab,     setTab]       = useState<Tab>("routes");
-  const [loading, setLoading]   = useState(true);
-  const [sales,   setSales]     = useState<Sale[]>([]);
+  const [period,    setPeriod]    = useState<Period>(30);
+  const [dateMode,  setDateMode]  = useState<DateMode>("preset");
+  const [fromDate,  setFromDate]  = useState(daysAgoStr(30));
+  const [toDate,    setToDate]    = useState(todayStr());
+  const [tab,       setTab]       = useState<Tab>("routes");
+  const [loading,   setLoading]   = useState(true);
+  const [sales,     setSales]     = useState<Sale[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [sl, mv] = await Promise.all([
-        getSales(user.uid, period),
-        listMovements(user.uid, period),
-      ]);
+      let sl: Sale[], mv: InventoryMovement[];
+      if (dateMode === "custom") {
+        const from = new Date(fromDate + "T00:00:00");
+        const to   = new Date(toDate   + "T23:59:59");
+        [sl, mv] = await Promise.all([
+          getSalesByRange(user.uid, from, to),
+          listMovementsByRange(user.uid, from, to),
+        ]);
+      } else {
+        [sl, mv] = await Promise.all([
+          getSales(user.uid, period),
+          listMovements(user.uid, period),
+        ]);
+      }
       setSales(sl);
       setMovements(mv);
-    } catch (e) {
-      console.error("rentabilidad load error:", e);
+    } catch {
+      // silently handle errors — KPIs will show zeros
     } finally {
       setLoading(false);
     }
-  }, [user, period]);
+  }, [user, period, dateMode, fromDate, toDate]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -57,7 +80,7 @@ export default function RentabilidadPage() {
   if (summary.numSales === 0) {
     return (
       <div>
-        <PageHeader title="Rentabilidad" subtitle="Analiza rutas, productos y márgenes" />
+        <PageHeader title="Rentabilidad" subtitle="Analiza rutas, productos y márgenes" action={<PeriodSelect value={period} onChange={(p) => { setPeriod(p); setDateMode("preset"); }} />} />
         <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
           <TrendingUp size={48} className="text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">No hay ventas en este período.</p>
@@ -72,7 +95,44 @@ export default function RentabilidadPage() {
       <PageHeader
         title="Rentabilidad"
         subtitle="Analiza qué rutas, productos y zonas generan más ganancia"
-        action={<PeriodSelect value={period} onChange={setPeriod} />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setDateMode("preset")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${dateMode === "preset" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}
+              >
+                Período
+              </button>
+              <button
+                onClick={() => setDateMode("custom")}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition ${dateMode === "custom" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}
+              >
+                <CalendarRange size={12} /> Personalizado
+              </button>
+            </div>
+            {dateMode === "preset" ? (
+              <PeriodSelect value={period} onChange={setPeriod} />
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date" value={fromDate}
+                  max={toDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <span className="text-xs text-slate-400">—</span>
+                <input
+                  type="date" value={toDate}
+                  min={fromDate}
+                  max={todayStr()}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            )}
+          </div>
+        }
       />
 
       {/* KPIs */}

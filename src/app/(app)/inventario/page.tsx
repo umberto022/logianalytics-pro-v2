@@ -36,6 +36,8 @@ import { StockBadge } from "@/components/ui/StockBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import type { InventoryItem, InventoryMovement, PurchaseOrder, PurchaseOrderStatus, StockStatus } from "@/types";
+import { inventorySchema } from "@/lib/schemas";
+import { z } from "zod";
 
 type Tab = "dashboard" | "list" | "add" | "historial" | "ordenes";
 type ActiveFilter = "all" | "critical" | "low" | "ok" | string;
@@ -1124,6 +1126,7 @@ export default function InventarioPage() {
   const [search,       setSearch]       = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [form,           setForm]           = useState(EMPTY);
+  const [formErrors,     setFormErrors]     = useState<Record<string, string>>({});
   const [editing,        setEditing]        = useState<InventoryItem | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
 
@@ -1165,10 +1168,12 @@ export default function InventarioPage() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || !form.category.trim()) { toast.error("Nombre y tipo son obligatorios"); return; }
     if (!user) return;
+    const result = inventorySchema.safeParse(form);
+    if (!result.success) { setFormErrors(Object.fromEntries(result.error.issues.map((e) => [e.path.join("."), e.message]))); toast.error("Corrige los errores del formulario"); return; }
+    setFormErrors({});
     setSaving(true);
-    const r = await addInventoryItem(user.uid, form);
+    const r = await addInventoryItem(user.uid, result.data);
     setSaving(false);
     if (r.ok) { toast.success(r.message); setForm(EMPTY); await load(); setTab("list"); }
     else toast.error(r.message);
@@ -1177,8 +1182,11 @@ export default function InventarioPage() {
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     if (!editing || !user) return;
+    const result = inventorySchema.safeParse(form);
+    if (!result.success) { setFormErrors(Object.fromEntries(result.error.issues.map((e) => [e.path.join("."), e.message]))); toast.error("Corrige los errores del formulario"); return; }
+    setFormErrors({});
     setSaving(true);
-    const r = await updateInventoryItem(user.uid, editing.id, form);
+    const r = await updateInventoryItem(user.uid, editing.id, result.data);
     setSaving(false);
     if (r.ok) { toast.success(r.message); setEditing(null); await load(); setTab("list"); }
     else toast.error(r.message);
@@ -1303,7 +1311,7 @@ export default function InventarioPage() {
     e.target.value = "";
   }
 
-  const suppliers = ["all", ...Array.from(new Set(items.map(i => i.supplier).filter(Boolean)))];
+  const supplierFilterOptions = ["all", ...Array.from(new Set(items.map(i => i.supplier).filter(Boolean)))];
 
   const filtered = items
     .filter((i) => {
@@ -1450,11 +1458,11 @@ export default function InventarioPage() {
                   placeholder="Buscar por nombre, SKU o categoría…"
                   className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
-              {suppliers.length > 1 && (
+              {supplierFilterOptions.length > 1 && (
                 <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}
                   className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                   <option value="all">Todos los proveedores</option>
-                  {suppliers.filter(s => s !== "all").map(s => (
+                  {supplierFilterOptions.filter(s => s !== "all").map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
@@ -1661,7 +1669,8 @@ export default function InventarioPage() {
                 <div key={key}>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
                   <input value={String(form[key])} onChange={setF(key)} placeholder={placeholder}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors[key] ? "border-red-400" : "border-slate-200"}`} />
+                  {formErrors[key] && <p className="text-xs text-red-500 mt-1">{formErrors[key]}</p>}
                 </div>
               ))}
               <div>
@@ -1690,7 +1699,8 @@ export default function InventarioPage() {
                 <div key={key}>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
                   <input type="number" value={Number(form[key])} onChange={setF(key)} min={min} step={step}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors[key] ? "border-red-400" : "border-slate-200"}`} />
+                  {formErrors[key] && <p className="text-xs text-red-500 mt-1">{formErrors[key]}</p>}
                 </div>
               ))}
             </div>

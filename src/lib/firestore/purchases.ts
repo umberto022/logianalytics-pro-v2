@@ -5,6 +5,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { PurchaseOrder, PurchaseOrderItem } from "@/types";
 import { adjustStock } from "./inventory";
+import { logAudit } from "./auditLog";
 
 const ordersCol = (uid: string) =>
   collection(db, "purchaseOrders", uid, "orders");
@@ -37,6 +38,7 @@ export async function createPurchaseOrder(
       createdAt: now,
       updatedAt: now,
     });
+    void logAudit(uid, "purchase_create", ref.id, data.supplierName, `${data.items.length} productos · Total: ${data.total}`);
     return { ok: true, message: "Orden creada", id: ref.id };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error desconocido";
@@ -89,6 +91,7 @@ export async function receivePurchaseOrder(
       receivedDate: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
+    void logAudit(uid, "purchase_receive", orderId, snap.data().supplierName, `Estado: ${status} · ${receivedItems.length} productos recibidos`);
     return { ok: true, message: `Orden marcada como ${status}` };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error";
