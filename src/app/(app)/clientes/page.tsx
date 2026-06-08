@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import {
   Users, Plus, Search, Edit2, Trash2, Phone, Mail, MapPin,
-  FileText, X, TrendingUp, ShoppingCart, DollarSign, ChevronRight, Download,
+  FileText, X, TrendingUp, ShoppingCart, DollarSign, ChevronRight, Download, Printer,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCustomers, useInvalidateCustomers } from "@/hooks/useCustomers";
@@ -13,6 +13,8 @@ import { addCustomer, updateCustomer, deleteCustomer } from "@/lib/firestore/cus
 import { computeByClient } from "@/lib/firestore/sales";
 import { fmtCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { PeriodSelect } from "@/components/ui/PeriodSelect";
+import type { Period } from "@/types";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { useUndoDelete } from "@/hooks/useUndoDelete";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -26,7 +28,8 @@ const EMPTY: Omit<Customer, "id" | "createdAt" | "updatedAt"> = {
 export default function ClientesPage() {
   const { user } = useAuth();
   const { customers, loading } = useCustomers();
-  const { sales } = useSales(90);
+  const [salesPeriod, setSalesPeriod] = useState<Period>(90);
+  const { sales } = useSales(salesPeriod);
   const invalidate  = useInvalidateCustomers();
   const undoDelete  = useUndoDelete();
 
@@ -132,15 +135,24 @@ export default function ClientesPage() {
       <PageHeader
         title="Clientes"
         subtitle={`${customers.length} cliente${customers.length !== 1 ? "s" : ""} registrado${customers.length !== 1 ? "s" : ""}`}
+        action={
+          <div className="flex items-center gap-2">
+            <PeriodSelect value={salesPeriod} onChange={setSalesPeriod} />
+            <button onClick={() => window.print()}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition print:hidden">
+              <Printer size={13} /> PDF
+            </button>
+          </div>
+        }
       />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total clientes",   value: customers.length,                                          icon: Users,       color: "text-brand-600 bg-brand-50" },
-          { label: "Con compras (90d)", value: clientStats.size,                                         icon: ShoppingCart, color: "text-emerald-600 bg-emerald-50" },
-          { label: "Ingresos (90d)",    value: fmtCurrency(sales.reduce((s, v) => s + v.totalRevenue, 0)), icon: DollarSign,  color: "text-amber-600 bg-amber-50" },
-          { label: "Ganancia (90d)",    value: fmtCurrency(sales.reduce((s, v) => s + v.profit, 0)),       icon: TrendingUp,  color: "text-purple-600 bg-purple-50" },
+          { label: `Con compras (${salesPeriod}d)`, value: clientStats.size,                                         icon: ShoppingCart, color: "text-emerald-600 bg-emerald-50" },
+          { label: `Ingresos (${salesPeriod}d)`,    value: fmtCurrency(sales.reduce((s, v) => s + v.totalRevenue, 0)), icon: DollarSign,  color: "text-amber-600 bg-amber-50" },
+          { label: `Ganancia (${salesPeriod}d)`,    value: fmtCurrency(sales.reduce((s, v) => s + v.profit, 0)),       icon: TrendingUp,  color: "text-purple-600 bg-purple-50" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>

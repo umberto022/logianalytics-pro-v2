@@ -308,6 +308,19 @@ export function computeByClient(sales: Sale[]): ClientStats[] {
   })).sort((a, b) => b.revenue - a.revenue);
 }
 
+export async function updateSalePaymentStatus(
+  uid: string,
+  saleId: string,
+  status: PaymentStatus
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    await updateDoc(doc(salesCol(uid), saleId), { paymentStatus: status, updatedAt: Timestamp.now() });
+    return { ok: true, message: "Estado actualizado" };
+  } catch (e: unknown) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error" };
+  }
+}
+
 export function computeDailyStats(sales: Sale[]): DailyStat[] {
   const map = new Map<string, DailyStat>();
   for (const s of sales) {

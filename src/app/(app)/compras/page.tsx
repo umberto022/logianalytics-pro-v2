@@ -14,11 +14,12 @@ import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { listInventory } from "@/lib/firestore/inventory";
-import { listSuppliers, type Supplier } from "@/lib/firestore/suppliers";
+import { type Supplier } from "@/lib/firestore/suppliers";
 import {
   listPurchaseOrders, createPurchaseOrder,
   deletePurchaseOrder, updatePurchaseOrder,
 } from "@/lib/firestore/purchases";
+import { useSuppliers } from "@/hooks/useSuppliers";
 import { purchaseOrderSchema, zodErrors } from "@/lib/schemas";
 import { fmtCurrency, fmt } from "@/lib/utils";
 import { usePagination } from "@/hooks/usePagination";
@@ -547,15 +548,15 @@ export default function ComprasPage() {
   const [detailOrder, setDetailOrder] = useState<PurchaseOrder | null>(null);
   const [receiveOrder, setReceiveOrder] = useState<PurchaseOrder | null>(null);
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const { suppliers } = useSuppliers();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [o, i, s] = await Promise.all([listPurchaseOrders(user.uid), listInventory(user.uid), listSuppliers(user.uid)]);
-      setOrders(o); setInventory(i); setSuppliers(s);
+      const [o, i] = await Promise.all([listPurchaseOrders(user.uid), listInventory(user.uid)]);
+      setOrders(o); setInventory(i);
     } catch { toast.error("Error al cargar datos"); }
     finally { setLoading(false); }
   }, [user]);

@@ -9,9 +9,11 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickSaleModal } from "@/components/ui/QuickSaleModal";
 import { ShortcutsModal } from "@/components/ui/ShortcutsModal";
 import { useStockNotifications } from "@/hooks/useStockNotifications";
+import { useOverdueOrders } from "@/hooks/useOverdueOrders";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   useStockNotifications();
+  useOverdueOrders();
   const { user, loading, logout, profile } = useAuth();
   const router = useRouter();
   const [saleOpen,      setSaleOpen]      = useState(false);

@@ -748,10 +748,16 @@ export default function VentasPage() {
         subtitle="Registra transacciones y analiza tu desempeño"
         action={
           tab === "history" && sales.length > 0 ? (
-            <button onClick={exportCSV}
-              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
-              <Download size={15} /> Exportar CSV
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={exportCSV}
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                <Download size={15} /> Exportar CSV
+              </button>
+              <button onClick={() => window.print()}
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition print:hidden">
+                <Receipt size={15} /> PDF
+              </button>
+            </div>
           ) : undefined
         }
       />

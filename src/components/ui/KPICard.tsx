@@ -8,6 +8,8 @@ interface KPICardProps {
   deltaType?: "positive" | "negative" | "neutral";
   icon?:      LucideIcon;
   color?:     "indigo" | "green" | "amber" | "red" | "blue";
+  onClick?:   () => void;
+  active?:    boolean;
 }
 
 const colorMap = {
@@ -25,11 +27,18 @@ const deltaColorMap = {
 };
 
 export function KPICard({
-  label, value, delta, deltaType = "neutral", icon: Icon, color = "indigo",
+  label, value, delta, deltaType = "neutral", icon: Icon, color = "indigo", onClick, active = false,
 }: KPICardProps) {
   const c = colorMap[color];
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group overflow-hidden relative">
+    <div
+      onClick={onClick}
+      className={cn(
+        "bg-white rounded-2xl border p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group overflow-hidden relative",
+        onClick ? "cursor-pointer" : "",
+        active ? "border-brand-400 ring-2 ring-brand-200" : "border-slate-100",
+      )}
+    >
       {/* Subtle top accent bar */}
       <div className={cn("absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity", c.bar)} />
 

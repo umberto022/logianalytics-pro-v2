@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Package,
   ClipboardList, Users, MoreHorizontal,
-  MapPin, TrendingUp, Settings, LogOut, X, Download, Store,
+  MapPin, TrendingUp, Settings, LogOut, X, Download, Store, CreditCard,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,10 +22,11 @@ const MAIN_NAV = [
 ];
 
 const MORE_NAV = [
-  { href: "/rutas",         label: "Rutas",         icon: MapPin     },
-  { href: "/proveedores",   label: "Proveedores",   icon: Store      },
-  { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp },
-  { href: "/configuracion", label: "Configuración", icon: Settings   },
+  { href: "/rutas",               label: "Rutas",           icon: MapPin    },
+  { href: "/proveedores",         label: "Proveedores",     icon: Store     },
+  { href: "/cuentas-por-cobrar",  label: "Por cobrar",      icon: CreditCard },
+  { href: "/rentabilidad",        label: "Rentabilidad",    icon: TrendingUp },
+  { href: "/configuracion",       label: "Configuración",   icon: Settings  },
 ];
 
 export function BottomNav() {

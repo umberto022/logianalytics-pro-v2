@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
   Settings, LogOut, Truck, Building2, MapPin, ClipboardList,
-  Users, Sun, Moon, Store,
+  Users, Sun, Moon, Store, CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/dashboard",     label: "Dashboard",     icon: LayoutDashboard, badge: null         },
   { href: "/ventas",        label: "Ventas",        icon: ShoppingCart,    badge: null         },
   { href: "/clientes",      label: "Clientes",      icon: Users,           badge: null         },
+  { href: "/cuentas-por-cobrar", label: "Por cobrar", icon: CreditCard,     badge: null         },
   { href: "/rutas",         label: "Rutas",         icon: MapPin,          badge: null         },
   { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp,      badge: null         },
   { href: "/compras",       label: "Compras",       icon: ClipboardList,   badge: null         },
