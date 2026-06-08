@@ -4,19 +4,31 @@ import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import {
   Store, Plus, Edit2, Trash2, X, CheckCircle2, Search,
-  Phone, Mail, MapPin, FileText, Download,
+  Phone, Mail, MapPin, FileText, Download, BarChart2,
+  ShoppingBag, DollarSign, Clock,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   listSuppliers, addSupplier, updateSupplier, deleteSupplier, type Supplier,
 } from "@/lib/firestore/suppliers";
+import { listPurchaseOrders } from "@/lib/firestore/purchases";
+import { supplierSchema, zodErrors } from "@/lib/schemas";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { fmtCurrency } from "@/lib/utils";
+import type { PurchaseOrder } from "@/types";
 import { useEffect } from "react";
 
 const EMPTY: Omit<Supplier, "id" | "createdAt"> = {
   name: "", rnc: "", phone: "", email: "", address: "", notes: "", active: true,
 };
+
+interface SupplierPerf {
+  orders: PurchaseOrder[];
+  totalSpent: number;
+  onTimeRate: number;
+}
 
 export default function ProveedoresPage() {
   const { user } = useAuth();
@@ -26,7 +38,12 @@ export default function ProveedoresPage() {
   const [showForm,  setShowForm]  = useState(false);
   const [editing,   setEditing]   = useState<Supplier | null>(null);
   const [form,      setForm]      = useState({ ...EMPTY });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [saving,    setSaving]    = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Supplier | null>(null);
+  const [perfSupplier, setPerfSupplier] = useState<Supplier | null>(null);
+  const [perfData,     setPerfData]     = useState<SupplierPerf | null>(null);
+  const [perfLoading,  setPerfLoading]  = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -41,32 +58,72 @@ export default function ProveedoresPage() {
   function openAdd() {
     setEditing(null);
     setForm({ ...EMPTY });
+    setFormErrors({});
     setShowForm(true);
   }
 
   function openEdit(s: Supplier) {
     setEditing(s);
     setForm({ name: s.name, rnc: s.rnc, phone: s.phone, email: s.email, address: s.address, notes: s.notes, active: s.active });
+    setFormErrors({});
     setShowForm(true);
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !form.name.trim()) { toast.error("El nombre es obligatorio"); return; }
+    if (!user) return;
+    const parsed = supplierSchema.safeParse(form);
+    if (!parsed.success) {
+      setFormErrors(zodErrors(parsed));
+      toast.error("Corrige los errores del formulario");
+      return;
+    }
+    setFormErrors({});
     setSaving(true);
     const r = editing
-      ? await updateSupplier(user.uid, editing.id, form)
-      : await addSupplier(user.uid, form);
+      ? await updateSupplier(user.uid, editing.id, parsed.data)
+      : await addSupplier(user.uid, parsed.data);
     setSaving(false);
     if (r.ok) { toast.success(r.message); await load(); setShowForm(false); }
     else toast.error(r.message);
   }
 
-  async function handleDelete(s: Supplier) {
-    if (!user || !confirm(`¿Eliminar "${s.name}"?`)) return;
+  function handleDelete(s: Supplier) {
+    setConfirmDelete(s);
+  }
+
+  async function doDelete() {
+    if (!user || !confirmDelete) return;
+    const s = confirmDelete;
+    setConfirmDelete(null);
     const r = await deleteSupplier(user.uid, s.id);
     if (r.ok) { toast.success(r.message); await load(); }
     else toast.error(r.message);
+  }
+
+  async function openPerf(s: Supplier) {
+    if (!user) return;
+    setPerfSupplier(s);
+    setPerfData(null);
+    setPerfLoading(true);
+    try {
+      const allOrders = await listPurchaseOrders(user.uid);
+      const orders = allOrders.filter((o) =>
+        o.supplierId === s.id || o.supplierName.toLowerCase() === s.name.toLowerCase()
+      );
+      const completed = orders.filter((o) => o.status === "recibida");
+      const totalSpent = completed.reduce((sum, o) => sum + o.total, 0);
+      const onTime = completed.filter((o) => {
+        if (!o.receivedDate || !o.expectedDate) return false;
+        return o.receivedDate.seconds <= o.expectedDate.seconds;
+      }).length;
+      const onTimeRate = completed.length > 0 ? (onTime / completed.length) * 100 : 0;
+      setPerfData({ orders, totalSpent, onTimeRate });
+    } catch {
+      toast.error("Error al cargar historial");
+    } finally {
+      setPerfLoading(false);
+    }
   }
 
   function exportCSV() {
@@ -85,8 +142,10 @@ export default function ProveedoresPage() {
     return !q || s.name.toLowerCase().includes(q) || s.rnc.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
   });
 
-  const total   = suppliers.length;
-  const active  = suppliers.filter((s) => s.active).length;
+  const total  = suppliers.length;
+  const active = suppliers.filter((s) => s.active).length;
+
+  const inp = "w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
 
   if (loading) return <FullPageSpinner />;
 
@@ -105,16 +164,17 @@ export default function ProveedoresPage() {
             <form onSubmit={handleSave} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 {([
-                  { label: "Nombre *",         key: "name"    as const, placeholder: "ej. Distribuidora ABC" },
-                  { label: "RNC / ID fiscal",  key: "rnc"     as const, placeholder: "ej. 1-31-12345-6"     },
-                  { label: "Teléfono",         key: "phone"   as const, placeholder: "809-555-0000"          },
-                  { label: "Email",            key: "email"   as const, placeholder: "compras@abc.com"       },
+                  { label: "Nombre *",        key: "name"  as const, placeholder: "ej. Distribuidora ABC" },
+                  { label: "RNC / ID fiscal", key: "rnc"   as const, placeholder: "ej. 1-31-12345-6" },
+                  { label: "Teléfono",        key: "phone" as const, placeholder: "809-555-0000" },
+                  { label: "Email",           key: "email" as const, placeholder: "compras@abc.com" },
                 ]).map(({ label, key, placeholder }) => (
                   <div key={key}>
                     <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
                     <input value={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
                       placeholder={placeholder}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                      className={`${inp} ${formErrors[key] ? "border-red-400" : "border-slate-200"}`} />
+                    {formErrors[key] && <p className="text-xs text-red-500 mt-0.5">{formErrors[key]}</p>}
                   </div>
                 ))}
               </div>
@@ -122,13 +182,13 @@ export default function ProveedoresPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
                 <input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
                   placeholder="Calle, ciudad, país"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className={`${inp} border-slate-200`} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Notas internas</label>
                 <textarea value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                   placeholder="Condiciones de pago, contacto, observaciones…" rows={2}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" />
+                  className={`${inp} border-slate-200 resize-none`} />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.active}
@@ -151,6 +211,100 @@ export default function ProveedoresPage() {
         </div>
       )}
 
+      {/* Performance modal */}
+      {perfSupplier && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setPerfSupplier(null); }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <h2 className="font-bold text-slate-900">{perfSupplier.name}</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Historial de performance</p>
+              </div>
+              <button onClick={() => setPerfSupplier(null)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6">
+              {perfLoading ? (
+                <div className="py-10 text-center text-slate-400 text-sm">Cargando datos…</div>
+              ) : perfData ? (
+                <>
+                  <div className="grid grid-cols-3 gap-3 mb-5">
+                    {[
+                      { label: "Órdenes", value: perfData.orders.length, icon: ShoppingBag, color: "text-indigo-600 bg-indigo-50" },
+                      { label: "Total comprado", value: fmtCurrency(perfData.totalSpent), icon: DollarSign, color: "text-emerald-600 bg-emerald-50" },
+                      { label: "A tiempo", value: `${Math.round(perfData.onTimeRate)}%`, icon: Clock, color: perfData.onTimeRate >= 80 ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50" },
+                    ].map(({ label, value, icon: Icon, color }) => (
+                      <div key={label} className="bg-slate-50 rounded-xl p-3 text-center">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1 ${color}`}>
+                          <Icon size={15} />
+                        </div>
+                        <p className="text-xs text-slate-500 mb-0.5">{label}</p>
+                        <p className="text-sm font-bold text-slate-900">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {perfData.orders.length === 0 ? (
+                    <p className="text-center text-sm text-slate-400 py-4">Sin órdenes de compra registradas para este proveedor.</p>
+                  ) : (
+                    <div className="rounded-xl border border-slate-100 overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-slate-50 text-slate-500">
+                            <th className="text-left px-3 py-2 font-medium">N° Orden</th>
+                            <th className="text-left px-3 py-2 font-medium">Fecha</th>
+                            <th className="text-right px-3 py-2 font-medium">Total</th>
+                            <th className="text-center px-3 py-2 font-medium">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {perfData.orders.slice(0, 10).map((o) => (
+                            <tr key={o.id} className="border-t border-slate-50">
+                              <td className="px-3 py-2 font-mono text-brand-600">{o.orderNumber}</td>
+                              <td className="px-3 py-2 text-slate-500">
+                                {o.createdAt?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "2-digit" }) ?? "—"}
+                              </td>
+                              <td className="px-3 py-2 text-right font-semibold text-slate-900">{fmtCurrency(o.total)}</td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`inline-block px-2 py-0.5 rounded-full font-medium ${
+                                  o.status === "recibida" ? "bg-emerald-50 text-emerald-700" :
+                                  o.status === "parcial"  ? "bg-blue-50 text-blue-700" :
+                                  o.status === "cancelada" ? "bg-red-50 text-red-700" :
+                                  "bg-amber-50 text-amber-700"
+                                }`}>
+                                  {o.status.charAt(0).toUpperCase() + o.status.slice(1)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {perfData.orders.length > 10 && (
+                        <p className="px-3 py-2 text-xs text-slate-400 bg-slate-50 border-t border-slate-100">
+                          Mostrando 10 de {perfData.orders.length} órdenes
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        title="Eliminar proveedor"
+        description={`¿Estás seguro de que deseas eliminar "${confirmDelete?.name}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={doDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
+
       <PageHeader
         title="Proveedores"
         subtitle={`${total} proveedor${total !== 1 ? "es" : ""} · ${active} activo${active !== 1 ? "s" : ""}`}
@@ -171,9 +325,9 @@ export default function ProveedoresPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total", value: total, color: "text-slate-800", bg: "bg-white" },
-          { label: "Activos", value: active, color: "text-emerald-700", bg: "bg-emerald-50" },
-          { label: "Inactivos", value: total - active, color: "text-slate-500", bg: "bg-white" },
+          { label: "Total",     value: total,             color: "text-slate-800",   bg: "bg-white" },
+          { label: "Activos",   value: active,            color: "text-emerald-700", bg: "bg-emerald-50" },
+          { label: "Inactivos", value: total - active,    color: "text-slate-500",   bg: "bg-white" },
           { label: "Con email", value: suppliers.filter(s => s.email).length, color: "text-indigo-700", bg: "bg-indigo-50" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={`${bg} rounded-2xl border border-slate-100 p-5 shadow-sm`}>
@@ -246,6 +400,10 @@ export default function ProveedoresPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">
+                      <button onClick={() => openPerf(s)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition" title="Ver historial">
+                        <BarChart2 size={14} />
+                      </button>
                       <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
                         <Edit2 size={14} />
                       </button>

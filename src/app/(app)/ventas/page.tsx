@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import {
@@ -14,9 +14,10 @@ import {
 } from "recharts";
 import Papa from "papaparse";
 import { useAuth } from "@/contexts/AuthContext";
-import { listInventory } from "@/lib/firestore/inventory";
+import { useInventory, useInvalidateInventory } from "@/hooks/useInventory";
+import { useSales, useInvalidateSales } from "@/hooks/useSales";
 import {
-  registerSaleOrder, getSales, computeSummary, computeDailyStats,
+  registerSaleOrder, computeSummary, computeDailyStats,
   computeByProduct, computeByClient,
 } from "@/lib/firestore/sales";
 import { fmtCurrency, fmt, fmtDate } from "@/lib/utils";
@@ -499,12 +500,15 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
 
 export default function VentasPage() {
   const { user, profile } = useAuth();
-  const [tab,     setTab]     = useState<Tab>("register");
-  const [items,   setItems]   = useState<InventoryItem[]>([]);
-  const [sales,   setSales]   = useState<Sale[]>([]);
-  const [period,  setPeriod]  = useState<Period>(30);
-  const [loading, setLoading] = useState(true);
-  const [saving,  setSaving]  = useState(false);
+  const [tab,     setTab]    = useState<Tab>("register");
+  const [period,  setPeriod] = useState<Period>(30);
+  const [saving,  setSaving] = useState(false);
+
+  const { items, loading: itemsLoading } = useInventory();
+  const { sales, loading: salesLoading, refetch: refetchSales } = useSales(period);
+  const invalidateInventory = useInvalidateInventory();
+  const invalidateSales     = useInvalidateSales();
+  const loading = itemsLoading || salesLoading;
 
   // Cart state
   const [showPicker,    setShowPicker]    = useState(false);
@@ -529,18 +533,6 @@ export default function VentasPage() {
   const [histPayFilter,  setHistPayFilter]  = useState<PaymentStatus | "all">("all");
   const [histSearch,     setHistSearch]     = useState("");
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const [inv, sl] = await Promise.all([listInventory(user.uid), getSales(user.uid, period)]);
-      setItems(inv);
-      setSales(sl);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, [user, period]);
-
-  useEffect(() => { load(); }, [load]);
 
   function addToCart(item: InventoryItem) {
     setCart((prev) => {
@@ -638,7 +630,8 @@ export default function VentasPage() {
       setClientRnc(""); setClientAddress(""); setClientPhone(""); setClientEmail("");
       setNotes(""); setNcf("");
       setPaymentStatus("pagado"); setDueDate("");
-      await load();
+      invalidateInventory();
+      invalidateSales();
     } else {
       toast.error(r.message);
     }

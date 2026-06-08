@@ -10,16 +10,56 @@ import { createCompany, getCompany, updateCompany } from "@/lib/firestore/compan
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
-import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon } from "lucide-react";
+import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck } from "lucide-react";
+import { listAuditLog, type AuditEntry, type AuditAction } from "@/lib/firestore/auditLog";
 import {
   isPushEnabled,
   setPushEnabled,
   requestNotificationPermission,
 } from "@/lib/notifications";
 
+const ACTION_LABELS: Record<AuditAction, string> = {
+  inventory_add:    "Producto agregado",
+  inventory_update: "Producto actualizado",
+  inventory_delete: "Producto eliminado",
+  stock_adjust:     "Ajuste de stock",
+  purchase_create:  "Orden creada",
+  purchase_update:  "Orden actualizada",
+  purchase_receive: "Orden recibida",
+  purchase_delete:  "Orden eliminada",
+  sale_register:    "Venta registrada",
+  customer_add:     "Cliente agregado",
+  customer_update:  "Cliente actualizado",
+  customer_delete:  "Cliente eliminado",
+  supplier_add:     "Proveedor agregado",
+  supplier_update:  "Proveedor actualizado",
+  supplier_delete:  "Proveedor eliminado",
+};
+
+const ACTION_COLOR: Record<AuditAction, string> = {
+  inventory_add: "bg-emerald-50 text-emerald-700",
+  inventory_update: "bg-blue-50 text-blue-700",
+  inventory_delete: "bg-red-50 text-red-700",
+  stock_adjust: "bg-amber-50 text-amber-700",
+  purchase_create: "bg-indigo-50 text-indigo-700",
+  purchase_update: "bg-blue-50 text-blue-700",
+  purchase_receive: "bg-emerald-50 text-emerald-700",
+  purchase_delete: "bg-red-50 text-red-700",
+  sale_register: "bg-purple-50 text-purple-700",
+  customer_add: "bg-emerald-50 text-emerald-700",
+  customer_update: "bg-blue-50 text-blue-700",
+  customer_delete: "bg-red-50 text-red-700",
+  supplier_add: "bg-emerald-50 text-emerald-700",
+  supplier_update: "bg-blue-50 text-blue-700",
+  supplier_delete: "bg-red-50 text-red-700",
+};
+
 export default function ConfiguracionPage() {
   const { user, profile, refreshProfile } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
+  const [auditLog,     setAuditLog]     = useState<AuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditDays,    setAuditDays]    = useState(7);
   const [pushEnabled, setPushEnabledState] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
 
@@ -79,6 +119,15 @@ export default function ConfiguracionPage() {
       });
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (!user) return;
+    setAuditLoading(true);
+    listAuditLog(user.uid, auditDays).then((entries) => {
+      setAuditLog(entries);
+      setAuditLoading(false);
+    });
+  }, [user, auditDays]);
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -329,6 +378,67 @@ export default function ConfiguracionPage() {
               />
             </button>
           </div>
+        </div>
+
+        {/* Audit Log */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={18} className="text-brand-600" />
+              <h2 className="font-semibold text-slate-700">Auditoría de actividad</h2>
+            </div>
+            <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+              {([7, 30, 90] as const).map((d) => (
+                <button key={d} onClick={() => setAuditDays(d)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${auditDays === d ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>
+                  {d}d
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {auditLoading ? (
+            <div className="py-10 text-center text-sm text-slate-400">Cargando…</div>
+          ) : auditLog.length === 0 ? (
+            <div className="py-10 text-center">
+              <History size={32} className="mx-auto mb-2 text-slate-300" />
+              <p className="text-sm text-slate-400">Sin actividad en los últimos {auditDays} días</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-xs text-slate-500">
+                    <th className="text-left px-4 py-2.5 font-medium">Acción</th>
+                    <th className="text-left px-4 py-2.5 font-medium">Entidad</th>
+                    <th className="text-left px-4 py-2.5 font-medium hidden sm:table-cell">Detalle</th>
+                    <th className="text-right px-4 py-2.5 font-medium">Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLog.slice(0, 50).map((e) => (
+                    <tr key={e.id} className="border-t border-slate-50 hover:bg-slate-50">
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ACTION_COLOR[e.action] ?? "bg-slate-100 text-slate-600"}`}>
+                          {ACTION_LABELS[e.action] ?? e.action}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 font-medium text-slate-800 max-w-[140px] truncate">{e.entityName}</td>
+                      <td className="px-4 py-2.5 text-slate-500 text-xs hidden sm:table-cell max-w-[200px] truncate">{e.detail}</td>
+                      <td className="px-4 py-2.5 text-right text-xs text-slate-400 whitespace-nowrap">
+                        {e.createdAt?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {auditLog.length > 50 && (
+                <p className="px-4 py-2 text-xs text-slate-400 bg-slate-50 border-t border-slate-100">
+                  Mostrando 50 de {auditLog.length} eventos
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
       </div>

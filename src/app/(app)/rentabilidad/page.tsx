@@ -1,17 +1,14 @@
 "use client";
 
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ScatterChart, Scatter, Cell, Treemap,
   PieChart, Pie,
 } from "recharts";
 import { TrendingUp, CalendarRange } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { getSales, getSalesByRange, computeSummary, computeByRoute, computeByProduct } from "@/lib/firestore/sales";
-import { listMovements, listMovementsByRange } from "@/lib/firestore/inventory";
+import { computeSummary, computeByRoute, computeByProduct } from "@/lib/firestore/sales";
+import { useRentabilidad } from "@/hooks/useRentabilidad";
 import { fmtCurrency, fmt, fmtDatetime } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
@@ -31,44 +28,13 @@ function daysAgoStr(n: number) {
 }
 
 export default function RentabilidadPage() {
-  const { user } = useAuth();
-  const [period,    setPeriod]    = useState<Period>(30);
-  const [dateMode,  setDateMode]  = useState<DateMode>("preset");
-  const [fromDate,  setFromDate]  = useState(daysAgoStr(30));
-  const [toDate,    setToDate]    = useState(todayStr());
-  const [tab,       setTab]       = useState<Tab>("routes");
-  const [loading,   setLoading]   = useState(true);
-  const [sales,     setSales]     = useState<Sale[]>([]);
-  const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const [period,   setPeriod]  = useState<Period>(30);
+  const [dateMode, setDateMode] = useState<DateMode>("preset");
+  const [fromDate, setFromDate] = useState(daysAgoStr(30));
+  const [toDate,   setToDate]   = useState(todayStr());
+  const [tab,      setTab]      = useState<Tab>("routes");
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      let sl: Sale[], mv: InventoryMovement[];
-      if (dateMode === "custom") {
-        const from = new Date(fromDate + "T00:00:00");
-        const to   = new Date(toDate   + "T23:59:59");
-        [sl, mv] = await Promise.all([
-          getSalesByRange(user.uid, from, to),
-          listMovementsByRange(user.uid, from, to),
-        ]);
-      } else {
-        [sl, mv] = await Promise.all([
-          getSales(user.uid, period),
-          listMovements(user.uid, period),
-        ]);
-      }
-      setSales(sl);
-      setMovements(mv);
-    } catch {
-      // silently handle errors — KPIs will show zeros
-    } finally {
-      setLoading(false);
-    }
-  }, [user, period, dateMode, fromDate, toDate]);
-
-  useEffect(() => { load(); }, [load]);
+  const { sales, movements, loading } = useRentabilidad(dateMode, period, fromDate, toDate);
 
   const summary  = computeSummary(sales);
   const routes   = computeByRoute(sales);

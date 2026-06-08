@@ -11,6 +11,7 @@ import {
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { listInventory } from "@/lib/firestore/inventory";
 import { listSuppliers, type Supplier } from "@/lib/firestore/suppliers";
@@ -18,6 +19,7 @@ import {
   listPurchaseOrders, createPurchaseOrder,
   deletePurchaseOrder, updatePurchaseOrder,
 } from "@/lib/firestore/purchases";
+import { purchaseOrderSchema, zodErrors } from "@/lib/schemas";
 import { fmtCurrency, fmt } from "@/lib/utils";
 import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/ui/Pagination";
@@ -287,6 +289,7 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
     initialItems
   );
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [productSearch, setProductSearch] = useState("");
 
   const TAX_RATE = 0.18;
@@ -326,9 +329,14 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    if (!fields.supplierName.trim()) { toast.error("El nombre del proveedor es obligatorio"); return; }
+    const parsed = purchaseOrderSchema.safeParse(fields);
+    if (!parsed.success) {
+      setFieldErrors(zodErrors(parsed));
+      toast.error("Corrige los errores del formulario");
+      return;
+    }
     if (items.length === 0) { toast.error("Agrega al menos un producto"); return; }
-    if (!fields.expectedDate) { toast.error("La fecha esperada es obligatoria"); return; }
+    setFieldErrors({});
 
     setSaving(true);
     const payload = {
@@ -390,13 +398,15 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
                 <div key={key}>
                   <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
                   <input value={fields[key]} onChange={setF(key)} placeholder={placeholder}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${fieldErrors[key] ? "border-red-400" : "border-slate-200"}`} />
+                  {fieldErrors[key] && <p className="text-xs text-red-500 mt-0.5">{fieldErrors[key]}</p>}
                 </div>
               ))}
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Fecha esperada de entrega *</label>
                 <input type="date" value={fields.expectedDate} onChange={setF("expectedDate")}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${fieldErrors.expectedDate ? "border-red-400" : "border-slate-200"}`} />
+                {fieldErrors.expectedDate && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.expectedDate}</p>}
               </div>
               {editOrder && (
                 <div>
@@ -538,6 +548,7 @@ export default function ComprasPage() {
   const [receiveOrder, setReceiveOrder] = useState<PurchaseOrder | null>(null);
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -564,8 +575,14 @@ export default function ComprasPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleDelete(id: string) {
-    if (!confirm("¿Eliminar esta orden?") || !user) return;
+  function handleDelete(id: string) {
+    setConfirmDeleteId(id);
+  }
+
+  async function doDelete() {
+    if (!confirmDeleteId || !user) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     const r = await deletePurchaseOrder(user.uid, id);
     if (r.ok) { toast.success(r.message); load(); }
     else toast.error(r.message);
@@ -616,6 +633,15 @@ export default function ComprasPage() {
           onClose={() => setReceiveOrder(null)}
           onDone={load} />
       )}
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Eliminar orden"
+        description="¿Estás seguro de que deseas eliminar esta orden de compra? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={doDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
 
       <PageHeader
         title="Compras"

@@ -15,6 +15,8 @@ import { fmtCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { useUndoDelete } from "@/hooks/useUndoDelete";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { customerSchema, zodErrors } from "@/lib/schemas";
 import type { Customer } from "@/types";
 
 const EMPTY: Omit<Customer, "id" | "createdAt" | "updatedAt"> = {
@@ -35,6 +37,8 @@ export default function ClientesPage() {
   const [initialForm, setInitialForm] = useState({ ...EMPTY });
   const [saving, setSaving]       = useState(false);
   const [detail, setDetail]       = useState<Customer | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [showDirtyConfirm, setShowDirtyConfirm] = useState(false);
 
   const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
 
@@ -52,7 +56,7 @@ export default function ClientesPage() {
   }
 
   function tryCloseModal() {
-    if (isDirty && !confirm("Hay cambios sin guardar. ¿Cerrar de todas formas?")) return;
+    if (isDirty) { setShowDirtyConfirm(true); return; }
     setShowModal(false);
   }
 
@@ -87,8 +91,14 @@ export default function ClientesPage() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { toast.error("El nombre es obligatorio"); return; }
     if (!user) return;
+    const parsed = customerSchema.safeParse(form);
+    if (!parsed.success) {
+      setFormErrors(zodErrors(parsed));
+      toast.error("Corrige los errores del formulario");
+      return;
+    }
+    setFormErrors({});
     setSaving(true);
     const result = editing
       ? await updateCustomer(user.uid, editing.id, form)
@@ -246,7 +256,9 @@ export default function ClientesPage() {
             <div className="space-y-4">
               <div>
                 <label className={lbl}>Nombre *</label>
-                <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className={inp} placeholder="Nombre del cliente o empresa" />
+                <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  className={`${inp} ${formErrors.name ? "border-red-400" : ""}`} placeholder="Nombre del cliente o empresa" />
+                {formErrors.name && <p className="text-xs text-red-500 mt-0.5">{formErrors.name}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -260,7 +272,9 @@ export default function ClientesPage() {
               </div>
               <div>
                 <label className={lbl}>Email</label>
-                <input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className={inp} placeholder="cliente@empresa.com" />
+                <input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  className={`${inp} ${formErrors.email ? "border-red-400" : ""}`} placeholder="cliente@empresa.com" />
+                {formErrors.email && <p className="text-xs text-red-500 mt-0.5">{formErrors.email}</p>}
               </div>
               <div>
                 <label className={lbl}>Dirección</label>
@@ -361,6 +375,15 @@ export default function ClientesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showDirtyConfirm}
+        title="Cambios sin guardar"
+        description="Tienes cambios sin guardar. ¿Cerrar de todas formas?"
+        confirmLabel="Cerrar sin guardar"
+        onConfirm={() => { setShowDirtyConfirm(false); setShowModal(false); }}
+        onCancel={() => setShowDirtyConfirm(false)}
+      />
 
     </div>
   );

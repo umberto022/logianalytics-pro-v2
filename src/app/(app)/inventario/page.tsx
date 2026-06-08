@@ -35,6 +35,7 @@ import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { InventoryItem, InventoryMovement, PurchaseOrder, PurchaseOrderStatus, StockStatus } from "@/types";
 import { inventorySchema } from "@/lib/schemas";
 import { z } from "zod";
@@ -1141,6 +1142,7 @@ export default function InventarioPage() {
   const [adjustItem,   setAdjustItem]   = useState<InventoryItem | null>(null);
   const [qrItem,       setQrItem]       = useState<InventoryItem | null>(null);
   const [detailItem,   setDetailItem]   = useState<InventoryItem | null>(null);
+  const [confirmDeleteItem, setConfirmDeleteItem] = useState<InventoryItem | null>(null);
 
   // Suppliers
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -1192,8 +1194,14 @@ export default function InventarioPage() {
     else toast.error(r.message);
   }
 
-  async function handleDelete(item: InventoryItem) {
-    if (!confirm(`¿Eliminar "${item.name}"?`) || !user) return;
+  function handleDelete(item: InventoryItem) {
+    setConfirmDeleteItem(item);
+  }
+
+  async function doDeleteItem() {
+    if (!confirmDeleteItem || !user) return;
+    const item = confirmDeleteItem;
+    setConfirmDeleteItem(null);
     const r = await deleteInventoryItem(user.uid, item.id);
     if (r.ok) { toast.success(r.message); await load(); }
     else toast.error(r.message);
@@ -1373,8 +1381,15 @@ export default function InventarioPage() {
       {qrItem && (
         <QRModal item={qrItem} onClose={() => setQrItem(null)} />
       )}
-
-
+      <ConfirmModal
+        isOpen={!!confirmDeleteItem}
+        title="Eliminar producto"
+        description={`¿Estás seguro de que deseas eliminar "${confirmDeleteItem?.name}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={doDeleteItem}
+        onCancel={() => setConfirmDeleteItem(null)}
+      />
 
       <PageHeader
         title="Inventario"
