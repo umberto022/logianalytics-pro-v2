@@ -13,11 +13,11 @@ interface KPICardProps {
 }
 
 const colorMap = {
-  indigo: { icon: "bg-indigo-50 text-indigo-600",  bar: "bg-indigo-500" },
-  green:  { icon: "bg-emerald-50 text-emerald-600", bar: "bg-emerald-500" },
-  amber:  { icon: "bg-amber-50 text-amber-600",     bar: "bg-amber-500" },
-  red:    { icon: "bg-red-50 text-red-600",         bar: "bg-red-500" },
-  blue:   { icon: "bg-blue-50 text-blue-600",       bar: "bg-blue-500" },
+  indigo: { icon: "bg-indigo-50 text-indigo-600",   bar: "bg-indigo-500",   btn: "text-indigo-600 group-hover:bg-indigo-50"  },
+  green:  { icon: "bg-emerald-50 text-emerald-600", bar: "bg-emerald-500",  btn: "text-emerald-600 group-hover:bg-emerald-50" },
+  amber:  { icon: "bg-amber-50 text-amber-600",     bar: "bg-amber-500",    btn: "text-amber-600 group-hover:bg-amber-50"    },
+  red:    { icon: "bg-red-50 text-red-600",         bar: "bg-red-500",      btn: "text-red-600 group-hover:bg-red-50"        },
+  blue:   { icon: "bg-blue-50 text-blue-600",       bar: "bg-blue-500",     btn: "text-blue-600 group-hover:bg-blue-50"      },
 };
 
 const deltaColorMap = {
@@ -33,46 +33,51 @@ export function KPICard({
   return (
     <div
       onClick={onClick}
-      title={onClick ? "Clic para ver desglose" : undefined}
       className={cn(
-        "bg-white rounded-2xl border p-5 shadow-sm transition-all duration-200 group overflow-hidden relative select-none",
-        onClick ? "cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]" : "hover:shadow-md hover:-translate-y-0.5",
-        active ? "border-brand-500 ring-2 ring-brand-200 shadow-md" : "border-slate-100",
+        "bg-white rounded-2xl border transition-all duration-200 group overflow-hidden relative select-none flex flex-col",
+        onClick ? "cursor-pointer hover:shadow-lg active:scale-[0.98]" : "hover:shadow-md",
+        active ? "border-brand-500 ring-2 ring-brand-200 shadow-md -translate-y-0.5" : "border-slate-100 shadow-sm",
       )}
     >
-      {/* Top accent bar — always visible when active, hover otherwise */}
+      {/* Top accent bar */}
       <div className={cn(
-        "absolute top-0 left-0 right-0 h-0.5 transition-opacity",
+        "absolute top-0 left-0 right-0 h-1 transition-opacity",
         c.bar,
-        active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+        active ? "opacity-100" : "opacity-0 group-hover:opacity-60",
       )} />
 
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-1.5">
+      <div className="p-5 flex-1">
+        <div className="flex items-start justify-between mb-3">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
-          {onClick && (
-            <ChevronDown
-              size={12}
-              className={cn(
-                "text-slate-300 transition-transform duration-200 mt-px",
-                active ? "rotate-180 text-brand-400" : "group-hover:text-slate-400",
-              )}
-            />
+          {Icon && (
+            <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", c.icon)}>
+              <Icon size={17} />
+            </div>
           )}
         </div>
-        {Icon && (
-          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", c.icon)}>
-            <Icon size={17} />
-          </div>
+        <p className="text-2xl font-bold text-slate-900 leading-none mb-1 tracking-tight">{value}</p>
+        {delta && (
+          <p className={cn("text-xs font-medium mt-1.5 flex items-center gap-1", deltaColorMap[deltaType])}>
+            {deltaType === "positive" && "↑"}
+            {deltaType === "negative" && "↓"}
+            {delta}
+          </p>
         )}
       </div>
-      <p className="text-2xl font-bold text-slate-900 leading-none mb-1 tracking-tight">{value}</p>
-      {delta && (
-        <p className={cn("text-xs font-medium mt-1.5 flex items-center gap-1", deltaColorMap[deltaType])}>
-          {deltaType === "positive" && "↑"}
-          {deltaType === "negative" && "↓"}
-          {delta}
-        </p>
+
+      {/* "Ver desglose" footer — only when clickable */}
+      {onClick && (
+        <div className={cn(
+          "flex items-center justify-between px-5 py-2.5 border-t border-slate-100 text-xs font-semibold transition-colors",
+          c.btn,
+          active ? "bg-slate-50" : "",
+        )}>
+          <span>{active ? "Ocultar desglose" : "Ver desglose"}</span>
+          <ChevronDown
+            size={14}
+            className={cn("transition-transform duration-200", active ? "rotate-180" : "")}
+          />
+        </div>
       )}
     </div>
   );

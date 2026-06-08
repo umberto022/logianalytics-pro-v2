@@ -185,7 +185,7 @@ export default function DashboardPage() {
 
       {/* KPI detail panel */}
       {activeKPI && (
-        <div className={`bg-white rounded-2xl border shadow-md p-5 mb-6 animate-slide-up ${
+        <div className={`bg-white rounded-2xl border shadow-md p-5 mb-6 ${
           activeKPI === "revenue"   ? "border-indigo-200" :
           activeKPI === "profit"    ? "border-emerald-200" :
           activeKPI === "sales"     ? "border-blue-200" :
