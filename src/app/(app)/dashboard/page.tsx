@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { format, subDays } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, Treemap, Cell, PieChart, Pie,
@@ -53,6 +53,21 @@ export default function DashboardPage() {
 
   const marginPct = summary.revenue > 0 ? summary.profit / summary.revenue * 100 : 0;
   const invValue  = items.reduce((s, i) => s + i.currentStock * i.unitCost, 0);
+
+  // Month-over-month delta (always computed from the full 180-day cache)
+  const now = new Date();
+  const curMonthStart  = startOfMonth(now);
+  const prevMonthStart = startOfMonth(subDays(curMonthStart, 1));
+  const prevMonthEnd   = endOfMonth(prevMonthStart);
+  const curMonthSales  = allSales.filter((s) => { const d = s.saleDate.toDate(); return d >= curMonthStart && d <= now; });
+  const prevMonthSales = allSales.filter((s) => { const d = s.saleDate.toDate(); return d >= prevMonthStart && d <= prevMonthEnd; });
+  const curRevenue  = computeSummary(curMonthSales).revenue;
+  const prevRevenue = computeSummary(prevMonthSales).revenue;
+  const curProfit   = computeSummary(curMonthSales).profit;
+  const prevProfit  = computeSummary(prevMonthSales).profit;
+  const revDelta  = prevRevenue > 0 ? ((curRevenue - prevRevenue) / prevRevenue) * 100 : null;
+  const profDelta = prevProfit  > 0 ? ((curProfit  - prevProfit)  / prevProfit)  * 100 : null;
+  const fmtDelta  = (d: number | null) => d === null ? "vs mes ant." : `${d >= 0 ? "+" : ""}${d.toFixed(1)}% vs mes ant.`;
 
   const criticalItems = items.filter((i) => getStockStatus(i) === "critical");
   const lowItems      = items.filter((i) => getStockStatus(i) === "low");
@@ -115,10 +130,13 @@ export default function DashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <KPICard label="Ingresos"          value={fmtCurrency(summary.revenue)}    icon={DollarSign}   color="indigo" />
+        <KPICard label="Ingresos"          value={fmtCurrency(summary.revenue)}    icon={DollarSign}   color="indigo"
+          delta={fmtDelta(revDelta)}
+          deltaType={revDelta === null ? "neutral" : revDelta >= 0 ? "positive" : "negative"}
+        />
         <KPICard label="Ganancia"          value={fmtCurrency(summary.profit)}     icon={TrendingUp}   color="green"
-          delta={`Margen ${fmt(marginPct, 1)}%`}
-          deltaType={marginPct >= 20 ? "positive" : marginPct >= 10 ? "neutral" : "negative"}
+          delta={profDelta !== null ? fmtDelta(profDelta) : `Margen ${fmt(marginPct, 1)}%`}
+          deltaType={profDelta === null ? (marginPct >= 20 ? "positive" : marginPct >= 10 ? "neutral" : "negative") : profDelta >= 0 ? "positive" : "negative"}
         />
         <KPICard label="Ventas"            value={fmt(summary.numSales, 0)}        icon={ShoppingCart} color="blue"  />
         <KPICard label="Valor inventario"  value={fmtCurrency(invValue)}           icon={Package}      color="amber" />

@@ -16,6 +16,7 @@ import Papa from "papaparse";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInventory, useInvalidateInventory } from "@/hooks/useInventory";
 import { useSales, useInvalidateSales } from "@/hooks/useSales";
+import { useCustomers } from "@/hooks/useCustomers";
 import {
   registerSaleOrder, computeSummary, computeDailyStats,
   computeByProduct, computeByClient,
@@ -506,6 +507,7 @@ export default function VentasPage() {
 
   const { items, loading: itemsLoading } = useInventory();
   const { sales, loading: salesLoading, refetch: refetchSales } = useSales(period);
+  const { customers } = useCustomers();
   const invalidateInventory = useInvalidateInventory();
   const invalidateSales     = useInvalidateSales();
   const loading = itemsLoading || salesLoading;
@@ -846,11 +848,40 @@ export default function VentasPage() {
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
                   <h3 className="text-sm font-semibold text-slate-700">Datos del cliente</h3>
 
-                  {/* Client name — full width */}
-                  <div>
+                  {/* Client name — autocomplete from saved customers */}
+                  <div className="relative">
                     <label className="block text-xs font-medium text-slate-600 mb-1">Nombre / Razón social *</label>
+                    {customers.length > 0 && !client && (
+                      <div className="mb-1.5">
+                        <select
+                          defaultValue=""
+                          onChange={(e) => {
+                            const c = customers.find((x) => x.id === e.target.value);
+                            if (c) {
+                              setClient(c.name);
+                              setClientRnc(c.rnc);
+                              setClientPhone(c.phone);
+                              setClientEmail(c.email);
+                              setClientAddress(c.address);
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                        >
+                          <option value="">— Seleccionar cliente guardado —</option>
+                          {customers.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="Nombre o empresa"
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    {client && (
+                      <button type="button" onClick={() => { setClient(""); setClientRnc(""); setClientPhone(""); setClientEmail(""); setClientAddress(""); }}
+                        className="absolute right-2 bottom-2 text-slate-400 hover:text-slate-600">
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
 
                   {/* RNC + Phone */}

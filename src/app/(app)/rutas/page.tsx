@@ -12,6 +12,7 @@ import { KPICard } from "@/components/ui/KPICard";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { Period, RouteStats } from "@/types";
 
 const RouteMap = dynamic(() => import("@/components/map/RouteMap"), {
@@ -40,6 +41,7 @@ export default function RutasPage() {
   const [editing,      setEditing]      = useState<RouteRecord | null>(null);
   const [form,         setForm]         = useState({ ...EMPTY_ROUTE });
   const [saving,       setSaving]       = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<RouteRecord | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -76,8 +78,10 @@ export default function RutasPage() {
     finally { setSaving(false); }
   }
 
-  async function handleDelete(r: RouteRecord) {
-    if (!user || !confirm(`¿Eliminar la ruta "${r.name}"?`)) return;
+  async function doDelete() {
+    if (!user || !confirmDelete) return;
+    const r = confirmDelete;
+    setConfirmDelete(null);
     await deleteRoute(user.uid, r.id);
     toast.success("Ruta eliminada");
     await load();
@@ -216,7 +220,7 @@ export default function RutasPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
                           <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition"><Edit2 size={14} /></button>
-                          <button onClick={() => handleDelete(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"><Trash2 size={14} /></button>
+                          <button onClick={() => setConfirmDelete(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -389,6 +393,16 @@ export default function RutasPage() {
         </div>
       </div>
       </div>)}
+
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        title="Eliminar ruta"
+        description={`¿Eliminar la ruta "${confirmDelete?.name}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={doDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

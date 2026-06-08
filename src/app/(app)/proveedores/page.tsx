@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import {
   Store, Plus, Edit2, Trash2, X, CheckCircle2, Search,
@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  listSuppliers, addSupplier, updateSupplier, deleteSupplier, type Supplier,
+  addSupplier, updateSupplier, deleteSupplier, type Supplier,
 } from "@/lib/firestore/suppliers";
 import { listPurchaseOrders } from "@/lib/firestore/purchases";
 import { supplierSchema, zodErrors } from "@/lib/schemas";
@@ -17,8 +17,8 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { fmtCurrency } from "@/lib/utils";
+import { useSuppliers, useInvalidateSuppliers } from "@/hooks/useSuppliers";
 import type { PurchaseOrder } from "@/types";
-import { useEffect } from "react";
 
 const EMPTY: Omit<Supplier, "id" | "createdAt"> = {
   name: "", rnc: "", phone: "", email: "", address: "", notes: "", active: true,
@@ -32,8 +32,8 @@ interface SupplierPerf {
 
 export default function ProveedoresPage() {
   const { user } = useAuth();
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading,   setLoading]   = useState(true);
+  const { suppliers, loading, refetch } = useSuppliers();
+  const invalidate = useInvalidateSuppliers();
   const [search,    setSearch]    = useState("");
   const [showForm,  setShowForm]  = useState(false);
   const [editing,   setEditing]   = useState<Supplier | null>(null);
@@ -44,16 +44,6 @@ export default function ProveedoresPage() {
   const [perfSupplier, setPerfSupplier] = useState<Supplier | null>(null);
   const [perfData,     setPerfData]     = useState<SupplierPerf | null>(null);
   const [perfLoading,  setPerfLoading]  = useState(false);
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try { setSuppliers(await listSuppliers(user.uid)); }
-    catch { toast.error("Error al cargar proveedores"); }
-    finally { setLoading(false); }
-  }, [user]);
-
-  useEffect(() => { load(); }, [load]);
 
   function openAdd() {
     setEditing(null);
@@ -84,7 +74,7 @@ export default function ProveedoresPage() {
       ? await updateSupplier(user.uid, editing.id, parsed.data)
       : await addSupplier(user.uid, parsed.data);
     setSaving(false);
-    if (r.ok) { toast.success(r.message); await load(); setShowForm(false); }
+    if (r.ok) { toast.success(r.message); invalidate(); setShowForm(false); }
     else toast.error(r.message);
   }
 
@@ -97,7 +87,7 @@ export default function ProveedoresPage() {
     const s = confirmDelete;
     setConfirmDelete(null);
     const r = await deleteSupplier(user.uid, s.id);
-    if (r.ok) { toast.success(r.message); await load(); }
+    if (r.ok) { toast.success(r.message); invalidate(); }
     else toast.error(r.message);
   }
 
