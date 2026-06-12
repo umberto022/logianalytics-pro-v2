@@ -50,8 +50,8 @@ export default function RutasPage() {
       const [sl, rr] = await Promise.all([getSales(user.uid, period), listRoutes(user.uid)]);
       setRoutes(computeByRoute(sl));
       setManaged(rr);
-    } catch (e) {
-      console.error("rutas load error:", e);
+    } catch {
+      toast.error("Error al cargar rutas");
     } finally {
       setLoading(false);
     }
@@ -62,27 +62,24 @@ export default function RutasPage() {
   async function handleSave() {
     if (!form.name.trim() || !user) { toast.error("El nombre es obligatorio"); return; }
     setSaving(true);
-    try {
-      if (editing) {
-        await updateRoute(user.uid, editing.id, form);
-        toast.success("Ruta actualizada");
-      } else {
-        await addRoute(user.uid, form);
-        toast.success("Ruta creada");
-      }
-      await load();
-      setShowForm(false);
-      setEditing(null);
-      setForm({ ...EMPTY_ROUTE });
-    } catch { toast.error("Error al guardar"); }
-    finally { setSaving(false); }
+    const result = editing
+      ? await updateRoute(user.uid, editing.id, form)
+      : await addRoute(user.uid, form);
+    setSaving(false);
+    if (!result.ok) { toast.error(result.message ?? "Error al guardar"); return; }
+    toast.success(editing ? "Ruta actualizada" : "Ruta creada");
+    await load();
+    setShowForm(false);
+    setEditing(null);
+    setForm({ ...EMPTY_ROUTE });
   }
 
   async function doDelete() {
     if (!user || !confirmDelete) return;
     const r = confirmDelete;
     setConfirmDelete(null);
-    await deleteRoute(user.uid, r.id);
+    const result = await deleteRoute(user.uid, r.id);
+    if (!result.ok) { toast.error(result.message ?? "Error al eliminar"); return; }
     toast.success("Ruta eliminada");
     await load();
   }

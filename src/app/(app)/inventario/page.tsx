@@ -68,6 +68,10 @@ function useCounter(target: number, duration = 600) {
   return value;
 }
 
+function esc(s: string | undefined | null) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // ─── Stat card ───────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, sub, icon: Icon, color, active, onClick }: {
@@ -848,7 +852,7 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
 
   function printNeedsList() {
     const rows = needRestock.map((i) =>
-      `<tr><td>${i.sku}</td><td>${i.name}</td><td>${i.supplier || "—"}</td>
+      `<tr><td>${esc(i.sku)}</td><td>${esc(i.name)}</td><td>${esc(i.supplier) || "—"}</td>
        <td style="text-align:center">${i.currentStock}</td>
        <td style="text-align:center">${i.qtyNeeded}</td>
        <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
@@ -881,7 +885,7 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
 
   function printPurchaseOrder(order: PurchaseOrder) {
     const rows = order.items.map((i) =>
-      `<tr><td>${i.sku}</td><td>${i.productName}</td><td>${i.category}</td>
+      `<tr><td>${esc(i.sku)}</td><td>${esc(i.productName)}</td><td>${esc(i.category)}</td>
        <td style="text-align:center">${i.qtyOrdered}</td>
        <td style="text-align:center">${i.qtyReceived}</td>
        <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
@@ -1244,8 +1248,8 @@ export default function InventarioPage() {
     const rows = items.map(({ sku, name, category, color, currentStock, minStock, maxStock, unitCost, salePrice, supplier }) =>
       ({ sku, producto: name, tipo: category, color, stock: currentStock, stock_minimo: minStock, stock_maximo: maxStock, costo: unitCost, precio_venta: salePrice, proveedor: supplier })
     );
-    const csv = Papa.unparse(rows);
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const csv = "﻿" + Papa.unparse(rows);
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a"); a.href = url;
     a.download = `inventario_${new Date().toISOString().slice(0,10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
@@ -1254,7 +1258,7 @@ export default function InventarioPage() {
   function exportPDF() {
     const rows = filtered.map((i) =>
       `<tr>
-        <td>${i.sku}</td><td>${i.name}</td><td>${i.category}</td>
+        <td>${esc(i.sku)}</td><td>${esc(i.name)}</td><td>${esc(i.category)}</td>
         <td style="text-align:center">${i.currentStock}</td>
         <td style="text-align:center">${i.minStock}</td>
         <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
@@ -1308,7 +1312,13 @@ export default function InventarioPage() {
           unitCost:     Number(r.costo || r.unitCost || 0),
           salePrice:    Number(r.precio_venta || r.salePrice || 0),
           leadTimeDays: 7, imageUrl: "",
-        })).filter((r) => r.name && r.category);
+        })).filter((r) => {
+          if (!r.name || !r.category) return false;
+          if (r.currentStock < 0 || r.minStock < 0 || r.maxStock < 1) return false;
+          if (r.unitCost < 0 || r.salePrice < 0) return false;
+          if (r.maxStock < r.minStock) return false;
+          return true;
+        });
         if (!rows.length) { toast.error("No se encontraron filas válidas"); return; }
         const { imported, errors } = await bulkAddInventory(user.uid, rows);
         toast.success(`${imported} productos importados`);

@@ -18,6 +18,8 @@ import type { Period } from "@/types";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { useUndoDelete } from "@/hooks/useUndoDelete";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { usePagination } from "@/hooks/usePagination";
+import { Pagination } from "@/components/ui/Pagination";
 import { customerSchema, zodErrors } from "@/lib/schemas";
 import type { Customer } from "@/types";
 
@@ -77,6 +79,8 @@ export default function ClientesPage() {
       c.email.toLowerCase().includes(search.toLowerCase()) ||
       c.rnc.includes(search)
     ), [customers, search]);
+
+  const pagination = usePagination(filtered, 25);
 
   function openAdd() {
     setEditing(null);
@@ -195,6 +199,7 @@ export default function ClientesPage() {
             {!search && <p className="text-slate-400 text-sm mt-1">Agrega tu primer cliente con el botón de arriba</p>}
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
@@ -205,7 +210,7 @@ export default function ClientesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filtered.map((c) => {
+                {pagination.paged.map((c) => {
                   const stats = clientStats.get(c.name.toLowerCase());
                   return (
                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
@@ -248,6 +253,14 @@ export default function ClientesPage() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            pageSize={25}
+            onPage={pagination.setPage}
+          />
+          </>
         )}
       </div>
 

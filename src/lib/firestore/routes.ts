@@ -17,26 +17,44 @@ const col = (uid: string) =>
   collection(db, "users", uid, "routes");
 
 export async function listRoutes(uid: string): Promise<RouteRecord[]> {
-  const snap = await getDocs(query(col(uid), orderBy("createdAt", "desc")));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as RouteRecord));
+  try {
+    const snap = await getDocs(query(col(uid), orderBy("createdAt", "desc")));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as RouteRecord));
+  } catch {
+    return [];
+  }
 }
 
 export async function addRoute(
   uid: string,
   data: Omit<RouteRecord, "id" | "createdAt">
-): Promise<{ ok: true; id: string }> {
-  const ref = await addDoc(col(uid), { ...data, createdAt: Timestamp.now() });
-  return { ok: true, id: ref.id };
+): Promise<{ ok: boolean; id?: string; message?: string }> {
+  try {
+    const ref = await addDoc(col(uid), { ...data, createdAt: Timestamp.now() });
+    return { ok: true, id: ref.id };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error al guardar ruta" };
+  }
 }
 
 export async function updateRoute(
   uid: string,
   id: string,
   data: Partial<Omit<RouteRecord, "id" | "createdAt">>
-): Promise<void> {
-  await updateDoc(doc(col(uid), id), data);
+): Promise<{ ok: boolean; message?: string }> {
+  try {
+    await updateDoc(doc(col(uid), id), data);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error al actualizar ruta" };
+  }
 }
 
-export async function deleteRoute(uid: string, id: string): Promise<void> {
-  await deleteDoc(doc(col(uid), id));
+export async function deleteRoute(uid: string, id: string): Promise<{ ok: boolean; message?: string }> {
+  try {
+    await deleteDoc(doc(col(uid), id));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error al eliminar ruta" };
+  }
 }
