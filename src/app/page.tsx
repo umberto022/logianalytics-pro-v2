@@ -1,11 +1,32 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Truck, BarChart3, Package, ShoppingCart, TrendingUp,
-  MapPin, ClipboardList, ArrowRight, CheckCircle, Download,
+  MapPin, ClipboardList, ArrowRight, CheckCircle,
 } from "lucide-react";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { LandingInstallButtonHeader, LandingInstallButtonHero } from "@/components/ui/LandingInstallButton";
+
+export const metadata: Metadata = {
+  title: "LogiAnalytics Pro — Gestión logística para negocios",
+  description:
+    "Gestiona inventario, ventas, compras y rentabilidad en una sola plataforma. Datos en tiempo real, desde cualquier dispositivo. Hecho para negocios latinoamericanos.",
+  openGraph: {
+    title: "LogiAnalytics Pro — Gestión logística para negocios",
+    description:
+      "Inventario, ventas, compras y rentabilidad en una sola plataforma. En tiempo real, desde cualquier dispositivo.",
+    type: "website",
+    locale: "es_LA",
+    siteName: "LogiAnalytics Pro",
+    url: "https://logianalytics-pro-v2.vercel.app",
+    images: [{ url: "https://logianalytics-pro-v2.vercel.app/icon-512.png", width: 512, height: 512, alt: "LogiAnalytics Pro" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LogiAnalytics Pro — Gestión logística para negocios",
+    description: "Gestión logística y analítica para negocios latinoamericanos. Gratis para empezar.",
+    images: ["https://logianalytics-pro-v2.vercel.app/icon-512.png"],
+  },
+};
 
 const FEATURES = [
   {
@@ -56,8 +77,6 @@ const BENEFITS = [
 ];
 
 export default function LandingPage() {
-  const { canInstall, install } = usePWAInstall();
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -70,14 +89,7 @@ export default function LandingPage() {
             <span className="font-bold text-slate-900 text-lg leading-none">LogiAnalytics</span>
           </div>
           <div className="flex items-center gap-2">
-            {canInstall && (
-              <button
-                onClick={install}
-                className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-brand-600 border border-brand-200 px-3 py-2 rounded-lg hover:bg-brand-50 transition"
-              >
-                <Download size={15} /> Instalar
-              </button>
-            )}
+            <LandingInstallButtonHeader />
             <Link
               href="/login"
               className="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 rounded-lg hover:bg-slate-100 transition"
@@ -125,15 +137,7 @@ export default function LandingPage() {
               Ya tengo cuenta
             </Link>
           </div>
-
-          {canInstall && (
-            <button
-              onClick={install}
-              className="mt-4 inline-flex items-center gap-2 text-sm text-brand-600 font-semibold border border-brand-200 bg-brand-50 px-5 py-2.5 rounded-xl hover:bg-brand-100 transition mx-auto"
-            >
-              <Download size={16} /> Instalar app en mi dispositivo
-            </button>
-          )}
+          <LandingInstallButtonHero />
         </div>
 
         {/* Stats strip */}
