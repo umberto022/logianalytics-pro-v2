@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useTheme } from "@/hooks/useTheme";
+import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -30,6 +31,7 @@ export function Sidebar() {
   const { profile, logout } = useAuth();
   const criticalCount       = useStockAlerts();
   const { isDark, toggle }  = useTheme();
+  const { isAdmin }         = useRole();
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[var(--sidebar-width)] bg-sidebar text-slate-200 flex-col z-20">
@@ -53,9 +55,16 @@ export function Sidebar() {
 
       {/* User */}
       <div className="px-5 py-4 border-b border-white/10">
-        <p className="text-white font-semibold text-sm truncate">
-          {profile?.fullName || "Usuario"}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-white font-semibold text-sm truncate flex-1">
+            {profile?.fullName || "Usuario"}
+          </p>
+          {isAdmin && (
+            <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-500/30 text-brand-300 border border-brand-500/40">
+              Admin
+            </span>
+          )}
+        </div>
         {profile?.companyName && (
           <div className="flex items-center gap-1.5 mt-1">
             <Building2 size={12} className="text-slate-400 flex-shrink-0" />

@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { subDays } from "date-fns";
+import { usePagination } from "@/hooks/usePagination";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   CreditCard, DollarSign, Clock, CheckCircle2, AlertTriangle, X,
 } from "lucide-react";
@@ -25,6 +27,8 @@ export default function CuentasPorCobrarPage() {
   const [confirmSale, setConfirmSale] = useState<Sale | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Reset page when filter changes is handled automatically by usePagination
+
   const creditSales = useMemo(
     () => sales.filter((s) => s.paymentStatus === "credito" || s.paymentStatus === "pagado"),
     [sales]
@@ -47,6 +51,8 @@ export default function CuentasPorCobrarPage() {
     if (filter === "paid")     return paid;
     return [...overdue, ...upcoming, ...current];
   }, [filter, overdue, upcoming, current, paid]);
+
+  const pagination = usePagination(filtered, 20);
 
   async function markPaid() {
     if (!user || !confirmSale) return;
@@ -117,7 +123,7 @@ export default function CuentasPorCobrarPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s) => {
+                {pagination.paged.map((s) => {
                   const dueDate   = s.dueDate?.toDate();
                   const isOverdue = dueDate && dueDate < now && s.paymentStatus === "credito";
                   const isDue7    = dueDate && dueDate >= now && dueDate <= in7days && s.paymentStatus === "credito";
@@ -157,6 +163,14 @@ export default function CuentasPorCobrarPage() {
           </div>
         </div>
       )}
+
+      <Pagination
+        page={pagination.page}
+        totalPages={pagination.totalPages}
+        total={pagination.total}
+        pageSize={20}
+        onPage={pagination.setPage}
+      />
 
       <ConfirmModal
         isOpen={!!confirmSale}

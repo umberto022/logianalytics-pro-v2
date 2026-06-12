@@ -29,6 +29,7 @@ import { InvoiceModal, type InvoiceData } from "@/components/ui/InvoiceModal";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/usePagination";
 import { getCompany } from "@/lib/firestore/companies";
+import { saleSchema, zodErrors } from "@/lib/schemas";
 import type { InventoryItem, Sale, Period, PaymentStatus } from "@/types";
 
 type Tab = "register" | "analytics" | "history";
@@ -501,9 +502,10 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
 
 export default function VentasPage() {
   const { user, profile } = useAuth();
-  const [tab,     setTab]    = useState<Tab>("register");
-  const [period,  setPeriod] = useState<Period>(30);
-  const [saving,  setSaving] = useState(false);
+  const [tab,        setTab]       = useState<Tab>("register");
+  const [period,     setPeriod]    = useState<Period>(30);
+  const [saving,     setSaving]    = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { items, loading: itemsLoading } = useInventory();
   const { sales, loading: salesLoading, refetch: refetchSales } = useSales(period);
@@ -580,6 +582,13 @@ export default function VentasPage() {
     e.preventDefault();
     if (!user) return;
     if (cart.length === 0) { toast.error("Agrega al menos un producto al carrito"); return; }
+
+    const validation = saleSchema.pick({ route: true, client: true, zone: true }).safeParse({ route, client, zone });
+    if (!validation.success) {
+      setFormErrors(zodErrors(validation));
+      return;
+    }
+    setFormErrors({});
     setSaving(true);
     const cartSnapshot = [...cart];
     const formSnapshot = { route, zone, client, clientRnc, clientAddress, clientPhone, clientEmail, notes, ncf, saleDate, paymentStatus, dueDate };
@@ -880,8 +889,9 @@ export default function VentasPage() {
                         </select>
                       </div>
                     )}
-                    <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="Nombre o empresa"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    <input value={client} onChange={(e) => { setClient(e.target.value); setFormErrors((p) => ({ ...p, client: "" })); }} placeholder="Nombre o empresa"
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors.client ? "border-red-400" : "border-slate-200"}`} />
+                    {formErrors.client && <p className="text-xs text-red-500 mt-0.5">{formErrors.client}</p>}
                     {client && (
                       <button type="button" onClick={() => { setClient(""); setClientRnc(""); setClientPhone(""); setClientEmail(""); setClientAddress(""); }}
                         className="absolute right-2 bottom-2 text-slate-400 hover:text-slate-600">
@@ -921,9 +931,10 @@ export default function VentasPage() {
                   {/* Route + Zone */}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Ruta</label>
-                      <input value={route} onChange={(e) => setRoute(e.target.value)} placeholder="ej. Norte, Sur"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Ruta *</label>
+                      <input value={route} onChange={(e) => { setRoute(e.target.value); setFormErrors((p) => ({ ...p, route: "" })); }} placeholder="ej. Norte, Sur"
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors.route ? "border-red-400" : "border-slate-200"}`} />
+                      {formErrors.route && <p className="text-xs text-red-500 mt-0.5">{formErrors.route}</p>}
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">Zona / Ciudad</label>
