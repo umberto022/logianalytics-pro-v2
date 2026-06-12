@@ -17,6 +17,7 @@ export function useCustomers() {
   return {
     customers: query.data ?? [],
     loading:   query.isLoading,
+    error:     query.error,
     refetch:   query.refetch,
   };
 }

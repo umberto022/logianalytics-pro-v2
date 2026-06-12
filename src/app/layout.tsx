@@ -39,12 +39,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_LA",
     siteName: "LogiAnalytics Pro",
+    url: "https://logianalytics-pro-v2.vercel.app",
+    images: [{ url: "https://logianalytics-pro-v2.vercel.app/icon-512.png", width: 512, height: 512, alt: "LogiAnalytics Pro" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "LogiAnalytics Pro",
     description:
       "Gestión logística y analítica para negocios latinoamericanos. Gratis para empezar.",
+    images: ["https://logianalytics-pro-v2.vercel.app/icon-512.png"],
   },
 };
 

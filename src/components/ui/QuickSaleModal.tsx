@@ -53,6 +53,11 @@ export function QuickSaleModal({ isOpen, onClose, onSuccess }: Props) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.inventoryId || !user) return;
+    if (form.quantity < 1) { toast.error("La cantidad debe ser al menos 1"); return; }
+    if (form.unitPrice <= 0) { toast.error("El precio debe ser mayor a 0"); return; }
+    if (selected && form.quantity > selected.currentStock) {
+      toast.error(`Stock insuficiente (disponible: ${selected.currentStock})`); return;
+    }
     setSaving(true);
     const r = await registerSale(user.uid, {
       inventoryId: form.inventoryId,

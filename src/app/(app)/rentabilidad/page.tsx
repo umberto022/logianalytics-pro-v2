@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ScatterChart, Scatter, Cell, Treemap,
@@ -13,6 +13,8 @@ import { fmtCurrency, fmt, fmtDatetime } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { usePagination } from "@/hooks/usePagination";
+import { Pagination } from "@/components/ui/Pagination";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import type { Period, Sale, RouteStats, ProductStats, InventoryMovement } from "@/types";
 
@@ -35,6 +37,8 @@ export default function RentabilidadPage() {
   const [tab,      setTab]      = useState<Tab>("routes");
 
   const { sales, movements, loading } = useRentabilidad(dateMode, period, fromDate, toDate);
+
+  const movPagination = usePagination(movements, 50);
 
   const summary  = computeSummary(sales);
   const routes   = computeByRoute(sales);
@@ -324,6 +328,7 @@ export default function RentabilidadPage() {
           {movements.length === 0 ? (
             <div className="text-center py-16 text-slate-400">Sin movimientos en este período.</div>
           ) : (
+            <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -334,7 +339,7 @@ export default function RentabilidadPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {movements.map((m) => (
+                  {movPagination.paged.map((m) => (
                     <tr key={m.id} className="border-t border-slate-50 hover:bg-slate-50">
                       <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">{fmtDatetime(m.createdAt)}</td>
                       <td className="py-2.5 px-4">
@@ -357,6 +362,14 @@ export default function RentabilidadPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              page={movPagination.page}
+              totalPages={movPagination.totalPages}
+              total={movPagination.total}
+              pageSize={50}
+              onPage={movPagination.setPage}
+            />
+            </>
           )}
         </div>
       )}
