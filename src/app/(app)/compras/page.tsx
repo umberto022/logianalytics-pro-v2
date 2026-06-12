@@ -47,10 +47,18 @@ function StatusBadge({ status }: { status: PurchaseOrderStatus }) {
 
 // ─── Print order ──────────────────────────────────────────────────────────────
 
+function esc(s: string | undefined | null): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function printOrder(order: PurchaseOrder) {
   const rows = order.items.map((i) =>
     `<tr>
-      <td>${i.sku}</td><td>${i.productName}</td><td>${i.category}</td>
+      <td>${esc(i.sku)}</td><td>${esc(i.productName)}</td><td>${esc(i.category)}</td>
       <td style="text-align:center">${i.qtyOrdered}</td>
       <td style="text-align:center">${i.qtyReceived}</td>
       <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
@@ -82,8 +90,8 @@ function printOrder(order: PurchaseOrder) {
       <div class="header">
         <div>
           <h1>Orden de Compra</h1>
-          <p style="color:#64748b;margin:4px 0 8px">${order.orderNumber}</p>
-          <span class="badge">${STATUS_META[order.status].label}</span>
+          <p style="color:#64748b;margin:4px 0 8px">${esc(order.orderNumber)}</p>
+          <span class="badge">${esc(STATUS_META[order.status].label)}</span>
         </div>
         <div style="text-align:right">
           <p style="margin:0;font-size:11px;color:#64748b">Fecha de creación</p>
@@ -94,12 +102,12 @@ function printOrder(order: PurchaseOrder) {
       </div>
       <div class="info">
         <div class="info-box">
-          <p>Proveedor</p><b>${order.supplierName}</b>
-          ${order.supplierRnc ? `<p style="margin-top:6px">RNC</p><b>${order.supplierRnc}</b>` : ""}
+          <p>Proveedor</p><b>${esc(order.supplierName)}</b>
+          ${order.supplierRnc ? `<p style="margin-top:6px">RNC</p><b>${esc(order.supplierRnc)}</b>` : ""}
         </div>
         <div class="info-box">
-          ${order.supplierPhone ? `<p>Teléfono</p><b>${order.supplierPhone}</b>` : ""}
-          ${order.supplierEmail ? `<p style="margin-top:6px">Email</p><b>${order.supplierEmail}</b>` : ""}
+          ${order.supplierPhone ? `<p>Teléfono</p><b>${esc(order.supplierPhone)}</b>` : ""}
+          ${order.supplierEmail ? `<p style="margin-top:6px">Email</p><b>${esc(order.supplierEmail)}</b>` : ""}
         </div>
       </div>
       <table>
@@ -111,7 +119,7 @@ function printOrder(order: PurchaseOrder) {
         <div><span style="color:#64748b">ITBIS (18%)</span><span>${fmtCurrency(order.tax)}</span></div>
         <div class="grand"><span>TOTAL</span><span>${fmtCurrency(order.total)}</span></div>
       </div>
-      ${order.note ? `<p style="margin-top:16px;padding:10px;background:#f8fafc;border-radius:6px;color:#64748b;font-size:12px"><b>Nota:</b> ${order.note}</p>` : ""}
+      ${order.note ? `<p style="margin-top:16px;padding:10px;background:#f8fafc;border-radius:6px;color:#64748b;font-size:12px"><b>Nota:</b> ${esc(order.note)}</p>` : ""}
     </body></html>`);
   win.document.close();
   win.print();

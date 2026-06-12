@@ -18,15 +18,18 @@ export function usePWAInstall() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setCanInstall(true);
     };
-    window.addEventListener("beforeinstallprompt", handler);
-
-    window.addEventListener("appinstalled", () => {
+    const installedHandler = () => {
       setInstalled(true);
       setCanInstall(false);
       setDeferredPrompt(null);
-    });
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installedHandler);
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
   }, []);
 
   async function install() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -50,48 +50,58 @@ export default function DashboardPage() {
     });
   }, [allSales, useCustom, customFrom, customTo, period]);
 
-  if (loadingInv || loadingSales) return <DashboardSkeleton />;
+  const summary    = useMemo(() => computeSummary(sales),    [sales]);
+  const routes     = useMemo(() => computeByRoute(sales),    [sales]);
+  const products   = useMemo(() => computeByProduct(sales),  [sales]);
+  const daily      = useMemo(() => computeDailyStats(sales), [sales]);
+  const byClient   = useMemo(() => computeByClient(sales).slice(0, 5), [sales]);
+  const invValue   = useMemo(() => items.reduce((s, i) => s + i.currentStock * i.unitCost, 0), [items]);
+  const invByValue = useMemo(() => [...items].sort((a, b) => (b.currentStock * b.unitCost) - (a.currentStock * a.unitCost)).slice(0, 8), [items]);
+  const criticalItems = useMemo(() => items.filter((i) => getStockStatus(i) === "critical"), [items]);
+  const lowItems      = useMemo(() => items.filter((i) => getStockStatus(i) === "low"),      [items]);
 
-  const summary: SalesSummary = computeSummary(sales);
-  const routes:  RouteStats[] = computeByRoute(sales);
-  const products: ProductStats[] = computeByProduct(sales);
-  const daily:   DailyStat[]  = computeDailyStats(sales);
+  const mom = useMemo(() => {
+    const now = new Date();
+    const curMonthStart  = startOfMonth(now);
+    const prevMonthStart = startOfMonth(subDays(curMonthStart, 1));
+    const prevMonthEnd   = endOfMonth(prevMonthStart);
+    const cur  = allSales.filter((s) => { const d = s.saleDate.toDate(); return d >= curMonthStart && d <= now; });
+    const prev = allSales.filter((s) => { const d = s.saleDate.toDate(); return d >= prevMonthStart && d <= prevMonthEnd; });
+    const curRev  = computeSummary(cur).revenue;
+    const prevRev = computeSummary(prev).revenue;
+    const curProfit  = computeSummary(cur).profit;
+    const prevProfit = computeSummary(prev).profit;
+    return {
+      curRevenue: curRev,
+      prevRevenue: prevRev,
+      curProfit,
+      prevProfit,
+      revDelta:  prevRev  > 0 ? ((curRev  - prevRev)  / prevRev)  * 100 : null,
+      profDelta: prevProfit > 0 ? ((curProfit - prevProfit) / prevProfit) * 100 : null,
+    };
+  }, [allSales]);
+
+  const topWeek = useMemo(() => {
+    const weekStart = subDays(new Date(), 7);
+    return computeByProduct(allSales.filter((s) => s.saleDate.toDate() >= weekStart)).slice(0, 5);
+  }, [allSales]);
+
+  const { pendingOrders, overdueOrders } = useMemo(() => {
+    const now = new Date();
+    const pending  = purchaseOrders.filter((o) => o.status === "pendiente" || o.status === "parcial");
+    const overdue  = pending.filter((o) => o.expectedDate.seconds < now.getTime() / 1000);
+    return { pendingOrders: pending, overdueOrders: overdue };
+  }, [purchaseOrders]);
+
+  const fmtDelta = useCallback((d: number | null) =>
+    d === null ? "vs mes ant." : `${d >= 0 ? "+" : ""}${d.toFixed(1)}% vs mes ant.`, []);
 
   const marginPct = summary.revenue > 0 ? summary.profit / summary.revenue * 100 : 0;
-  const invValue  = items.reduce((s, i) => s + i.currentStock * i.unitCost, 0);
-
-  // Month-over-month delta (always computed from the full 180-day cache)
-  const now = new Date();
-  const curMonthStart  = startOfMonth(now);
-  const prevMonthStart = startOfMonth(subDays(curMonthStart, 1));
-  const prevMonthEnd   = endOfMonth(prevMonthStart);
-  const curMonthSales  = allSales.filter((s) => { const d = s.saleDate.toDate(); return d >= curMonthStart && d <= now; });
-  const prevMonthSales = allSales.filter((s) => { const d = s.saleDate.toDate(); return d >= prevMonthStart && d <= prevMonthEnd; });
-  const curRevenue  = computeSummary(curMonthSales).revenue;
-  const prevRevenue = computeSummary(prevMonthSales).revenue;
-  const curProfit   = computeSummary(curMonthSales).profit;
-  const prevProfit  = computeSummary(prevMonthSales).profit;
-  const revDelta  = prevRevenue > 0 ? ((curRevenue - prevRevenue) / prevRevenue) * 100 : null;
-  const profDelta = prevProfit  > 0 ? ((curProfit  - prevProfit)  / prevProfit)  * 100 : null;
-  const fmtDelta  = (d: number | null) => d === null ? "vs mes ant." : `${d >= 0 ? "+" : ""}${d.toFixed(1)}% vs mes ant.`;
-
-  // Top 5 products this week
-  const weekStart   = subDays(now, 7);
-  const weekSales   = allSales.filter((s) => s.saleDate.toDate() >= weekStart);
-  const topWeek     = computeByProduct(weekSales).slice(0, 5);
-
-  // Pending / overdue purchase orders
-  const pendingOrders = purchaseOrders.filter((o) => o.status === "pendiente" || o.status === "parcial");
-  const overdueOrders = pendingOrders.filter((o) => o.expectedDate.seconds < now.getTime() / 1000);
-
-  // KPI detail data
-  const byClient  = computeByClient(sales).slice(0, 5);
-  const invByValue = [...items].sort((a, b) => (b.currentStock * b.unitCost) - (a.currentStock * a.unitCost)).slice(0, 8);
-
-  const criticalItems = items.filter((i) => getStockStatus(i) === "critical");
-  const lowItems      = items.filter((i) => getStockStatus(i) === "low");
+  const { revDelta, profDelta } = mom;
 
   const isEmpty = summary.numSales === 0 && items.length === 0;
+
+  if (loadingInv || loadingSales) return <DashboardSkeleton />;
 
   if (isEmpty) {
     return (
@@ -194,10 +204,10 @@ export default function DashboardPage() {
           criticalItems={criticalItems}
           lowItems={lowItems}
           marginPct={marginPct}
-          curRevenue={curRevenue}
-          prevRevenue={prevRevenue}
-          curProfit={curProfit}
-          prevProfit={prevProfit}
+          curRevenue={mom.curRevenue}
+          prevRevenue={mom.prevRevenue}
+          curProfit={mom.curProfit}
+          prevProfit={mom.prevProfit}
           revDelta={revDelta}
           profDelta={profDelta}
         />
@@ -361,7 +371,7 @@ export default function DashboardPage() {
           </h3>
           <div className="space-y-2">
             {pendingOrders.slice(0, 5).map((o) => {
-              const overdue = o.expectedDate.seconds < now.getTime() / 1000;
+              const overdue = o.expectedDate.seconds < Date.now() / 1000;
               return (
                 <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50" : "bg-slate-50"}`}>
                   <div>

@@ -7,12 +7,17 @@ type Theme = "light" | "dark";
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>("light");
 
-  // Leer preferencia al montar
   useEffect(() => {
-    const saved = localStorage.getItem("logi_theme") as Theme | null;
-    const preferred = saved ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    apply(preferred);
-    setTheme(preferred);
+    try {
+      const saved = localStorage.getItem("logi_theme") as Theme | null;
+      const preferred = saved ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      apply(preferred);
+      setTheme(preferred);
+    } catch {
+      const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      apply(preferred);
+      setTheme(preferred);
+    }
   }, []);
 
   function apply(t: Theme) {
@@ -22,7 +27,7 @@ export function useTheme() {
   function toggle() {
     const next: Theme = theme === "light" ? "dark" : "light";
     apply(next);
-    localStorage.setItem("logi_theme", next);
+    try { localStorage.setItem("logi_theme", next); } catch { /* private mode */ }
     setTheme(next);
   }
 
