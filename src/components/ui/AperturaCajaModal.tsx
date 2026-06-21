@@ -21,10 +21,14 @@ export function AperturaCajaModal({ onSkip }: Props) {
 
   async function handleOpen() {
     const cash = typeof initialCash === "number" ? initialCash : 0;
+    if (typeof initialCash === "number" && initialCash <= 0 && initialCash !== 0) {
+      toast.error("El monto del fondo debe ser mayor a cero");
+      return;
+    }
     setSaving(true);
     try {
       await openCaja(cash);
-      toast.success("¡Caja abierta! Puedes comenzar a registrar ventas.");
+      toast.success(cash > 0 ? `¡Caja abierta con fondo de ${fmtCurrency(cash)}!` : "¡Caja abierta!");
     } catch {
       toast.error("Error al abrir la caja");
     } finally {
@@ -56,9 +60,12 @@ export function AperturaCajaModal({ onSkip }: Props) {
 
           {/* Initial cash */}
           <div className="mb-5">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Fondo de caja inicial
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-slate-700">
+                Fondo de caja inicial
+              </label>
+              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Opcional</span>
+            </div>
             <div className="relative">
               <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -67,15 +74,15 @@ export function AperturaCajaModal({ onSkip }: Props) {
                 step="0.01"
                 value={initialCash}
                 onChange={(e) => setInitialCash(e.target.value === "" ? "" : Number(e.target.value))}
-                placeholder="0.00"
-                className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="Dejar vacío si no hay fondo"
+                className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-base font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
-            {typeof initialCash === "number" && initialCash > 0 && (
-              <p className="text-xs text-slate-400 mt-1 text-right">
-                Fondo: {fmtCurrency(initialCash)}
-              </p>
-            )}
+            <p className="text-xs text-slate-400 mt-1.5">
+              {typeof initialCash === "number" && initialCash > 0
+                ? `Fondo registrado: ${fmtCurrency(initialCash)}`
+                : "Si no ingresas monto, la caja abre en $0"}
+            </p>
           </div>
 
           <button
