@@ -14,7 +14,7 @@ export async function createUserProfile(
     email:            data.email,
     fullName:         data.fullName,
     phone:            data.phone ?? "",
-    role:             "user",
+    role:             "admin",
     subscriptionPlan: "free",
     createdAt:        Timestamp.now(),
   });

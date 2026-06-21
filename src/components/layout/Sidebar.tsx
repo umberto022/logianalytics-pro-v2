@@ -41,7 +41,10 @@ export function Sidebar() {
           <Truck size={20} className="text-white" />
         </div>
         <div>
-          <p className="text-white font-bold text-sm leading-none">LogiAnalytics</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-white font-bold text-sm leading-none">LogiAnalytics</p>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 leading-none">BETA</span>
+          </div>
           <p className="text-slate-400 text-xs mt-0.5">Gestión logística</p>
         </div>
         <button

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { completeOnboarding } from "@/lib/firestore/users";
+import { seedDemoData } from "@/lib/firestore/seedDemo";
 import toast from "react-hot-toast";
 import { INDUSTRIES, COUNTRIES } from "@/types";
 
@@ -29,6 +30,7 @@ export function OnboardingWizard({ onDone }: Props) {
   const [companyName, setCompanyName] = useState("");
   const [industry,    setIndustry]    = useState("");
   const [country,     setCountry]     = useState("");
+  const [loadDemo,    setLoadDemo]    = useState(false);
   const [saving,      setSaving]      = useState(false);
 
   async function finish() {
@@ -36,8 +38,13 @@ export function OnboardingWizard({ onDone }: Props) {
     setSaving(true);
     try {
       await completeOnboarding(user.uid, { companyName, industry, country });
+      if (loadDemo) {
+        await seedDemoData(user.uid);
+        toast.success("Datos de demo cargados. ¡Explora la app!");
+      } else {
+        toast.success("¡Bienvenido a LogiAnalytics!");
+      }
       await refreshProfile();
-      toast.success("¡Bienvenido a LogiAnalytics!");
       onDone();
     } catch {
       toast.error("Error al guardar. Intenta de nuevo.");
@@ -199,6 +206,26 @@ export function OnboardingWizard({ onDone }: Props) {
                 ))}
               </div>
 
+              {/* Demo data toggle */}
+              <button
+                onClick={() => setLoadDemo((v) => !v)}
+                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition text-left ${
+                  loadDemo
+                    ? "border-indigo-400 bg-indigo-50"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition ${
+                  loadDemo ? "bg-indigo-600 border-indigo-600" : "border-slate-300"
+                }`}>
+                  {loadDemo && <CheckCircle2 size={12} className="text-white" />}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Cargar datos de demostración</p>
+                  <p className="text-xs text-slate-500 mt-0.5">8 productos, 3 proveedores, 4 clientes y ventas de 4 semanas para explorar la app desde el inicio.</p>
+                </div>
+              </button>
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(1)}
@@ -211,7 +238,7 @@ export function OnboardingWizard({ onDone }: Props) {
                   disabled={saving}
                   className="flex-[2] bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold py-2.5 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2 text-sm disabled:opacity-70"
                 >
-                  {saving ? "Guardando…" : "Ir al Dashboard →"}
+                  {saving ? (loadDemo ? "Cargando demo…" : "Guardando…") : "Ir al Dashboard →"}
                 </button>
               </div>
             </div>
