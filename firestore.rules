@@ -66,5 +66,15 @@ service cloud.firestore {
     match /auditLog/{userId}/events/{eventId} {
       allow read, write: if isOwner(userId);
     }
+
+    // Caja sessions: scoped per user
+    match /caja/{userId}/sessions/{sessionId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Conteos físicos: scoped per user
+    match /conteos/{userId}/records/{conteoId} {
+      allow read, write: if isOwner(userId);
+    }
   }
 }
