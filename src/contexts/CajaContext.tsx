@@ -23,7 +23,15 @@ interface CajaCtx {
   confirmLogout:  () => void;   // after cierre done → proceed with logout
 }
 
-const Ctx = createContext<CajaCtx | null>(null);
+const DEFAULT_CTX: CajaCtx = {
+  session: null, loading: false, cajaOpen: false,
+  openCaja: async () => {}, closeCaja: async () => {}, reload: async () => {},
+  needsCierre: false,
+  requestLogout: () => {}, cancelLogout: () => {}, confirmLogout: () => {},
+};
+
+const Ctx = createContext<CajaCtx>(DEFAULT_CTX);
+
 
 export function CajaProvider({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -77,7 +85,5 @@ export function CajaProvider({ children }: { children: ReactNode }) {
 }
 
 export function useCaja(): CajaCtx {
-  const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useCaja must be inside CajaProvider");
-  return ctx;
+  return useContext(Ctx);
 }
