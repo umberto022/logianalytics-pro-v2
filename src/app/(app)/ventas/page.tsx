@@ -536,6 +536,11 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
 
   async function handleCierre() {
     if (!session) return;
+    const cashVal = typeof efectivo === "number" ? efectivo : 0;
+    if (totalSales > 0 && cashVal === 0 && (typeof tarjeta !== "number" || tarjeta === 0) && (typeof transferencia !== "number" || transferencia === 0)) {
+      toast.error("Hay ventas del día — debes declarar al menos un monto antes de cerrar");
+      return;
+    }
     setSaving(true);
     try {
       await closeCajaSession(uid, session.id, {
