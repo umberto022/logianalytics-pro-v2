@@ -14,6 +14,7 @@ import {
 import { listPurchaseOrders } from "@/lib/firestore/purchases";
 import { supplierSchema, zodErrors } from "@/lib/schemas";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AdminButton } from "@/components/ui/AdminOnly";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
@@ -406,9 +407,9 @@ export default function ProveedoresPage() {
                       <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => handleDelete(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
+                      <AdminButton onClick={() => handleDelete(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
                         <Trash2 size={14} />
-                      </button>
+                      </AdminButton>
                     </div>
                   </td>
                 </tr>

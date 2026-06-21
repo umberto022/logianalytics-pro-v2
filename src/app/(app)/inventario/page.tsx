@@ -34,6 +34,8 @@ import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
 import { StockBadge } from "@/components/ui/StockBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminButton } from "@/components/ui/AdminOnly";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { InventoryItem, InventoryMovement, PurchaseOrder, PurchaseOrderStatus, StockStatus } from "@/types";
@@ -1445,13 +1447,8 @@ export default function InventarioPage() {
       {/* ── Dashboard ── */}
       {tab === "dashboard" && (
         items.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-            <Package size={48} className="mx-auto mb-4 text-slate-300" />
-            <p className="text-slate-500 mb-4">Agrega productos para ver tu dashboard</p>
-            <button onClick={() => setTab("add")}
-              className="px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition">
-              Agregar primer producto
-            </button>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <EmptyState icon={Package} title="Sin productos aún" description="Agrega tu primer producto para ver el dashboard con estadísticas de stock, valor de inventario y alertas automáticas." action={{ label: "Agregar primer producto", onClick: () => setTab("add") }} />
           </div>
         ) : (
           <InventoryDashboard items={items} activeFilter={activeFilter}
@@ -1498,10 +1495,9 @@ export default function InventarioPage() {
             </div>
 
             {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                <Package size={40} className="mb-3" />
-                <p>{items.length === 0 ? "Aún no tienes productos" : "Sin resultados"}</p>
-              </div>
+              items.length === 0
+                ? <EmptyState icon={Package} title="Sin productos" description="Tu inventario está vacío. Agrega productos manualmente o importa un CSV." action={{ label: "Agregar producto", onClick: () => setTab("add") }} secondaryAction={{ label: "Importar CSV", onClick: () => { const el = document.getElementById("csv-import"); el?.click(); } }} />
+                : <EmptyState icon={Package} title="Sin resultados" description="Ningún producto coincide con los filtros actuales." action={{ label: "Limpiar filtros", onClick: () => { setSearch(""); setActiveFilter("all"); } }} />
             ) : (
               <>
                 {/* Mobile cards */}
@@ -1550,10 +1546,10 @@ export default function InventarioPage() {
                               className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
                               <Edit2 size={13} />
                             </button>
-                            <button onClick={() => handleDelete(item)}
+                            <AdminButton onClick={() => handleDelete(item)}
                               className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
                               <Trash2 size={13} />
-                            </button>
+                            </AdminButton>
                           </div>
                         </div>
                       </div>
@@ -1633,10 +1629,10 @@ export default function InventarioPage() {
                                   className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
                                   <Edit2 size={14} />
                                 </button>
-                                <button onClick={() => handleDelete(item)}
+                                <AdminButton onClick={() => handleDelete(item)}
                                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
                                   <Trash2 size={14} />
-                                </button>
+                                </AdminButton>
                               </div>
                             </td>
                           </tr>

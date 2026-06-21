@@ -20,6 +20,7 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { useUndoDelete } from "@/hooks/useUndoDelete";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { AdminButton } from "@/components/ui/AdminOnly";
 import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/ui/Pagination";
 import { customerSchema, zodErrors } from "@/lib/schemas";
@@ -241,10 +242,10 @@ export default function ClientesPage() {
                             className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
                             <Edit2 size={15} />
                           </button>
-                          <button onClick={() => handleDelete(c)}
+                          <AdminButton onClick={() => handleDelete(c)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
                             <Trash2 size={15} />
-                          </button>
+                          </AdminButton>
                         </div>
                       </td>
                     </tr>
@@ -392,10 +393,10 @@ export default function ClientesPage() {
                 className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition flex items-center justify-center gap-2">
                 <Edit2 size={14} /> Editar
               </button>
-              <button onClick={() => { handleDelete(detail); setDetail(null); }}
+              <AdminButton onClick={() => { handleDelete(detail!); setDetail(null); }}
                 className="flex-1 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2">
                 <Trash2 size={14} /> Eliminar
-              </button>
+              </AdminButton>
             </div>
           </div>
         </div>
