@@ -925,6 +925,15 @@ export default function VentasPage() {
 
   const histPagination = usePagination(filteredSales, 20);
 
+  // Auto-switch to cierre tab if query param says so
+  // MUST be before any early return to comply with Rules of Hooks
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "cierre") setTab("cierre");
+    }
+  }, []);
+
   if (loading) return <FullPageSpinner />;
 
   const TABS: { key: Tab; label: string }[] = [
@@ -933,14 +942,6 @@ export default function VentasPage() {
     { key: "history",   label: `📋 Historial (${sales.length})` },
     { key: "cierre",    label: "💰 Cierre del día" },
   ];
-
-  // Auto-switch to cierre tab if query param says so
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("tab") === "cierre") setTab("cierre");
-    }
-  }, []);
 
   return (
     <div>
