@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
   Settings, LogOut, Truck, Building2, MapPin, ClipboardList,
-  Users, Sun, Moon, Store, CreditCard,
+  Users, Sun, Moon, Store, CreditCard, ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
@@ -102,6 +102,23 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Admin link */}
+      {isAdmin && (
+        <div className="px-3 pb-2 border-t border-white/10 pt-3">
+          <Link href="/admin"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
+              pathname.startsWith("/admin")
+                ? "bg-amber-500/20 text-amber-300"
+                : "text-slate-500 hover:bg-white/10 hover:text-amber-300"
+            )}
+          >
+            <ShieldAlert size={15} className="flex-shrink-0" />
+            Panel Admin
+          </Link>
+        </div>
+      )}
 
       {/* Logout */}
       <div className="px-3 pb-4 border-t border-white/10 pt-4">

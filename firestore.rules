@@ -40,5 +40,31 @@ service cloud.firestore {
     match /purchaseOrders/{userId}/orders/{orderId} {
       allow read, write: if isOwner(userId);
     }
+
+    // Feedback: users can write their own; reads only via admin SDK
+    match /feedback/{userId}/reports/{reportId} {
+      allow create: if isOwner(userId);
+      allow read, delete: if false; // admin reads via server SDK only
+    }
+
+    // Customers: scoped per user
+    match /customers/{userId}/records/{recordId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Suppliers: scoped per user
+    match /users/{userId}/suppliers/{supplierId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Routes: scoped per user
+    match /users/{userId}/routes/{routeId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Audit log: user can write, read only own
+    match /auditLog/{userId}/events/{eventId} {
+      allow read, write: if isOwner(userId);
+    }
   }
 }

@@ -6,11 +6,12 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, Package,
   ClipboardList, Users, MoreHorizontal,
-  MapPin, TrendingUp, Settings, LogOut, X, Download, Store, CreditCard,
+  MapPin, TrendingUp, Settings, LogOut, X, Download, Store, CreditCard, ShieldAlert,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
 
 const MAIN_NAV = [
@@ -34,6 +35,7 @@ export function BottomNav() {
   const criticalCount = useStockAlerts();
   const { logout }    = useAuth();
   const { canInstall, install } = usePWAInstall();
+  const { isAdmin }   = useRole();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const moreActive = MORE_NAV.some(
@@ -99,6 +101,17 @@ export function BottomNav() {
                   <Download size={20} />
                   Instalar app en este dispositivo
                 </button>
+              )}
+
+              {isAdmin && (
+                <>
+                  <div className="h-px bg-slate-100 my-1" />
+                  <Link href="/admin" onClick={() => setMoreOpen(false)}
+                    className={cn("flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold",
+                      pathname.startsWith("/admin") ? "bg-amber-50 text-amber-600" : "text-amber-600 active:bg-amber-50")}>
+                    <ShieldAlert size={20} /> Panel Admin
+                  </Link>
+                </>
               )}
 
               <div className="h-px bg-slate-100 my-1" />
