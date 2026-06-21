@@ -7,6 +7,7 @@ import {
   ShoppingCart, Download, Search, Plus, Minus, Trash2, X,
   TrendingUp, Users, Package, DollarSign, CreditCard,
   CheckCircle2, Clock, BarChart2, Award, Receipt, LayoutGrid, ImageOff,
+  Lock, Banknote, Building2, Smartphone, AlertTriangle,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -14,6 +15,8 @@ import {
 } from "recharts";
 import Papa from "papaparse";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCaja } from "@/contexts/CajaContext";
+import { closeCajaSession } from "@/lib/firestore/caja";
 import { useInventory, useInvalidateInventory } from "@/hooks/useInventory";
 import { useSales, useInvalidateSales } from "@/hooks/useSales";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -33,7 +36,7 @@ import { getCompany } from "@/lib/firestore/companies";
 import { saleSchema, zodErrors } from "@/lib/schemas";
 import type { InventoryItem, Sale, Period, PaymentStatus } from "@/types";
 
-type Tab = "register" | "analytics" | "history";
+type Tab = "register" | "analytics" | "history" | "cierre";
 
 const PAYMENT_STATUS: Record<PaymentStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pagado:    { label: "Pagado",    color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle2 size={11} /> },
@@ -499,10 +502,196 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
   );
 }
 
+// ── Cierre del día tab ────────────────────────────────────────────────────────
+
+function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
+  const { session, reload } = useCaja();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const todaySales = sales.filter((s) => {
+    const d = s.saleDate.toDate().toISOString().slice(0, 10);
+    return d === today;
+  });
+
+  const totalSales    = todaySales.reduce((s, v) => s + v.totalRevenue, 0);
+  const totalItems    = todaySales.reduce((s, v) => s + v.quantity, 0);
+  const pagadas       = todaySales.filter((s) => (s.paymentStatus ?? "pagado") === "pagado");
+  const pendientes    = todaySales.filter((s) => (s.paymentStatus ?? "pagado") === "pendiente");
+  const credito       = todaySales.filter((s) => (s.paymentStatus ?? "pagado") === "credito");
+  const totalPagado   = pagadas.reduce((s, v) => s + v.totalRevenue, 0);
+  const totalPendiente = pendientes.reduce((s, v) => s + v.totalRevenue, 0);
+  const totalCredito  = credito.reduce((s, v) => s + v.totalRevenue, 0);
+
+  const [efectivo,     setEfectivo]     = useState<number | "">("");
+  const [tarjeta,      setTarjeta]      = useState<number | "">("");
+  const [transferencia,setTransferencia]= useState<number | "">("");
+  const [notas,        setNotas]        = useState("");
+  const [saving,       setSaving]       = useState(false);
+
+  const totalDeclarado =
+    (typeof efectivo === "number" ? efectivo : 0) +
+    (typeof tarjeta  === "number" ? tarjeta  : 0) +
+    (typeof transferencia === "number" ? transferencia : 0);
+  const diferencia = totalDeclarado - totalPagado;
+
+  async function handleCierre() {
+    if (!session) return;
+    setSaving(true);
+    try {
+      await closeCajaSession(uid, session.id, {
+        totalSales:    totalSales,
+        totalItems,
+        cashSales:     typeof efectivo      === "number" ? efectivo      : 0,
+        cardSales:     typeof tarjeta       === "number" ? tarjeta       : 0,
+        transferSales: typeof transferencia === "number" ? transferencia : 0,
+        creditSales:   totalCredito,
+        actualCash:    typeof efectivo      === "number" ? efectivo      : 0,
+        closingNotes:  notas,
+      });
+      await reload();
+      toast.success("Cierre de caja realizado correctamente");
+    } catch {
+      toast.error("Error al realizar el cierre");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!session) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-100 p-14 text-center shadow-sm">
+        <CheckCircle2 size={40} className="mx-auto mb-3 text-emerald-400" />
+        <p className="text-slate-700 font-semibold">Caja ya cerrada</p>
+        <p className="text-slate-400 text-sm mt-1">El cierre de hoy ya fue registrado</p>
+      </div>
+    );
+  }
+
+  const openTime = session.openedAt.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="space-y-5">
+      {/* Session info */}
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-emerald-800">Caja abierta desde las {openTime}</p>
+          <p className="text-xs text-emerald-600 mt-0.5">Fondo inicial: {fmtCurrency(session.initialCash)}</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-xs font-bold text-emerald-700">EN OPERACIÓN</span>
+        </div>
+      </div>
+
+      {/* Resumen del día */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Ventas del día",   value: todaySales.length,         sub: `${totalItems} unidades`, color: "indigo" },
+          { label: "Total facturado",  value: fmtCurrency(totalSales),   sub: "Monto bruto",            color: "emerald" },
+          { label: "Cobrado (pagado)", value: fmtCurrency(totalPagado),  sub: `${pagadas.length} trans.`,color: "blue" },
+          { label: "Pendiente/crédito",value: fmtCurrency(totalPendiente + totalCredito),
+            sub: `${pendientes.length + credito.length} trans.`, color: "amber" },
+        ].map(({ label, value, sub, color }) => (
+          <div key={label} className={`bg-white rounded-2xl border border-slate-100 p-4 shadow-sm`}>
+            <p className="text-xs text-slate-500 mb-1">{label}</p>
+            <p className={`text-xl font-bold text-${color}-600`}>{value}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Cuadre de caja */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <Banknote size={16} className="text-emerald-500" /> Cuadre de caja — desglose cobrado
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+          {[
+            { label: "Efectivo recibido",    icon: Banknote,   val: efectivo,     set: setEfectivo     },
+            { label: "Tarjeta / POS",        icon: CreditCard, val: tarjeta,      set: setTarjeta      },
+            { label: "Transferencia / SINPE",icon: Building2,  val: transferencia,set: setTransferencia},
+          ].map(({ label, icon: Icon, val, set }) => (
+            <div key={label}>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1.5">
+                <Icon size={13} className="text-slate-400" /> {label}
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                <input
+                  type="number" min={0} step="0.01"
+                  value={val}
+                  onChange={(e) => set(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="0.00"
+                  className="w-full pl-7 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Comparison */}
+        <div className="bg-slate-50 rounded-xl p-4 mb-4 space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-500">Total facturado pagado</span>
+            <span className="font-semibold text-slate-800">{fmtCurrency(totalPagado)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">Total declarado</span>
+            <span className="font-semibold text-slate-800">{fmtCurrency(totalDeclarado)}</span>
+          </div>
+          <div className="h-px bg-slate-200" />
+          <div className="flex justify-between">
+            <span className={`font-bold ${diferencia === 0 ? "text-emerald-600" : diferencia > 0 ? "text-blue-600" : "text-red-600"}`}>
+              {diferencia === 0 ? "✓ Caja cuadrada" : diferencia > 0 ? `Sobrante` : `Faltante`}
+            </span>
+            <span className={`font-bold text-lg ${diferencia === 0 ? "text-emerald-600" : diferencia > 0 ? "text-blue-600" : "text-red-600"}`}>
+              {diferencia === 0 ? "—" : `${diferencia > 0 ? "+" : ""}${fmtCurrency(Math.abs(diferencia))}`}
+            </span>
+          </div>
+        </div>
+
+        {/* Credits pending */}
+        {(totalPendiente + totalCredito) > 0 && (
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4 text-xs text-amber-700">
+            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+            <span>
+              Hay {fmtCurrency(totalPendiente + totalCredito)} en ventas pendientes/crédito que <strong>no se incluyen</strong> en el cuadre de caja.
+            </span>
+          </div>
+        )}
+
+        {/* Notes */}
+        <div className="mb-5">
+          <label className="block text-xs font-medium text-slate-600 mb-1">Observaciones del cierre</label>
+          <textarea
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            rows={2}
+            placeholder="Ej: Sin novedad · Hubo descuadre por billete falso…"
+            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+        </div>
+
+        <button
+          onClick={handleCierre}
+          disabled={saving}
+          className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {saving
+            ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Cerrando caja…</>
+            : <><Lock size={16} /> Realizar cierre y cerrar caja</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function VentasPage() {
   const { user, profile } = useAuth();
+  const { session, cajaOpen } = useCaja();
   const [tab,        setTab]       = useState<Tab>("register");
   const [period,     setPeriod]    = useState<Period>(30);
   const [saving,     setSaving]    = useState(false);
@@ -737,7 +926,16 @@ export default function VentasPage() {
     { key: "register",  label: "🛒 Nueva venta" },
     { key: "analytics", label: "📊 Análisis" },
     { key: "history",   label: `📋 Historial (${sales.length})` },
+    { key: "cierre",    label: "💰 Cierre del día" },
   ];
+
+  // Auto-switch to cierre tab if query param says so
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "cierre") setTab("cierre");
+    }
+  }, []);
 
   return (
     <div>
@@ -784,8 +982,16 @@ export default function VentasPage() {
       </div>
 
       {/* ── Nueva venta ── */}
-      {tab === "register" && (
-        items.length === 0 ? (
+      {tab === "register" && !cajaOpen && (
+        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
+          <Lock size={40} className="mx-auto mb-3 text-slate-300" />
+          <p className="text-slate-700 font-semibold text-lg mb-1">Caja cerrada</p>
+          <p className="text-sm text-slate-400 mb-5">Debes abrir la caja antes de registrar ventas</p>
+          <p className="text-xs text-slate-400">Ve a la parte superior y haz clic en <strong>Abrir caja</strong></p>
+        </div>
+      )}
+
+      {tab === "register" && cajaOpen && (items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
             <ShoppingCart size={40} className="mx-auto mb-3 text-slate-300" />
             <p className="text-slate-500 mb-1">No tienes productos en inventario</p>
@@ -1001,8 +1207,7 @@ export default function VentasPage() {
               </div>
             </div>
           </form>
-        )
-      )}
+        ))}
 
       {/* ── Análisis ── */}
       {tab === "analytics" && (
@@ -1138,6 +1343,11 @@ export default function VentasPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Cierre del día ── */}
+      {tab === "cierre" && user && (
+        <CierreTab sales={sales} uid={user.uid} />
       )}
     </div>
   );

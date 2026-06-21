@@ -8,6 +8,7 @@ import {
   Users, Sun, Moon, Store, CreditCard, ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCaja } from "@/contexts/CajaContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useTheme } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
@@ -27,11 +28,12 @@ const NAV = [
 ];
 
 export function Sidebar() {
-  const pathname            = usePathname();
-  const { profile, logout } = useAuth();
-  const criticalCount       = useStockAlerts();
-  const { isDark, toggle }  = useTheme();
-  const { isAdmin }         = useRole();
+  const pathname               = usePathname();
+  const { profile }            = useAuth();
+  const { requestLogout, session } = useCaja();
+  const criticalCount          = useStockAlerts();
+  const { isDark, toggle }     = useTheme();
+  const { isAdmin }            = useRole();
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[var(--sidebar-width)] bg-sidebar text-slate-200 flex-col z-20">
@@ -72,6 +74,12 @@ export function Sidebar() {
           <div className="flex items-center gap-1.5 mt-1">
             <Building2 size={12} className="text-slate-400 flex-shrink-0" />
             <p className="text-slate-400 text-xs truncate">{profile.companyName}</p>
+          </div>
+        )}
+        {session && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            <span className="text-emerald-400 text-xs font-medium">Caja abierta</span>
           </div>
         )}
       </div>
@@ -123,7 +131,7 @@ export function Sidebar() {
       {/* Logout */}
       <div className="px-3 pb-4 border-t border-white/10 pt-4">
         <button
-          onClick={logout}
+          onClick={requestLogout}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
         >
           <LogOut size={18} />

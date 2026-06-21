@@ -29,6 +29,10 @@ import {
   deleteInventoryItem, bulkAddInventory, listMovements, adjustStock,
 } from "@/lib/firestore/inventory";
 import { listPurchaseOrders } from "@/lib/firestore/purchases";
+import {
+  getLastConteo, getRecentConteos, submitConteo,
+  type ConteoRecord, type ConteoItem,
+} from "@/lib/firestore/conteo";
 import { listSuppliers, type Supplier } from "@/lib/firestore/suppliers";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { getStockStatus, fmtCurrency, fmt } from "@/lib/utils";
@@ -42,7 +46,7 @@ import type { InventoryItem, InventoryMovement, PurchaseOrder, PurchaseOrderStat
 import { inventorySchema } from "@/lib/schemas";
 import { z } from "zod";
 
-type Tab = "dashboard" | "list" | "add" | "historial" | "ordenes";
+type Tab = "dashboard" | "list" | "add" | "historial" | "ordenes" | "conteo";
 type ActiveFilter = "all" | "critical" | "low" | "ok" | string;
 type SortKey = "name" | "category" | "currentStock" | "unitCost" | "salePrice" | "supplier";
 type SortDir = "asc" | "desc";
@@ -623,9 +627,9 @@ function InventoryDashboard({ items, activeFilter, onFilter }: {
         <StatCard label="Total productos" value={fmt(cTotal, 0)} icon={Boxes} color="bg-indigo-500"
           sub={`${fmt(cUnits, 0)} unidades en stock`}
           active={activeFilter === "all"} onClick={() => onFilter("all")} />
-        <StatCard label="Valor del inventario" value={fmtCurrency(totalVal)} icon={DollarSign} color="bg-emerald-500"
-          sub={`Potencial venta ${fmtCurrency(totalPotential)}`}
-          active={false} onClick={() => {}} />
+        <StatCard label="Necesita reabasto" value={fmt(cLow + cCritical, 0)} icon={TrendingDown} color="bg-amber-500"
+          sub={`${fmt(cCritical, 0)} crítico · ${fmt(cLow, 0)} bajo`}
+          active={activeFilter === "low" || activeFilter === "critical"} onClick={() => onFilter("low")} />
         <StatCard label="Stock crítico" value={fmt(cCritical, 0)} icon={AlertTriangle} color="bg-red-500"
           sub={critical.length > 0 ? `${critical.map(i => i.name).slice(0,2).join(", ")}…` : "Todo en orden ✓"}
           active={activeFilter === "critical"} onClick={() => toggle("critical")} />
@@ -1122,6 +1126,226 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
   );
 }
 
+// ─── ConteoTab ────────────────────────────────────────────────────────────────
+
+const DAYS_BETWEEN_CONTEOS = 14;
+
+function ConteoTab({ items, uid, onDone }: {
+  items: InventoryItem[];
+  uid: string;
+  onDone: () => void;
+}) {
+  const [lastConteo,    setLastConteo]    = useState<ConteoRecord | null | undefined>(undefined);
+  const [history,       setHistory]       = useState<ConteoRecord[]>([]);
+  const [loadingInfo,   setLoadingInfo]   = useState(true);
+  const [mode,          setMode]          = useState<"info" | "counting">("info");
+  const [counts,        setCounts]        = useState<Record<string, number>>({});
+  const [saving,        setSaving]        = useState(false);
+
+  useEffect(() => {
+    Promise.all([getLastConteo(uid), getRecentConteos(uid)])
+      .then(([last, hist]) => { setLastConteo(last); setHistory(hist); })
+      .finally(() => setLoadingInfo(false));
+  }, [uid]);
+
+  const daysSinceLast = lastConteo
+    ? Math.floor((Date.now() - lastConteo.createdAt.toDate().getTime()) / 86_400_000)
+    : null;
+  const needsConteo = daysSinceLast === null || daysSinceLast >= DAYS_BETWEEN_CONTEOS;
+
+  function startCounting() {
+    const initial: Record<string, number> = {};
+    items.forEach((i) => { initial[i.id] = i.currentStock; });
+    setCounts(initial);
+    setMode("counting");
+  }
+
+  async function handleSubmit() {
+    setSaving(true);
+    try {
+      const conteoItems: ConteoItem[] = items.map((i) => ({
+        inventoryId: i.id,
+        sku:         i.sku,
+        productName: i.name,
+        systemQty:   i.currentStock,
+        countedQty:  counts[i.id] ?? i.currentStock,
+        diff:        (counts[i.id] ?? i.currentStock) - i.currentStock,
+      }));
+      await submitConteo(uid, conteoItems);
+      toast.success("Conteo físico registrado y stock actualizado");
+      await Promise.all([getLastConteo(uid), getRecentConteos(uid)])
+        .then(([last, hist]) => { setLastConteo(last); setHistory(hist); });
+      setMode("info");
+      onDone();
+    } catch {
+      toast.error("Error al guardar el conteo");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const diffs = items.filter((i) => (counts[i.id] ?? i.currentStock) !== i.currentStock);
+
+  if (loadingInfo) {
+    return <div className="text-center py-12 text-slate-400 text-sm">Cargando…</div>;
+  }
+
+  if (mode === "counting") {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Conteo físico en progreso</h2>
+            <p className="text-sm text-slate-500">Ingresa las cantidades reales que tienes en almacén</p>
+          </div>
+          <button onClick={() => setMode("info")}
+            className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+            Cancelar
+          </button>
+        </div>
+
+        {diffs.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-700 flex items-center gap-2">
+            <AlertTriangle size={13} />
+            {diffs.length} producto{diffs.length !== 1 ? "s" : ""} con diferencia respecto al sistema
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase">
+                {["Producto", "SKU", "Sistema", "Contado", "Diferencia"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {items.map((item) => {
+                const counted = counts[item.id] ?? item.currentStock;
+                const diff    = counted - item.currentStock;
+                return (
+                  <tr key={item.id} className={diff !== 0 ? "bg-amber-50/50" : ""}>
+                    <td className="px-4 py-2.5 font-medium text-slate-800">{item.name}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-400">{item.sku}</td>
+                    <td className="px-4 py-2.5 text-slate-600">{item.currentStock}</td>
+                    <td className="px-4 py-2.5">
+                      <input
+                        type="number" min={0}
+                        value={counted}
+                        onChange={(e) => setCounts((p) => ({ ...p, [item.id]: Math.max(0, Number(e.target.value)) }))}
+                        className="w-20 text-center border border-slate-200 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      />
+                    </td>
+                    <td className={`px-4 py-2.5 font-semibold ${diff > 0 ? "text-emerald-600" : diff < 0 ? "text-red-600" : "text-slate-300"}`}>
+                      {diff === 0 ? "—" : `${diff > 0 ? "+" : ""}${diff}`}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={saving}
+          className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {saving
+            ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Guardando…</>
+            : `Confirmar conteo${diffs.length > 0 ? ` (${diffs.length} ajuste${diffs.length !== 1 ? "s" : ""})` : " (sin cambios)"}`}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Status */}
+      <div className={`rounded-2xl border p-5 ${needsConteo ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className={`font-bold text-base ${needsConteo ? "text-amber-800" : "text-emerald-800"}`}>
+              {lastConteo === null ? "Sin conteos registrados" :
+               needsConteo ? `Conteo recomendado (hace ${daysSinceLast} días)` :
+               `Al día — último hace ${daysSinceLast} día${daysSinceLast !== 1 ? "s" : ""}`}
+            </p>
+            <p className={`text-xs mt-1 ${needsConteo ? "text-amber-600" : "text-emerald-600"}`}>
+              {!lastConteo ? "Se recomienda hacer un conteo físico cada 2 semanas" :
+               `Último conteo: ${lastConteo.createdAt.toDate().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })} · ${lastConteo.adjustedItems} ajuste${lastConteo.adjustedItems !== 1 ? "s" : ""} aplicado${lastConteo.adjustedItems !== 1 ? "s" : ""}`}
+            </p>
+          </div>
+          <button
+            onClick={startCounting}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${
+              needsConteo
+                ? "bg-amber-600 hover:bg-amber-700 text-white"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+            }`}
+          >
+            Iniciar conteo
+          </button>
+        </div>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+          <p className="text-xs text-slate-400 mb-1">Productos a contar</p>
+          <p className="text-2xl font-bold text-slate-900">{items.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+          <p className="text-xs text-slate-400 mb-1">Conteos realizados</p>
+          <p className="text-2xl font-bold text-slate-900">{history.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+          <p className="text-xs text-slate-400 mb-1">Próximo conteo en</p>
+          <p className="text-2xl font-bold text-slate-900">
+            {daysSinceLast === null ? "Ahora"
+              : Math.max(0, DAYS_BETWEEN_CONTEOS - daysSinceLast) === 0
+              ? "Hoy"
+              : `${Math.max(0, DAYS_BETWEEN_CONTEOS - daysSinceLast)}d`}
+          </p>
+        </div>
+      </div>
+
+      {/* History */}
+      {history.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-100">
+            <h3 className="text-sm font-semibold text-slate-700">Historial de conteos</h3>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50 text-xs text-slate-500 uppercase">
+                {["Fecha", "Productos", "Ajustes aplicados"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {history.map((c) => (
+                <tr key={c.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 text-slate-600">
+                    {c.createdAt.toDate().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
+                  </td>
+                  <td className="px-4 py-3">{c.totalProducts}</td>
+                  <td className="px-4 py-3">
+                    <span className={`font-semibold ${c.adjustedItems > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                      {c.adjustedItems === 0 ? "Sin diferencias" : `${c.adjustedItems} producto${c.adjustedItems !== 1 ? "s" : ""}`}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function InventarioPage() {
@@ -1364,6 +1588,7 @@ export default function InventarioPage() {
     { key: "add",       label: editing ? "✏️ Editar" : "➕ Agregar" },
     { key: "historial", label: "📜 Historial" },
     { key: "ordenes",   label: `🛒 Reabastecer${items.filter(i=>getStockStatus(i)!=="ok").length > 0 ? ` (${items.filter(i=>getStockStatus(i)!=="ok").length})` : ""}` },
+    { key: "conteo",    label: "📦 Conteo físico" },
   ];
 
   const sortableCols: { key: SortKey; label: string }[] = [
@@ -1770,6 +1995,9 @@ export default function InventarioPage() {
 
       {/* ── Órdenes ── */}
       {tab === "ordenes" && user && <OrdenesTab items={items} uid={user.uid} />}
+
+      {/* ── Conteo físico ── */}
+      {tab === "conteo" && user && <ConteoTab items={items} uid={user.uid} onDone={load} />}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCaja } from "@/contexts/CajaContext";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
@@ -35,7 +36,8 @@ export function BottomNav() {
   const criticalCount = useStockAlerts();
   const { logout }    = useAuth();
   const { canInstall, install } = usePWAInstall();
-  const { isAdmin }   = useRole();
+  const { isAdmin }           = useRole();
+  const { requestLogout }     = useCaja();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const moreActive = MORE_NAV.some(
@@ -117,7 +119,7 @@ export function BottomNav() {
               <div className="h-px bg-slate-100 my-1" />
 
               <button
-                onClick={() => { logout(); setMoreOpen(false); }}
+                onClick={() => { setMoreOpen(false); requestLogout(); }}
                 className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-semibold text-red-500 active:bg-red-50"
               >
                 <LogOut size={20} />
