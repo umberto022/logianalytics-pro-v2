@@ -8,6 +8,8 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickSaleModal } from "@/components/ui/QuickSaleModal";
 import { ShortcutsModal } from "@/components/ui/ShortcutsModal";
+import { OnboardingWizard } from "@/components/ui/OnboardingWizard";
+import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { useStockNotifications } from "@/hooks/useStockNotifications";
 import { useOverdueOrders } from "@/hooks/useOverdueOrders";
 
@@ -94,6 +96,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         isOpen={saleOpen}
         onClose={() => setSaleOpen(false)}
       />
+
+      <FeedbackButton />
+
+      {profile && !profile.onboardingCompleted && (
+        <OnboardingWizard onDone={() => {}} />
+      )}
     </div>
   );
 }

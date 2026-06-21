@@ -10,6 +10,7 @@ export interface UserProfile {
   companyId?: string;
   companyName?: string;
   photoURL?: string;
+  onboardingCompleted?: boolean;
   createdAt: Timestamp;
   lastLogin?: Timestamp;
 }

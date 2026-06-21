@@ -36,3 +36,13 @@ export async function updateUserProfile(
 export async function touchLastLogin(uid: string): Promise<void> {
   await updateDoc(userDoc(uid), { lastLogin: Timestamp.now() });
 }
+
+export async function completeOnboarding(
+  uid: string,
+  data: { companyName?: string; industry?: string; country?: string }
+): Promise<void> {
+  await updateDoc(userDoc(uid), {
+    onboardingCompleted: true,
+    ...(data.companyName && { companyName: data.companyName }),
+  });
+}

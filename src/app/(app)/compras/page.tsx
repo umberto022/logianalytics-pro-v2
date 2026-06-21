@@ -9,6 +9,7 @@ import {
   Edit2, FileText, Package,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -704,18 +705,9 @@ export default function ComprasPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="py-20 text-center">
-            <ShoppingBag size={44} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-500 font-medium">
-              {orders.length === 0 ? "Aún no tienes órdenes de compra" : "Sin resultados"}
-            </p>
-            {orders.length === 0 && (
-              <button onClick={() => setShowForm(true)}
-                className="mt-4 px-5 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition">
-                Crear primera orden
-              </button>
-            )}
-          </div>
+          orders.length === 0
+            ? <EmptyState icon={ShoppingBag} title="Sin órdenes de compra" description="Crea tu primera orden para llevar el control de lo que compras a tus proveedores." action={{ label: "Crear primera orden", onClick: () => setShowForm(true) }} />
+            : <EmptyState icon={ShoppingBag} title="Sin resultados" description="Ninguna orden coincide con los filtros aplicados." />
         ) : (
           <>
             {/* Mobile cards */}

@@ -14,8 +14,10 @@ import { computeByClient } from "@/lib/firestore/sales";
 import { fmtCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { Period } from "@/types";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { useUndoDelete } from "@/hooks/useUndoDelete";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { usePagination } from "@/hooks/usePagination";
@@ -132,7 +134,7 @@ export default function ClientesPage() {
   const inp = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
   const lbl = "block text-sm font-medium text-slate-700 mb-1";
 
-  if (loading) return <FullPageSpinner />;
+  if (loading) return <div className="space-y-5"><TableSkeleton rows={6} cols={6} /></div>;
 
   return (
     <div>
@@ -193,11 +195,9 @@ export default function ClientesPage() {
       {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <Users size={36} className="mx-auto text-slate-300 mb-3" />
-            <p className="text-slate-500 font-medium">{search ? "Sin resultados" : "No hay clientes aún"}</p>
-            {!search && <p className="text-slate-400 text-sm mt-1">Agrega tu primer cliente con el botón de arriba</p>}
-          </div>
+          search
+            ? <EmptyState icon={Users} title="Sin resultados" description={`No encontramos clientes que coincidan con "${search}".`} />
+            : <EmptyState icon={Users} title="No hay clientes aún" description="Registra tus clientes para hacer seguimiento de compras, créditos y estadísticas por cliente." action={{ label: "Añadir primer cliente", onClick: openAdd }} />
         ) : (
           <>
           <div className="overflow-x-auto">

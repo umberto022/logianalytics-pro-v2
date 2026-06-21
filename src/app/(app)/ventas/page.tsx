@@ -24,6 +24,7 @@ import {
 import { fmtCurrency, fmt, fmtDate } from "@/lib/utils";
 import { PeriodSelect } from "@/components/ui/PeriodSelect";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { InvoiceModal, type InvoiceData } from "@/components/ui/InvoiceModal";
 import { Pagination } from "@/components/ui/Pagination";
@@ -1046,9 +1047,8 @@ export default function VentasPage() {
           </div>
 
           {filteredSales.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-              <ShoppingCart size={40} className="mx-auto mb-3 text-slate-300" />
-              <p className="text-slate-400">No hay ventas en este período</p>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+              <EmptyState icon={ShoppingCart} title="Sin ventas en este período" description="Registra tu primera venta usando el tab de Registrar o la tecla rápida V desde cualquier pantalla." action={{ label: "Registrar venta", onClick: () => setTab("register") }} />
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">

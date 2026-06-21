@@ -15,7 +15,9 @@ import { listPurchaseOrders } from "@/lib/firestore/purchases";
 import { supplierSchema, zodErrors } from "@/lib/schemas";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { fmtCurrency } from "@/lib/utils";
 import { useSuppliers, useInvalidateSuppliers } from "@/hooks/useSuppliers";
 import type { PurchaseOrder } from "@/types";
@@ -137,7 +139,7 @@ export default function ProveedoresPage() {
 
   const inp = "w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
 
-  if (loading) return <FullPageSpinner />;
+  if (loading) return <div className="space-y-5"><TableSkeleton rows={5} cols={5} /></div>;
 
   return (
     <div>
@@ -357,6 +359,13 @@ export default function ProveedoresPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
+              {filtered.length === 0 && (
+                <tr><td colSpan={6}>
+                  {search
+                    ? <EmptyState icon={Store} title="Sin resultados" description={`No hay proveedores que coincidan con "${search}".`} />
+                    : <EmptyState icon={Store} title="No hay proveedores aún" description="Agrega tus proveedores para agilizar órdenes de compra y controlar el rendimiento de cada uno." action={{ label: "Añadir proveedor", onClick: openAdd }} />}
+                </td></tr>
+              )}
               {filtered.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
