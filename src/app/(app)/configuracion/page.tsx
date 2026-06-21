@@ -10,7 +10,7 @@ import { createCompany, getCompany, updateCompany } from "@/lib/firestore/compan
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
-import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck, Mail, Send } from "lucide-react";
 import { listAuditLog, type AuditEntry, type AuditAction } from "@/lib/firestore/auditLog";
 import {
   isPushEnabled,
@@ -62,6 +62,7 @@ export default function ConfiguracionPage() {
   const [auditDays,    setAuditDays]    = useState(7);
   const [pushEnabled, setPushEnabledState] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
+  const [sendingReport, setSendingReport] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -69,6 +70,29 @@ export default function ConfiguracionPage() {
       if ("Notification" in window) setPushPermission(Notification.permission);
     }
   }, []);
+
+  async function sendTestReport() {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    setSendingReport(true);
+    try {
+      const token = await currentUser.getIdToken();
+      const res   = await fetch("/api/send-test-report", {
+        method:  "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(`Reporte enviado a ${data.email}`);
+      } else {
+        toast.error(`Error: ${data.error ?? "Intenta de nuevo"}`);
+      }
+    } catch {
+      toast.error("Error al enviar el reporte");
+    } finally {
+      setSendingReport(false);
+    }
+  }
 
   async function togglePush() {
     if (!pushEnabled) {
@@ -378,6 +402,31 @@ export default function ConfiguracionPage() {
               />
             </button>
           </div>
+        </div>
+
+        {/* Reportes por email */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail size={18} className="text-brand-600" />
+            <h2 className="font-semibold text-slate-700">Reportes por email</h2>
+          </div>
+          <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+            Recibe un resumen mensual con KPIs, top productos y alertas de stock directamente en tu correo. Se envía automáticamente el 1° de cada mes.
+          </p>
+          <div className="bg-slate-50 rounded-xl p-3.5 mb-4 text-xs text-slate-500 space-y-1">
+            <p>✉️ Se enviará a: <span className="font-semibold text-slate-700">{profile?.email}</span></p>
+            <p>🗓️ Frecuencia: primer día de cada mes a las 9:00 AM</p>
+            <p>📊 Incluye: ingresos, ganancia, margen, top 5 productos y alertas</p>
+          </div>
+          <button
+            onClick={sendTestReport}
+            disabled={sendingReport}
+            className="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl text-sm transition"
+          >
+            {sendingReport
+              ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Enviando…</>
+              : <><Send size={14} /> Enviarme un reporte de prueba</>}
+          </button>
         </div>
 
         {/* Audit Log */}

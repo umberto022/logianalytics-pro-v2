@@ -9,6 +9,7 @@ import {
   Edit2, FileText, Package,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminButton } from "@/components/ui/AdminOnly";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
@@ -245,10 +246,10 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit }: {
               </button>
             )}
             {order.status !== "recibida" && (
-              <button onClick={() => { onDelete(order.id); onClose(); }}
+              <AdminButton onClick={() => { onDelete(order.id); onClose(); }}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50 transition ml-auto">
                 <Trash2 size={14} /> Eliminar
-              </button>
+              </AdminButton>
             )}
           </div>
         </div>
@@ -740,10 +741,10 @@ export default function ComprasPage() {
                             className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
                             <Edit2 size={15} />
                           </button>
-                          <button onClick={() => handleDelete(order.id)}
+                          <AdminButton onClick={() => handleDelete(order.id)}
                             className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
                             <Trash2 size={15} />
-                          </button>
+                          </AdminButton>
                         </>
                       )}
                       <button onClick={() => printOrder(order)}
@@ -795,10 +796,10 @@ export default function ComprasPage() {
                                 className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
                                 <Edit2 size={14} />
                               </button>
-                              <button onClick={() => handleDelete(order.id)}
+                              <AdminButton onClick={() => handleDelete(order.id)}
                                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
                                 <Trash2 size={14} />
-                              </button>
+                              </AdminButton>
                             </>
                           )}
                           <button onClick={() => printOrder(order)}
