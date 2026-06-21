@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
-import { buildMonthlyReport, buildEmailHtml } from "@/app/api/send-monthly-report/route";
+import { buildMonthlyReport, buildEmailHtml } from "@/lib/monthlyReport";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 // Called from the Configuración page to send a test report to the current user.
 // Requires Firebase ID token in Authorization header.
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const fullName = (profile.fullName as string) ?? "";
 
     const report = await buildMonthlyReport(db, uid, true); // testMode = current month
-    await resend.emails.send({
+    await getResend().emails.send({
       from:    process.env.REPORT_FROM_EMAIL ?? "reportes@logianalytics.app",
       to:      email,
       subject: `📊 Reporte de prueba — ${report.monthLabel}`,
