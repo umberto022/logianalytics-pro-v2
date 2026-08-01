@@ -1361,7 +1361,8 @@ function ConteoTab({ items, uid, onDone }: {
 export default function InventarioPage() {
   const { user } = useAuth();
   const { workspaceId, can } = useRole();
-  const [tab,          setTab]          = useState<Tab>("dashboard");
+  const canEditInv = can("inventario").canEdit;
+  const [tab,          setTab]          = useState<Tab>(canEditInv ? "dashboard" : "list");
   const [items,        setItems]        = useState<InventoryItem[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
@@ -1593,15 +1594,15 @@ export default function InventarioPage() {
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const canEditInv = can("inventario").canEdit;
-
-  const TABS: { key: Tab; label: string }[] = [
+  const TABS: { key: Tab; label: string }[] = canEditInv ? [
     { key: "dashboard", label: "📊 Dashboard" },
     { key: "list",      label: `📋 Productos (${items.length})` },
-    ...(canEditInv ? [{ key: "add" as Tab,       label: editing ? "✏️ Editar" : "➕ Agregar" }] : []),
+    { key: "add",       label: editing ? "✏️ Editar" : "➕ Agregar" },
     { key: "historial", label: "📜 Historial" },
     { key: "ordenes",   label: `🛒 Reabastecer${items.filter(i=>getStockStatus(i)!=="ok").length > 0 ? ` (${items.filter(i=>getStockStatus(i)!=="ok").length})` : ""}` },
-    ...(canEditInv ? [{ key: "conteo" as Tab,    label: "📦 Conteo físico" }] : []),
+    { key: "conteo",    label: "📦 Conteo físico" },
+  ] : [
+    { key: "list", label: `📋 Productos (${items.length})` },
   ];
 
   const sortableCols: { key: SortKey; label: string }[] = [

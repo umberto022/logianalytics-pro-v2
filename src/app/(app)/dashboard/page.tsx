@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { format, subDays, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, Cell, PieChart, Pie,
 } from "recharts";
 import {
   DollarSign, TrendingUp, ShoppingCart, Package, AlertTriangle, Printer, Clock,
+  Wallet, CheckCircle2, XCircle,
 } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useSales } from "@/hooks/useSales";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
 import { useRole } from "@/hooks/useRole";
+import { useCaja } from "@/contexts/CajaContext";
+import { getRecentSessions, type CajaSession } from "@/lib/firestore/caja";
 import { computeSummary, computeByRoute, computeByProduct, computeDailyStats, computeByClient } from "@/lib/firestore/sales";
 import { getStockStatus, fmtCurrency, fmt, fmtDate } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
@@ -33,15 +36,29 @@ export default function DashboardPage() {
   const [customTo,   setCustomTo]   = useState("");
   const [useCustom,  setUseCustom]  = useState(false);
 
-  const { can } = useRole();
+  const { role, workspaceId, can } = useRole();
+  const isVentasOnly = role === "ventas"; // employee, not admin — gets the minimal daily view
   const canViewSales = can("ventas").canView;
   const canViewInv   = can("inventario").canView;
   const canViewPO    = can("compras").canView || can("recepciones").canView;
 
   const [activeKPI, setActiveKPI] = useState<ActiveKPI>(null);
-  const { items, loading: loadingInv } = useInventory(canViewInv);
+  const { items, loading: loadingInv } = useInventory(canViewInv && !isVentasOnly);
   const { sales: allSales, loading: loadingSales } = useSales(180, canViewSales);
-  const { orders: purchaseOrders } = usePurchaseOrders(canViewPO);
+  const { orders: purchaseOrders } = usePurchaseOrders(canViewPO && !isVentasOnly);
+
+  const { session: cajaSession } = useCaja();
+  const [todayClosedCaja, setTodayClosedCaja] = useState<CajaSession | null>(null);
+  useEffect(() => {
+    if (!isVentasOnly || !workspaceId) return;
+    getRecentSessions(workspaceId).then((sessions) => {
+      const today = new Date().toISOString().slice(0, 10);
+      setTodayClosedCaja(sessions.find((s) => s.date === today && s.status === "closed") ?? null);
+    });
+  }, [isVentasOnly, workspaceId, cajaSession]);
+
+  const todaySales   = useMemo(() => allSales.filter((s) => isSameDay(s.saleDate.toDate(), new Date())), [allSales]);
+  const todaySummary = useMemo(() => computeSummary(todaySales), [todaySales]);
 
   const sales = useMemo(() => {
     if (!useCustom || !customFrom) return allSales.filter((s) => {
@@ -111,6 +128,69 @@ export default function DashboardPage() {
     (!canViewPO || purchaseOrders.length === 0);
 
   if (loadingInv || loadingSales) return <DashboardSkeleton />;
+
+  if (isVentasOnly) {
+    const cajaStatus = cajaSession
+      ? { label: "Caja abierta", detail: `Abierta a las ${cajaSession.openedAt.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · inicial ${fmtCurrency(cajaSession.initialCash)}`, color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: Wallet }
+      : todayClosedCaja
+        ? (todayClosedCaja.difference === 0
+            ? { label: "Caja cuadrada", detail: `Cerrada a las ${todayClosedCaja.closedAt?.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) ?? ""}`, color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 }
+            : { label: "Caja con descuadre", detail: `Diferencia: ${fmtCurrency(todayClosedCaja.difference ?? 0)}`, color: "text-red-700 bg-red-50 border-red-200", icon: XCircle })
+        : { label: "Caja sin abrir hoy", detail: "Todavía no se ha abierto la caja del día", color: "text-slate-500 bg-slate-50 border-slate-200", icon: Wallet };
+
+    return (
+      <div>
+        <PageHeader title="Dashboard" subtitle="Resumen de tu día" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <KPICard label="Ventas hoy"   value={fmt(todaySummary.numSales, 0)}       icon={ShoppingCart} color="blue" deltaType="neutral" />
+          <KPICard label="Ingresos hoy" value={fmtCurrency(todaySummary.revenue)}   icon={DollarSign}   color="indigo" deltaType="neutral" />
+          <KPICard label="Ganancia hoy" value={fmtCurrency(todaySummary.profit)}    icon={TrendingUp}   color="green" deltaType="neutral" />
+        </div>
+
+        <div className={`rounded-2xl border p-5 mb-6 shadow-sm flex items-center gap-3 ${cajaStatus.color}`}>
+          <cajaStatus.icon size={22} className="flex-shrink-0" />
+          <div>
+            <p className="font-semibold">{cajaStatus.label}</p>
+            <p className="text-sm opacity-80">{cajaStatus.detail}</p>
+          </div>
+        </div>
+
+        {todaySales.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm">
+            <ShoppingCart size={40} className="text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-500 font-medium">Sin ventas registradas hoy</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+            <h3 className="font-semibold text-slate-700 mb-4">Ventas de hoy</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-slate-500 border-b border-slate-100">
+                    {["Hora", "Producto", "Cant.", "Cliente", "Ingreso"].map((h) => (
+                      <th key={h} className="text-left py-2 px-3 font-medium">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {todaySales.map((s) => (
+                    <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
+                      <td className="py-2 px-3 text-slate-500">{s.saleDate.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</td>
+                      <td className="py-2 px-3 font-medium truncate max-w-[160px]">{s.productName}</td>
+                      <td className="py-2 px-3">{s.quantity}</td>
+                      <td className="py-2 px-3 text-slate-500 truncate max-w-[140px]">{s.client || "—"}</td>
+                      <td className="py-2 px-3 text-indigo-600 font-medium">{fmtCurrency(s.totalRevenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (isEmpty) {
     return (
