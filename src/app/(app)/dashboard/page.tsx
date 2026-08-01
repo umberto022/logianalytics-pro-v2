@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import {
   DollarSign, TrendingUp, ShoppingCart, Package, AlertTriangle, Printer, Clock,
-  Wallet, CheckCircle2, XCircle,
+  Wallet, CheckCircle2, XCircle, PackageCheck, ClipboardList,
 } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useSales } from "@/hooks/useSales";
@@ -37,7 +37,9 @@ export default function DashboardPage() {
   const [useCustom,  setUseCustom]  = useState(false);
 
   const { role, workspaceId, can } = useRole();
-  const isVentasOnly = role === "ventas"; // employee, not admin — gets the minimal daily view
+  const isVentasOnly    = role === "ventas";    // employee, not admin — gets the minimal daily view
+  const isComprasOnly   = role === "compras";
+  const isLogisticaOnly = role === "logistica";
   const canViewSales = can("ventas").canView;
   const canViewInv   = can("inventario").canView;
   const canViewPO    = can("compras").canView || can("recepciones").canView;
@@ -116,6 +118,15 @@ export default function DashboardPage() {
     return { pendingOrders: pending, overdueOrders: overdue };
   }, [purchaseOrders]);
 
+  const receivedThisMonth = useMemo(() => {
+    const now = new Date();
+    return purchaseOrders.filter((o) => {
+      if (o.status !== "recibida" || !o.receivedDate) return false;
+      const d = o.receivedDate.toDate();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  }, [purchaseOrders]);
+
   const fmtDelta = useCallback((d: number | null) =>
     d === null ? "vs mes ant." : `${d >= 0 ? "+" : ""}${d.toFixed(1)}% vs mes ant.`, []);
 
@@ -185,6 +196,118 @@ export default function DashboardPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isComprasOnly) {
+    return (
+      <div>
+        <PageHeader title="Dashboard" subtitle="Resumen de tus órdenes de compra" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <KPICard label="Órdenes pendientes" value={fmt(pendingOrders.length, 0)} icon={Clock} color={overdueOrders.length > 0 ? "red" : "blue"} deltaType="neutral"
+            delta={overdueOrders.length > 0 ? `${overdueOrders.length} vencida${overdueOrders.length !== 1 ? "s" : ""}` : undefined} />
+          <KPICard label="Recibidas este mes" value={fmt(receivedThisMonth.length, 0)} icon={PackageCheck} color="green" deltaType="neutral" />
+          <KPICard label="Gastado este mes" value={fmtCurrency(receivedThisMonth.reduce((s, o) => s + o.total, 0))} icon={DollarSign} color="indigo" deltaType="neutral" />
+        </div>
+
+        {pendingOrders.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm">
+            <ClipboardList size={40} className="text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-500 font-medium">Sin órdenes pendientes</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <Clock size={15} className="text-amber-500" /> Órdenes de compra pendientes
+            </h3>
+            <div className="space-y-2">
+              {pendingOrders.map((o) => {
+                const overdue = o.expectedDate.seconds < Date.now() / 1000;
+                return (
+                  <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50" : "bg-slate-50"}`}>
+                    <div>
+                      <p className="font-medium text-slate-800">{o.orderNumber}</p>
+                      <p className="text-xs text-slate-400">{o.supplierName}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-xs font-semibold ${overdue ? "text-red-600" : "text-slate-500"}`}>
+                        {fmtDate(o.expectedDate)}{overdue ? " ⚠️" : ""}
+                      </p>
+                      <p className="font-semibold text-slate-900">{fmtCurrency(o.total)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isLogisticaOnly) {
+    return (
+      <div>
+        <PageHeader title="Dashboard" subtitle="Resumen de inventario y recepciones" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <KPICard label="Alertas de stock" value={`${criticalItems.length} crít · ${lowItems.length} bajos`} icon={AlertTriangle}
+            color={criticalItems.length > 0 ? "red" : "green"} deltaType="neutral" />
+          <KPICard label="Productos en catálogo" value={fmt(items.length, 0)} icon={Package} color="amber" deltaType="neutral" />
+          <KPICard label="Por recibir" value={fmt(pendingOrders.length, 0)} icon={PackageCheck}
+            color={overdueOrders.length > 0 ? "red" : "blue"} deltaType="neutral"
+            delta={overdueOrders.length > 0 ? `${overdueOrders.length} vencida${overdueOrders.length !== 1 ? "s" : ""}` : undefined} />
+        </div>
+
+        {(criticalItems.length > 0 || lowItems.length > 0) && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
+            <p className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
+              <AlertTriangle size={16} /> {criticalItems.length + lowItems.length} alerta(s) de inventario
+            </p>
+            <div className="space-y-1.5">
+              {[...criticalItems, ...lowItems].slice(0, 8).map((i) => (
+                <div key={i.id} className="flex items-center justify-between text-sm text-red-800 bg-white/60 rounded-lg px-3 py-1.5">
+                  <span className="font-medium">{i.name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-500">stock {i.currentStock} / mín {i.minStock}</span>
+                    <StockBadge status={getStockStatus(i)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pendingOrders.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm">
+            <PackageCheck size={40} className="text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-500 font-medium">Sin recepciones pendientes</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <Clock size={15} className="text-amber-500" /> Pendientes de recepción
+            </h3>
+            <div className="space-y-2">
+              {pendingOrders.map((o) => {
+                const overdue = o.expectedDate.seconds < Date.now() / 1000;
+                return (
+                  <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50" : "bg-slate-50"}`}>
+                    <div>
+                      <p className="font-medium text-slate-800">{o.orderNumber}</p>
+                      <p className="text-xs text-slate-400">{o.supplierName}</p>
+                    </div>
+                    <p className={`text-xs font-semibold ${overdue ? "text-red-600" : "text-slate-500"}`}>
+                      {fmtDate(o.expectedDate)}{overdue ? " ⚠️" : ""}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
