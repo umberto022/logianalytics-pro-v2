@@ -1,17 +1,17 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { listCustomers } from "@/lib/firestore/customers";
 
 export const CUSTOMERS_KEY = (uid: string) => ["customers", uid];
 
 export function useCustomers() {
-  const { user } = useAuth();
+  const { workspaceId } = useRole();
   const query = useQuery({
-    queryKey: CUSTOMERS_KEY(user?.uid ?? ""),
-    queryFn:  () => listCustomers(user!.uid),
-    enabled:  !!user,
+    queryKey: CUSTOMERS_KEY(workspaceId),
+    queryFn:  () => listCustomers(workspaceId),
+    enabled:  !!workspaceId,
     staleTime: 2 * 60 * 1000,
   });
   return {
@@ -23,7 +23,7 @@ export function useCustomers() {
 }
 
 export function useInvalidateCustomers() {
-  const { user } = useAuth();
+  const { workspaceId } = useRole();
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: CUSTOMERS_KEY(user?.uid ?? "") });
+  return () => qc.invalidateQueries({ queryKey: CUSTOMERS_KEY(workspaceId) });
 }

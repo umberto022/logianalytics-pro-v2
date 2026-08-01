@@ -7,6 +7,7 @@ import {
   FileText, X, TrendingUp, ShoppingCart, DollarSign, ChevronRight, Download, Printer,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { useCustomers, useInvalidateCustomers } from "@/hooks/useCustomers";
 import { useSales } from "@/hooks/useSales";
 import { addCustomer, updateCustomer, deleteCustomer } from "@/lib/firestore/customers";
@@ -32,6 +33,7 @@ const EMPTY: Omit<Customer, "id" | "createdAt" | "updatedAt"> = {
 
 export default function ClientesPage() {
   const { user } = useAuth();
+  const { workspaceId } = useRole();
   const { customers, loading } = useCustomers();
   const [salesPeriod, setSalesPeriod] = useState<Period>(90);
   const { sales } = useSales(salesPeriod);
@@ -111,8 +113,8 @@ export default function ClientesPage() {
     setFormErrors({});
     setSaving(true);
     const result = editing
-      ? await updateCustomer(user.uid, editing.id, form)
-      : await addCustomer(user.uid, form);
+      ? await updateCustomer(workspaceId, editing.id, form)
+      : await addCustomer(workspaceId, form);
     if (result.ok) {
       toast.success(result.message);
       invalidate();
@@ -126,7 +128,7 @@ export default function ClientesPage() {
   function handleDelete(c: Customer) {
     if (!user) return;
     undoDelete(`"${c.name}" eliminado`, async () => {
-      const result = await deleteCustomer(user.uid, c.id);
+      const result = await deleteCustomer(workspaceId, c.id);
       if (result.ok) invalidate();
       else toast.error(result.message);
     });

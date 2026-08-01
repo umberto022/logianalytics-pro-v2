@@ -8,6 +8,7 @@ import {
   Minus, Plus, ScanLine, Barcode,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { receivePurchaseOrder } from "@/lib/firestore/purchases";
 import { fmtCurrency } from "@/lib/utils";
 import type { PurchaseOrder, PurchaseOrderItem } from "@/types";
@@ -344,6 +345,7 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
   onDone: () => void;
 }) {
   const { user } = useAuth();
+  const { workspaceId } = useRole();
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<ItemState[]>(
     order.items.map((i) => ({
@@ -391,7 +393,7 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
       receiptPhotoUrl: items[i].receiptPhotoUrl,
     }));
 
-    const r = await receivePurchaseOrder(user.uid, order.id, merged);
+    const r = await receivePurchaseOrder(workspaceId, order.id, merged);
     setSaving(false);
     if (r.ok) { toast.success(r.message); onDone(); onClose(); }
     else toast.error(r.message);

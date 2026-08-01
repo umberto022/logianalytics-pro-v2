@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { MapPin, TrendingUp, Navigation, BarChart2, Plus, Edit2, Trash2, X, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { getSales, computeByRoute } from "@/lib/firestore/sales";
 import { listRoutes, addRoute, updateRoute, deleteRoute, type RouteRecord } from "@/lib/firestore/routes";
 import { fmtCurrency, fmt } from "@/lib/utils";
@@ -29,7 +30,9 @@ const EMPTY_ROUTE = { name: "", zone: "", description: "", active: true };
 
 export default function RutasPage() {
   const { user } = useAuth();
-  const [tab,     setTab]    = useState<Tab>("analytics");
+  const { workspaceId, can } = useRole();
+  const canViewAnalytics = can("ventas").canView;
+  const [tab,     setTab]    = useState<Tab>(canViewAnalytics ? "analytics" : "gestion");
   const [period,  setPeriod] = useState<Period>(30);
   const [loading, setLoading]= useState(true);
   const [routes,  setRoutes] = useState<RouteStats[]>([]);
@@ -47,7 +50,10 @@ export default function RutasPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const [sl, rr] = await Promise.all([getSales(user.uid, period), listRoutes(user.uid)]);
+      const [sl, rr] = await Promise.all([
+        canViewAnalytics ? getSales(workspaceId, period) : Promise.resolve([]),
+        listRoutes(workspaceId),
+      ]);
       setRoutes(computeByRoute(sl));
       setManaged(rr);
     } catch {
@@ -55,7 +61,7 @@ export default function RutasPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, period]);
+  }, [user, period, workspaceId, canViewAnalytics]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -63,8 +69,8 @@ export default function RutasPage() {
     if (!form.name.trim() || !user) { toast.error("El nombre es obligatorio"); return; }
     setSaving(true);
     const result = editing
-      ? await updateRoute(user.uid, editing.id, form)
-      : await addRoute(user.uid, form);
+      ? await updateRoute(workspaceId, editing.id, form)
+      : await addRoute(workspaceId, form);
     setSaving(false);
     if (!result.ok) { toast.error(result.message ?? "Error al guardar"); return; }
     toast.success(editing ? "Ruta actualizada" : "Ruta creada");
@@ -78,7 +84,7 @@ export default function RutasPage() {
     if (!user || !confirmDelete) return;
     const r = confirmDelete;
     setConfirmDelete(null);
-    const result = await deleteRoute(user.uid, r.id);
+    const result = await deleteRoute(workspaceId, r.id);
     if (!result.ok) { toast.error(result.message ?? "Error al eliminar"); return; }
     toast.success("Ruta eliminada");
     await load();
@@ -97,7 +103,7 @@ export default function RutasPage() {
   const best  = routes[0];
   const worst = routes[routes.length - 1];
 
-  if (routes.length === 0) {
+  if (canViewAnalytics && routes.length === 0 && tab === "analytics") {
     return (
       <div>
         <PageHeader title="Rutas" subtitle="Visualiza el rendimiento de tus rutas de entrega" />
@@ -159,7 +165,9 @@ export default function RutasPage() {
 
       <PageHeader
         title="Rutas"
-        subtitle={`${routes.length} ruta${routes.length !== 1 ? "s" : ""} activa${routes.length !== 1 ? "s" : ""} con datos de ventas`}
+        subtitle={canViewAnalytics
+          ? `${routes.length} ruta${routes.length !== 1 ? "s" : ""} activa${routes.length !== 1 ? "s" : ""} con datos de ventas`
+          : `${managed.length} ruta${managed.length !== 1 ? "s" : ""} registrada${managed.length !== 1 ? "s" : ""}`}
         action={tab === "analytics" ? <PeriodSelect value={period} onChange={setPeriod} /> : (
           <button onClick={() => { setEditing(null); setForm({ ...EMPTY_ROUTE }); setShowForm(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-xl hover:bg-brand-700 transition">
@@ -170,7 +178,10 @@ export default function RutasPage() {
 
       {/* Tab bar */}
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
-        {([["analytics", "📊 Analíticas"], ["gestion", "🗺️ Mis rutas"]] as const).map(([key, label]) => (
+        {(canViewAnalytics
+          ? ([["analytics", "📊 Analíticas"], ["gestion", "🗺️ Mis rutas"]] as const)
+          : ([["gestion", "🗺️ Mis rutas"]] as const)
+        ).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key as Tab)}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap ${tab === key ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}>
             {label}

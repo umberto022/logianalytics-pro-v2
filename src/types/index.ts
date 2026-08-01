@@ -1,16 +1,23 @@
 import { Timestamp } from "firebase/firestore";
 
+export type Department = "admin" | "ventas" | "compras" | "logistica";
+
 export interface UserProfile {
   id: string;
   email: string;
   fullName: string;
   phone: string;
-  role: "admin" | "user";
+  role: Department;
   subscriptionPlan: "free" | "basic" | "pro";
+  /** Id of the `companies/{id}` profile doc (name, RIF, address...). Unrelated to data scoping. */
   companyId?: string;
   companyName?: string;
+  /** Scopes all operational data (inventory, sales, etc). Uid of the owning admin — equals `id` for the admin/owner themselves. */
+  workspaceId?: string;
   photoURL?: string;
   onboardingCompleted?: boolean;
+  /** Gates the platform-wide /admin panel (feedback + all-companies user list). Only true for the LogiAnalytics operator account. */
+  platformAdmin?: boolean;
   createdAt: Timestamp;
   lastLogin?: Timestamp;
 }

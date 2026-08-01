@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import Papa from "papaparse";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { useCaja } from "@/contexts/CajaContext";
 import { closeCajaSession } from "@/lib/firestore/caja";
 import { useInventory, useInvalidateInventory } from "@/hooks/useInventory";
@@ -696,6 +697,7 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
 
 export default function VentasPage() {
   const { user, profile } = useAuth();
+  const { workspaceId } = useRole();
   const { session, cajaOpen } = useCaja();
   const [tab,        setTab]       = useState<Tab>("register");
   const [period,     setPeriod]    = useState<Period>(30);
@@ -787,7 +789,7 @@ export default function VentasPage() {
     setSaving(true);
     const cartSnapshot = [...cart];
     const formSnapshot = { route, zone, client, clientRnc, clientAddress, clientPhone, clientEmail, notes, ncf, saleDate, paymentStatus, dueDate };
-    const r = await registerSaleOrder(user.uid, {
+    const r = await registerSaleOrder(workspaceId, {
       items: cart.map((c) => ({ inventoryId: c.inventoryId, quantity: c.quantity, unitPrice: c.unitPrice })),
       route, zone, client, clientRnc, clientAddress, clientPhone, clientEmail, notes, ncf,
       saleDate: new Date(saleDate),
@@ -1353,7 +1355,7 @@ export default function VentasPage() {
 
       {/* ── Cierre del día ── */}
       {tab === "cierre" && user && (
-        <CierreTab sales={sales} uid={user.uid} />
+        <CierreTab sales={sales} uid={workspaceId} />
       )}
     </div>
   );

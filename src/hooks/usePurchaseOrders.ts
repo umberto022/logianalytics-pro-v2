@@ -1,17 +1,17 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { listPurchaseOrders } from "@/lib/firestore/purchases";
 
 export const PURCHASE_ORDERS_KEY = (uid: string) => ["purchaseOrders", uid];
 
-export function usePurchaseOrders() {
-  const { user } = useAuth();
+export function usePurchaseOrders(enabled: boolean = true) {
+  const { workspaceId } = useRole();
   const query = useQuery({
-    queryKey: PURCHASE_ORDERS_KEY(user?.uid ?? ""),
-    queryFn:  () => listPurchaseOrders(user!.uid),
-    enabled:  !!user,
+    queryKey: PURCHASE_ORDERS_KEY(workspaceId),
+    queryFn:  () => listPurchaseOrders(workspaceId),
+    enabled:  !!workspaceId && enabled,
     staleTime: 2 * 60 * 1000,
   });
   return {
@@ -22,7 +22,7 @@ export function usePurchaseOrders() {
 }
 
 export function useInvalidatePurchaseOrders() {
-  const { user } = useAuth();
+  const { workspaceId } = useRole();
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: PURCHASE_ORDERS_KEY(user?.uid ?? "") });
+  return () => qc.invalidateQueries({ queryKey: PURCHASE_ORDERS_KEY(workspaceId) });
 }

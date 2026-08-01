@@ -1,20 +1,20 @@
 import { useEffect, useRef } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { getStockStatus } from "@/lib/utils";
 import { isPushEnabled, sendStockNotification } from "@/lib/notifications";
 import type { InventoryItem } from "@/types";
 
 export function useStockNotifications() {
-  const { user } = useAuth();
+  const { workspaceId, can } = useRole();
   // Track which items we've already notified so we don't spam on every render
   const notifiedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!user) return;
+    if (!workspaceId || !can("inventario").canView) return;
 
-    const col = collection(db, "inventory", user.uid, "items");
+    const col = collection(db, "inventory", workspaceId, "items");
 
     const unsub = onSnapshot(col, (snap) => {
       if (!isPushEnabled()) return;
@@ -38,5 +38,5 @@ export function useStockNotifications() {
     });
 
     return () => unsub();
-  }, [user]);
+  }, [workspaceId, can]);
 }

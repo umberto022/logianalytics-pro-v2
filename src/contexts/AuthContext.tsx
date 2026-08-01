@@ -12,7 +12,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import {
-  createUserProfile, getUserProfile, touchLastLogin,
+  createUserProfile, getUserProfile, touchLastLogin, backfillWorkspaceId,
 } from "@/lib/firestore/users";
 import type { UserProfile } from "@/types";
 
@@ -37,7 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadProfile(u: User) {
     try {
-      const p = await getUserProfile(u.uid);
+      let p = await getUserProfile(u.uid);
+      if (p && !p.workspaceId) {
+        await backfillWorkspaceId(u.uid).catch(() => {});
+        p = { ...p, workspaceId: u.uid };
+      }
       setProfile(p);
       if (p) touchLastLogin(u.uid).catch(() => {});
     } catch (e) {

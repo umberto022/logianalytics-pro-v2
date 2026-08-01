@@ -10,71 +10,119 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == uid;
     }
 
-    // Users can read/write their own profile
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
+    // Caller's own profile doc — used to look up role/workspaceId for RBAC checks below.
+    function callerProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Companies: owner or members can access
+    function callerWorkspaceId() {
+      return callerProfile().workspaceId;
+    }
+
+    function callerRole() {
+      return callerProfile().role;
+    }
+
+    // True if the caller belongs to the given workspace (company).
+    function inWorkspace(workspaceId) {
+      return isAuth() && callerWorkspaceId() == workspaceId;
+    }
+
+    // True if the caller belongs to the workspace AND their department is in `roles`.
+    function roleIn(workspaceId, roles) {
+      return inWorkspace(workspaceId) && callerRole() in roles;
+    }
+
+    // Users can read only their own profile. Writes are locked down to prevent
+    // self-granting of role/workspaceId/platformAdmin — those are only ever set
+    // via the Admin SDK (server-side API routes), which bypasses these rules.
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+
+      // Self-registration: you may only ever create yourself as the admin of
+      // your own brand-new workspace (workspaceId == your own uid).
+      allow create: if isOwner(userId) &&
+        request.resource.data.role == 'admin' &&
+        request.resource.data.workspaceId == userId &&
+        !('platformAdmin' in request.resource.data);
+
+      // Ongoing profile edits: safe personal fields only. `workspaceId` may be
+      // set exactly once, as a self-heal, and only to your own uid.
+      allow update: if isOwner(userId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['fullName', 'phone', 'photoURL', 'companyId', 'companyName', 'onboardingCompleted', 'lastLogin', 'workspaceId']) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['workspaceId']) ||
+          (!('workspaceId' in resource.data) && request.resource.data.workspaceId == userId));
+    }
+
+    // Companies: profile metadata doc (name, RIF, address...), doc id is an
+    // auto-generated Firestore id (not a uid), unrelated to workspace data scoping.
+    // Only the company's own admin may read/write their company profile doc.
     match /companies/{companyId} {
-      allow read, write: if isAuth() &&
+      allow read, write: if isAuth() && callerRole() == 'admin' &&
         (resource == null || resource.data.ownerId == request.auth.uid);
     }
 
-    // Inventory: scoped per user
-    match /inventory/{userId}/items/{itemId} {
-      allow read, write: if isOwner(userId);
+    // Inventory: Logística edits; Ventas reads (to know what's sellable);
+    // Compras reads (to look up products/stock while building purchase orders).
+    match /inventory/{workspaceId}/items/{itemId} {
+      allow read: if roleIn(workspaceId, ['admin', 'logistica', 'ventas', 'compras']);
+      allow write: if roleIn(workspaceId, ['admin', 'logistica']);
     }
 
-    // Inventory movements: scoped per user
-    match /inventoryMovements/{userId}/records/{movId} {
-      allow read, write: if isOwner(userId);
+    match /inventoryMovements/{workspaceId}/records/{movId} {
+      allow read: if roleIn(workspaceId, ['admin', 'logistica', 'ventas']);
+      allow write: if roleIn(workspaceId, ['admin', 'logistica']);
     }
 
-    // Sales: scoped per user
-    match /sales/{userId}/records/{saleId} {
-      allow read, write: if isOwner(userId);
+    // Sales: Ventas only.
+    match /sales/{workspaceId}/records/{saleId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
     }
 
-    // Purchase orders: scoped per user
-    match /purchaseOrders/{userId}/orders/{orderId} {
-      allow read, write: if isOwner(userId);
+    // Purchase orders: Compras creates/manages, Logística receives — both can write;
+    // the finer-grained "who does what" split is enforced in the UI, not here.
+    match /purchaseOrders/{workspaceId}/orders/{orderId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'compras', 'logistica']);
     }
 
-    // Feedback: users can write their own; reads only via admin SDK
+    // Feedback: personal beta feedback, not workspace-scoped. Reads only via admin SDK.
     match /feedback/{userId}/reports/{reportId} {
       allow create: if isOwner(userId);
-      allow read, delete: if false; // admin reads via server SDK only
+      allow read, delete: if false;
     }
 
-    // Customers: scoped per user
-    match /customers/{userId}/records/{recordId} {
-      allow read, write: if isOwner(userId);
+    // Customers: Ventas only.
+    match /customers/{workspaceId}/records/{recordId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
     }
 
-    // Suppliers: scoped per user
-    match /users/{userId}/suppliers/{supplierId} {
-      allow read, write: if isOwner(userId);
+    // Suppliers: Compras edits; Logística/Ventas read (populates the supplier
+    // dropdown on the Inventario product form, which they can also reach).
+    match /users/{workspaceId}/suppliers/{supplierId} {
+      allow read: if roleIn(workspaceId, ['admin', 'compras', 'logistica', 'ventas']);
+      allow write: if roleIn(workspaceId, ['admin', 'compras']);
     }
 
-    // Routes: scoped per user
-    match /users/{userId}/routes/{routeId} {
-      allow read, write: if isOwner(userId);
+    // Routes: Logística only.
+    match /users/{workspaceId}/routes/{routeId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'logistica']);
     }
 
-    // Audit log: user can write, read only own
-    match /auditLog/{userId}/events/{eventId} {
-      allow read, write: if isOwner(userId);
+    // Audit log: any workspace member can log their own actions; only Admin reads.
+    match /auditLog/{workspaceId}/events/{eventId} {
+      allow read: if roleIn(workspaceId, ['admin']);
+      allow write: if inWorkspace(workspaceId);
     }
 
-    // Caja sessions: scoped per user
-    match /caja/{userId}/sessions/{sessionId} {
-      allow read, write: if isOwner(userId);
+    // Caja sessions: Ventas only.
+    match /caja/{workspaceId}/sessions/{sessionId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
     }
 
-    // Conteos físicos: scoped per user
-    match /conteos/{userId}/records/{conteoId} {
-      allow read, write: if isOwner(userId);
+    // Conteos físicos: lives inside the Inventario page (Logística), not Caja.
+    match /conteos/{workspaceId}/records/{conteoId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'logistica']);
     }
   }
 }

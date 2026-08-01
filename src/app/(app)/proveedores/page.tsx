@@ -8,6 +8,7 @@ import {
   ShoppingBag, DollarSign, Clock,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import {
   addSupplier, updateSupplier, deleteSupplier, type Supplier,
 } from "@/lib/firestore/suppliers";
@@ -35,6 +36,7 @@ interface SupplierPerf {
 
 export default function ProveedoresPage() {
   const { user } = useAuth();
+  const { workspaceId } = useRole();
   const { suppliers, loading, refetch } = useSuppliers();
   const invalidate = useInvalidateSuppliers();
   const [search,    setSearch]    = useState("");
@@ -74,8 +76,8 @@ export default function ProveedoresPage() {
     setFormErrors({});
     setSaving(true);
     const r = editing
-      ? await updateSupplier(user.uid, editing.id, parsed.data)
-      : await addSupplier(user.uid, parsed.data);
+      ? await updateSupplier(workspaceId, editing.id, parsed.data)
+      : await addSupplier(workspaceId, parsed.data);
     setSaving(false);
     if (r.ok) { toast.success(r.message); invalidate(); setShowForm(false); }
     else toast.error(r.message);
@@ -89,7 +91,7 @@ export default function ProveedoresPage() {
     if (!user || !confirmDelete) return;
     const s = confirmDelete;
     setConfirmDelete(null);
-    const r = await deleteSupplier(user.uid, s.id);
+    const r = await deleteSupplier(workspaceId, s.id);
     if (r.ok) { toast.success(r.message); invalidate(); }
     else toast.error(r.message);
   }
@@ -100,7 +102,7 @@ export default function ProveedoresPage() {
     setPerfData(null);
     setPerfLoading(true);
     try {
-      const allOrders = await listPurchaseOrders(user.uid);
+      const allOrders = await listPurchaseOrders(workspaceId);
       const orders = allOrders.filter((o) =>
         o.supplierId === s.id || o.supplierName.toLowerCase() === s.name.toLowerCase()
       );

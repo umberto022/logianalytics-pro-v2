@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     const decoded  = await getAdminAuth().verifyIdToken(token);
     const userSnap = await getAdminDb().collection("users").doc(decoded.uid).get();
-    if (!userSnap.exists || userSnap.data()?.role !== "admin") {
+    if (!userSnap.exists || userSnap.data()?.platformAdmin !== true) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -24,6 +24,7 @@ const CLOUDINARY_PRESET = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import {
   listInventory, addInventoryItem, updateInventoryItem,
   deleteInventoryItem, bulkAddInventory, listMovements, adjustStock,
@@ -265,11 +266,12 @@ function ProductThumb({ url, name }: { url?: string; name: string }) {
 
 // ─── Product detail modal ─────────────────────────────────────────────────────
 
-function ProductDetailModal({ item, onClose, onEdit, onAdjust }: {
+function ProductDetailModal({ item, onClose, onEdit, onAdjust, canEdit }: {
   item: InventoryItem;
   onClose: () => void;
   onEdit: () => void;
   onAdjust: () => void;
+  canEdit: boolean;
 }) {
   const status = getStockStatus(item);
   const margin = item.salePrice > 0
@@ -320,21 +322,25 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust }: {
           </div>
 
           {/* Price & stock grid */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className={`grid gap-3 mb-5 ${canEdit ? "grid-cols-3" : "grid-cols-1"}`}>
             <div className="bg-emerald-50 rounded-xl p-3 text-center">
               <p className="text-xs text-emerald-600 font-medium mb-1 flex items-center justify-center gap-1">
                 <Tag size={11} /> Precio venta
               </p>
               <p className="text-lg font-bold text-emerald-700">{fmtCurrency(item.salePrice)}</p>
             </div>
-            <div className="bg-slate-50 rounded-xl p-3 text-center">
-              <p className="text-xs text-slate-500 font-medium mb-1">Costo</p>
-              <p className="text-lg font-bold text-slate-700">{fmtCurrency(item.unitCost)}</p>
-            </div>
-            <div className="bg-indigo-50 rounded-xl p-3 text-center">
-              <p className="text-xs text-indigo-600 font-medium mb-1">Margen</p>
-              <p className="text-lg font-bold text-indigo-700">{margin}%</p>
-            </div>
+            {canEdit && (
+              <>
+                <div className="bg-slate-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-slate-500 font-medium mb-1">Costo</p>
+                  <p className="text-lg font-bold text-slate-700">{fmtCurrency(item.unitCost)}</p>
+                </div>
+                <div className="bg-indigo-50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-indigo-600 font-medium mb-1">Margen</p>
+                  <p className="text-lg font-bold text-indigo-700">{margin}%</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Stock bar */}
@@ -359,7 +365,7 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust }: {
           </div>
 
           {/* Price history chart */}
-          {item.priceHistory && item.priceHistory.length >= 2 && (() => {
+          {canEdit && item.priceHistory && item.priceHistory.length >= 2 && (() => {
             const chartData = [...item.priceHistory]
               .sort((a, b) => a.date.toMillis() - b.date.toMillis())
               .map((e) => ({
@@ -396,16 +402,18 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust }: {
           })()}
 
           {/* Actions */}
-          <div className="flex gap-2">
-            <button onClick={() => { onAdjust(); onClose(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
-              <SlidersHorizontal size={14} /> Ajustar stock
-            </button>
-            <button onClick={() => { onEdit(); onClose(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition">
-              <Edit2 size={14} /> Editar
-            </button>
-          </div>
+          {canEdit && (
+            <div className="flex gap-2">
+              <button onClick={() => { onAdjust(); onClose(); }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
+                <SlidersHorizontal size={14} /> Ajustar stock
+              </button>
+              <button onClick={() => { onEdit(); onClose(); }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition">
+                <Edit2 size={14} /> Editar
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -420,6 +428,7 @@ function QuickAdjustModal({ item, onClose, onDone }: {
   onDone: () => void;
 }) {
   const { user } = useAuth();
+  const { workspaceId } = useRole();
   const [delta, setDelta] = useState(1);
   const [note,  setNote]  = useState("");
   const [type,  setType]  = useState<"purchase" | "adjustment" | "sale">("purchase");
@@ -430,7 +439,7 @@ function QuickAdjustModal({ item, onClose, onDone }: {
     if (!user || delta === 0) return;
     setSaving(true);
     const actualDelta = type === "sale" || (type === "adjustment" && delta < 0) ? -Math.abs(delta) : Math.abs(delta);
-    const r = await adjustStock(user.uid, item.id, actualDelta, note || "Ajuste manual", type);
+    const r = await adjustStock(workspaceId, item.id, actualDelta, note || "Ajuste manual", type);
     setSaving(false);
     if (r.ok) { toast.success(r.message); onDone(); onClose(); }
     else toast.error(r.message);
@@ -825,20 +834,21 @@ const PO_STATUS: Record<PurchaseOrderStatus, { label: string; color: string; ico
   cancelada: { label: "Cancelada", color: "bg-red-50 text-red-700 border-red-200",           icon: <XCircle size={11} /> },
 };
 
-function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
+function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryItem[]; uid: string; canViewPO: boolean; canReceive: boolean }) {
   const router = useRouter();
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
 
   function reloadOrders() {
+    if (!canViewPO) { setOrders([]); setLoadingOrders(false); return; }
     setLoadingOrders(true);
     listPurchaseOrders(uid)
       .then(setOrders)
       .finally(() => setLoadingOrders(false));
   }
 
-  useEffect(() => { reloadOrders(); }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { reloadOrders(); }, [uid, canViewPO]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const needRestock = items
     .filter((i) => i.currentStock <= i.minStock)
@@ -1099,7 +1109,7 @@ function OrdenesTab({ items, uid }: { items: InventoryItem[]; uid: string }) {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
-                          {(order.status === "pendiente" || order.status === "parcial") && (
+                          {canReceive && (order.status === "pendiente" || order.status === "parcial") && (
                             <button
                               onClick={() => setReceivingOrder(order)}
                               className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition font-medium"
@@ -1350,6 +1360,7 @@ function ConteoTab({ items, uid, onDone }: {
 
 export default function InventarioPage() {
   const { user } = useAuth();
+  const { workspaceId, can } = useRole();
   const [tab,          setTab]          = useState<Tab>("dashboard");
   const [items,        setItems]        = useState<InventoryItem[]>([]);
   const [loading,      setLoading]      = useState(true);
@@ -1381,7 +1392,7 @@ export default function InventarioPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const [inv, sups] = await Promise.all([listInventory(user.uid), listSuppliers(user.uid)]);
+      const [inv, sups] = await Promise.all([listInventory(workspaceId), listSuppliers(workspaceId)]);
       setItems(inv);
       setSuppliers(sups);
     }
@@ -1405,7 +1416,7 @@ export default function InventarioPage() {
     if (!result.success) { setFormErrors(Object.fromEntries(result.error.issues.map((e) => [e.path.join("."), e.message]))); toast.error("Corrige los errores del formulario"); return; }
     setFormErrors({});
     setSaving(true);
-    const r = await addInventoryItem(user.uid, result.data);
+    const r = await addInventoryItem(workspaceId, result.data);
     setSaving(false);
     if (r.ok) { toast.success(r.message); setForm(EMPTY); await load(); setTab("list"); }
     else toast.error(r.message);
@@ -1418,7 +1429,7 @@ export default function InventarioPage() {
     if (!result.success) { setFormErrors(Object.fromEntries(result.error.issues.map((e) => [e.path.join("."), e.message]))); toast.error("Corrige los errores del formulario"); return; }
     setFormErrors({});
     setSaving(true);
-    const r = await updateInventoryItem(user.uid, editing.id, result.data);
+    const r = await updateInventoryItem(workspaceId, editing.id, result.data);
     setSaving(false);
     if (r.ok) { toast.success(r.message); setEditing(null); await load(); setTab("list"); }
     else toast.error(r.message);
@@ -1432,7 +1443,7 @@ export default function InventarioPage() {
     if (!confirmDeleteItem || !user) return;
     const item = confirmDeleteItem;
     setConfirmDeleteItem(null);
-    const r = await deleteInventoryItem(user.uid, item.id);
+    const r = await deleteInventoryItem(workspaceId, item.id);
     if (r.ok) { toast.success(r.message); await load(); }
     else toast.error(r.message);
   }
@@ -1546,7 +1557,7 @@ export default function InventarioPage() {
           return true;
         });
         if (!rows.length) { toast.error("No se encontraron filas válidas"); return; }
-        const { imported, errors } = await bulkAddInventory(user.uid, rows);
+        const { imported, errors } = await bulkAddInventory(workspaceId, rows);
         toast.success(`${imported} productos importados`);
         if (errors.length) toast.error(`${errors.length} errores`);
         await load(); setTab("list");
@@ -1582,13 +1593,15 @@ export default function InventarioPage() {
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const canEditInv = can("inventario").canEdit;
+
   const TABS: { key: Tab; label: string }[] = [
     { key: "dashboard", label: "📊 Dashboard" },
     { key: "list",      label: `📋 Productos (${items.length})` },
-    { key: "add",       label: editing ? "✏️ Editar" : "➕ Agregar" },
+    ...(canEditInv ? [{ key: "add" as Tab,       label: editing ? "✏️ Editar" : "➕ Agregar" }] : []),
     { key: "historial", label: "📜 Historial" },
     { key: "ordenes",   label: `🛒 Reabastecer${items.filter(i=>getStockStatus(i)!=="ok").length > 0 ? ` (${items.filter(i=>getStockStatus(i)!=="ok").length})` : ""}` },
-    { key: "conteo",    label: "📦 Conteo físico" },
+    ...(canEditInv ? [{ key: "conteo" as Tab,    label: "📦 Conteo físico" }] : []),
   ];
 
   const sortableCols: { key: SortKey; label: string }[] = [
@@ -1596,7 +1609,7 @@ export default function InventarioPage() {
     { key: "category", label: "Tipo" },
     { key: "supplier", label: "Proveedor" },
     { key: "currentStock", label: "Stock" },
-    { key: "unitCost", label: "Costo" },
+    ...(canEditInv ? [{ key: "unitCost" as SortKey, label: "Costo" }] : []),
     { key: "salePrice", label: "P.Venta" },
   ];
 
@@ -1610,6 +1623,7 @@ export default function InventarioPage() {
           onClose={() => setDetailItem(null)}
           onEdit={() => { startEdit(detailItem); }}
           onAdjust={() => setAdjustItem(detailItem)}
+          canEdit={canEditInv}
         />
       )}
       {adjustItem && (
@@ -1641,19 +1655,23 @@ export default function InventarioPage() {
               className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
               <Printer size={15} /> PDF
             </button>
-            <button onClick={downloadCSVTemplate}
-              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition"
-              title="Descargar plantilla CSV para importación masiva">
-              <FileText size={15} /> Plantilla
-            </button>
-            <label className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer">
-              <Upload size={15} /> Importar CSV
-              <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
-            </label>
-            <button onClick={() => { setEditing(null); setForm(EMPTY); setTab("add"); }}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium">
-              <Plus size={15} /> Agregar
-            </button>
+            {canEditInv && (
+              <>
+                <button onClick={downloadCSVTemplate}
+                  className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                  title="Descargar plantilla CSV para importación masiva">
+                  <FileText size={15} /> Plantilla
+                </button>
+                <label className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer">
+                  <Upload size={15} /> Importar CSV
+                  <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+                </label>
+                <button onClick={() => { setEditing(null); setForm(EMPTY); setTab("add"); }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition font-medium">
+                  <Plus size={15} /> Agregar
+                </button>
+              </>
+            )}
           </div>
         }
       />
@@ -1673,7 +1691,7 @@ export default function InventarioPage() {
       {tab === "dashboard" && (
         items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
-            <EmptyState icon={Package} title="Sin productos aún" description="Agrega tu primer producto para ver el dashboard con estadísticas de stock, valor de inventario y alertas automáticas." action={{ label: "Agregar primer producto", onClick: () => setTab("add") }} />
+            <EmptyState icon={Package} title="Sin productos aún" description="Agrega tu primer producto para ver el dashboard con estadísticas de stock, valor de inventario y alertas automáticas." action={canEditInv ? { label: "Agregar primer producto", onClick: () => setTab("add") } : undefined} />
           </div>
         ) : (
           <InventoryDashboard items={items} activeFilter={activeFilter}
@@ -1721,7 +1739,7 @@ export default function InventarioPage() {
 
             {filtered.length === 0 ? (
               items.length === 0
-                ? <EmptyState icon={Package} title="Sin productos" description="Tu inventario está vacío. Agrega productos manualmente o importa un CSV." action={{ label: "Agregar producto", onClick: () => setTab("add") }} secondaryAction={{ label: "Importar CSV", onClick: () => { const el = document.getElementById("csv-import"); el?.click(); } }} />
+                ? <EmptyState icon={Package} title="Sin productos" description="Tu inventario está vacío." action={canEditInv ? { label: "Agregar producto", onClick: () => setTab("add") } : undefined} secondaryAction={canEditInv ? { label: "Importar CSV", onClick: () => { const el = document.getElementById("csv-import"); el?.click(); } } : undefined} />
                 : <EmptyState icon={Package} title="Sin resultados" description="Ningún producto coincide con los filtros actuales." action={{ label: "Limpiar filtros", onClick: () => { setSearch(""); setActiveFilter("all"); } }} />
             ) : (
               <>
@@ -1741,10 +1759,12 @@ export default function InventarioPage() {
                           </button>
                           <p className="text-xs text-slate-400 font-mono">{item.sku} · {item.category}</p>
                           <div className="flex items-center gap-2 mt-1.5">
-                            <button onClick={() => setAdjustItem(item)}
-                              className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition text-slate-400">
-                              <Minus size={10} />
-                            </button>
+                            {canEditInv && (
+                              <button onClick={() => setAdjustItem(item)}
+                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition text-slate-400">
+                                <Minus size={10} />
+                              </button>
+                            )}
                             <div>
                               <span className="text-sm font-bold">{item.currentStock}</span>
                               <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden mt-0.5">
@@ -1752,29 +1772,35 @@ export default function InventarioPage() {
                                   style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
                               </div>
                             </div>
-                            <button onClick={() => setAdjustItem(item)}
-                              className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 transition text-slate-400">
-                              <Plus size={10} />
-                            </button>
+                            {canEditInv && (
+                              <button onClick={() => setAdjustItem(item)}
+                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 transition text-slate-400">
+                                <Plus size={10} />
+                              </button>
+                            )}
                             <StockBadge status={status} />
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <p className="text-sm font-bold text-emerald-600">{fmtCurrency(item.salePrice)}</p>
-                          <p className="text-xs text-slate-400">costo {fmtCurrency(item.unitCost)}</p>
+                          {canEditInv && <p className="text-xs text-slate-400">costo {fmtCurrency(item.unitCost)}</p>}
                           <div className="flex gap-1 mt-1.5 justify-end">
                             <button onClick={() => setQrItem(item)}
                               className="p-1.5 text-slate-400 hover:text-purple-600 rounded-lg transition">
                               <QrCode size={13} />
                             </button>
-                            <button onClick={() => startEdit(item)}
-                              className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
-                              <Edit2 size={13} />
-                            </button>
-                            <AdminButton onClick={() => handleDelete(item)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
-                              <Trash2 size={13} />
-                            </AdminButton>
+                            {canEditInv && (
+                              <>
+                                <button onClick={() => startEdit(item)}
+                                  className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
+                                  <Edit2 size={13} />
+                                </button>
+                                <AdminButton onClick={() => handleDelete(item)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
+                                  <Trash2 size={13} />
+                                </AdminButton>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1823,10 +1849,12 @@ export default function InventarioPage() {
                             <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <button onClick={() => setAdjustItem(item)}
-                                  className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition text-slate-400">
-                                  <Minus size={11} />
-                                </button>
+                                {canEditInv && (
+                                  <button onClick={() => setAdjustItem(item)}
+                                    className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition text-slate-400">
+                                    <Minus size={11} />
+                                  </button>
+                                )}
                                 <div>
                                   <span className="font-semibold">{item.currentStock}</span>
                                   <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-0.5">
@@ -1834,13 +1862,15 @@ export default function InventarioPage() {
                                       style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
                                   </div>
                                 </div>
-                                <button onClick={() => setAdjustItem(item)}
-                                  className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition text-slate-400">
-                                  <Plus size={11} />
-                                </button>
+                                {canEditInv && (
+                                  <button onClick={() => setAdjustItem(item)}
+                                    className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition text-slate-400">
+                                    <Plus size={11} />
+                                  </button>
+                                )}
                               </div>
                             </td>
-                            <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
+                            {canEditInv && <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>}
                             <td className="py-3 px-4 text-emerald-600 font-medium">{fmtCurrency(item.salePrice)}</td>
                             <td className="py-3 px-4 text-slate-500">{item.minStock} / {item.maxStock}</td>
                             <td className="py-3 px-4"><StockBadge status={status} /></td>
@@ -1850,14 +1880,18 @@ export default function InventarioPage() {
                                   className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="Ver QR">
                                   <QrCode size={14} />
                                 </button>
-                                <button onClick={() => startEdit(item)}
-                                  className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
-                                  <Edit2 size={14} />
-                                </button>
-                                <AdminButton onClick={() => handleDelete(item)}
-                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
-                                  <Trash2 size={14} />
-                                </AdminButton>
+                                {canEditInv && (
+                                  <>
+                                    <button onClick={() => startEdit(item)}
+                                      className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
+                                      <Edit2 size={14} />
+                                    </button>
+                                    <AdminButton onClick={() => handleDelete(item)}
+                                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                                      <Trash2 size={14} />
+                                    </AdminButton>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1991,13 +2025,17 @@ export default function InventarioPage() {
       )}
 
       {/* ── Historial ── */}
-      {tab === "historial" && user && <HistorialTab uid={user.uid} />}
+      {tab === "historial" && user && <HistorialTab uid={workspaceId} />}
 
       {/* ── Órdenes ── */}
-      {tab === "ordenes" && user && <OrdenesTab items={items} uid={user.uid} />}
+      {tab === "ordenes" && user && (
+        <OrdenesTab items={items} uid={workspaceId}
+          canViewPO={can("compras").canView || can("recepciones").canView}
+          canReceive={can("recepciones").canEdit} />
+      )}
 
       {/* ── Conteo físico ── */}
-      {tab === "conteo" && user && <ConteoTab items={items} uid={user.uid} onDone={load} />}
+      {tab === "conteo" && user && <ConteoTab items={items} uid={workspaceId} onDone={load} />}
     </div>
   );
 }

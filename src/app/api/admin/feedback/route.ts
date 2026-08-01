@@ -8,8 +8,7 @@ async function getAdminUid(req: NextRequest): Promise<string | null> {
     const decoded  = await getAdminAuth().verifyIdToken(token);
     const userSnap = await getAdminDb().collection("users").doc(decoded.uid).get();
     if (!userSnap.exists) return null;
-    const role = userSnap.data()?.role as string | undefined;
-    return role === "admin" ? decoded.uid : null;
+    return userSnap.data()?.platformAdmin === true ? decoded.uid : null;
   } catch {
     return null;
   }

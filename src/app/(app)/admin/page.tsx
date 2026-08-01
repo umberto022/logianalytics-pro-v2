@@ -50,7 +50,7 @@ function fmtDate(iso: string | null) {
 }
 
 export default function AdminPage() {
-  const { isAdmin } = useRole();
+  const { isPlatformAdmin } = useRole();
   const router      = useRouter();
 
   const [tab,           setTab]           = useState<"feedback" | "users">("feedback");
@@ -62,10 +62,10 @@ export default function AdminPage() {
   const [deleting,      setDeleting]      = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAdmin) { router.replace("/dashboard"); return; }
+    if (!isPlatformAdmin) { router.replace("/dashboard"); return; }
     loadAll();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
+  }, [isPlatformAdmin]);
 
   async function getToken() {
     return auth.currentUser?.getIdToken() ?? "";

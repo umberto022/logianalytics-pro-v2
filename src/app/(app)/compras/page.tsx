@@ -15,6 +15,7 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { listInventory } from "@/lib/firestore/inventory";
 import { type Supplier } from "@/lib/firestore/suppliers";
 import {
@@ -129,15 +130,16 @@ function printOrder(order: PurchaseOrder) {
 
 // ─── Order detail modal ───────────────────────────────────────────────────────
 
-function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit }: {
+function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canReceiveOrders }: {
   order: PurchaseOrder;
   onClose: () => void;
   onReceive: (o: PurchaseOrder) => void;
   onDelete: (id: string) => void;
   onEdit: (o: PurchaseOrder) => void;
+  canReceiveOrders: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const canReceive = order.status === "pendiente" || order.status === "parcial";
+  const canReceive = canReceiveOrders && (order.status === "pendiente" || order.status === "parcial");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
@@ -279,6 +281,7 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
   onDone: () => void;
 }) {
   const { user } = useAuth();
+  const { workspaceId } = useRole();
   const [fields, setFields] = useState(editOrder ? {
     supplierId: editOrder.supplierId,
     supplierName: editOrder.supplierName,
@@ -360,8 +363,8 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
     };
 
     const r = editOrder
-      ? await updatePurchaseOrder(user.uid, editOrder.id, payload)
-      : await createPurchaseOrder(user.uid, payload);
+      ? await updatePurchaseOrder(workspaceId, editOrder.id, payload)
+      : await createPurchaseOrder(workspaceId, payload);
 
     setSaving(false);
     if (r.ok) { toast.success(r.message); onDone(); onClose(); }
@@ -547,6 +550,7 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
 
 export default function ComprasPage() {
   const { user } = useAuth();
+  const { workspaceId, can } = useRole();
   const [orders,    setOrders]    = useState<PurchaseOrder[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading,   setLoading]   = useState(true);
@@ -565,7 +569,7 @@ export default function ComprasPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const [o, i] = await Promise.all([listPurchaseOrders(user.uid), listInventory(user.uid)]);
+      const [o, i] = await Promise.all([listPurchaseOrders(workspaceId), listInventory(workspaceId)]);
       setOrders(o); setInventory(i);
     } catch { toast.error("Error al cargar datos"); }
     finally { setLoading(false); }
@@ -594,7 +598,7 @@ export default function ComprasPage() {
     if (!confirmDeleteId || !user) return;
     const id = confirmDeleteId;
     setConfirmDeleteId(null);
-    const r = await deletePurchaseOrder(user.uid, id);
+    const r = await deletePurchaseOrder(workspaceId, id);
     if (r.ok) { toast.success(r.message); load(); }
     else toast.error(r.message);
   }
@@ -637,9 +641,10 @@ export default function ComprasPage() {
           onClose={() => setDetailOrder(null)}
           onReceive={(o) => setReceiveOrder(o)}
           onDelete={handleDelete}
-          onEdit={openEdit} />
+          onEdit={openEdit}
+          canReceiveOrders={can("recepciones").canEdit} />
       )}
-      {receiveOrder && (
+      {can("recepciones").canEdit && receiveOrder && (
         <ReceiveOrderModal order={receiveOrder}
           onClose={() => setReceiveOrder(null)}
           onDone={load} />
@@ -729,7 +734,7 @@ export default function ComprasPage() {
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      {(order.status === "pendiente" || order.status === "parcial") && (
+                      {can("recepciones").canEdit && (order.status === "pendiente" || order.status === "parcial") && (
                         <button onClick={() => setReceiveOrder(order)}
                           className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg transition">
                           <PackageCheck size={15} />
@@ -784,7 +789,7 @@ export default function ComprasPage() {
                       <td className="py-3 px-4"><StatusBadge status={order.status} /></td>
                       <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1">
-                          {(order.status === "pendiente" || order.status === "parcial") && (
+                          {can("recepciones").canEdit && (order.status === "pendiente" || order.status === "parcial") && (
                             <button onClick={() => setReceiveOrder(order)}
                               className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Recibir">
                               <PackageCheck size={14} />

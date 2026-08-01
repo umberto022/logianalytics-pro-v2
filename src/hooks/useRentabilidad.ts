@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { getSales, getSalesByRange } from "@/lib/firestore/sales";
 import { listMovements, listMovementsByRange } from "@/lib/firestore/inventory";
 import type { Period } from "@/types";
@@ -14,31 +14,31 @@ export function useRentabilidad(
   fromDate: string,
   toDate: string
 ) {
-  const { user } = useAuth();
+  const { workspaceId } = useRole();
 
-  const queryKey = ["rentabilidad", user?.uid ?? "", mode, mode === "preset" ? period : `${fromDate}_${toDate}`];
+  const queryKey = ["rentabilidad", workspaceId, mode, mode === "preset" ? period : `${fromDate}_${toDate}`];
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
-      if (!user) return { sales: [], movements: [] };
+      if (!workspaceId) return { sales: [], movements: [] };
       if (mode === "custom") {
         const from = new Date(fromDate + "T00:00:00");
         const to   = new Date(toDate   + "T23:59:59");
         const [sales, movements] = await Promise.all([
-          getSalesByRange(user.uid, from, to),
-          listMovementsByRange(user.uid, from, to),
+          getSalesByRange(workspaceId, from, to),
+          listMovementsByRange(workspaceId, from, to),
         ]);
         return { sales, movements };
       } else {
         const [sales, movements] = await Promise.all([
-          getSales(user.uid, period),
-          listMovements(user.uid, period),
+          getSales(workspaceId, period),
+          listMovements(workspaceId, period),
         ]);
         return { sales, movements };
       }
     },
-    enabled: !!user,
+    enabled: !!workspaceId,
     staleTime: 60 * 1000,
   });
 

@@ -8,6 +8,7 @@ import {
   CreditCard, DollarSign, Clock, CheckCircle2, AlertTriangle, X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { useSales, useInvalidateSales } from "@/hooks/useSales";
 import { updateSalePaymentStatus } from "@/lib/firestore/sales";
 import { fmtCurrency, fmtDate } from "@/lib/utils";
@@ -21,6 +22,7 @@ type Filter = "all" | "overdue" | "upcoming" | "paid";
 
 export default function CuentasPorCobrarPage() {
   const { user } = useAuth();
+  const { workspaceId } = useRole();
   const { sales, loading } = useSales(180);
   const invalidate = useInvalidateSales();
   const [filter, setFilter] = useState<Filter>("all");
@@ -57,7 +59,7 @@ export default function CuentasPorCobrarPage() {
   async function markPaid() {
     if (!user || !confirmSale) return;
     setSaving(true);
-    const r = await updateSalePaymentStatus(user.uid, confirmSale.id, "pagado");
+    const r = await updateSalePaymentStatus(workspaceId, confirmSale.id, "pagado");
     setSaving(false);
     setConfirmSale(null);
     if (r.ok) { toast.success("Marcado como pagado"); invalidate(); }

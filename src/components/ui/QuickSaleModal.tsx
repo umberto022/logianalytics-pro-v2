@@ -5,6 +5,7 @@ import { X, Zap, ShoppingCart } from "lucide-react";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { listInventory } from "@/lib/firestore/inventory";
 import { registerSale } from "@/lib/firestore/sales";
 import { fmtCurrency, fmt } from "@/lib/utils";
@@ -18,6 +19,7 @@ interface Props {
 
 export function QuickSaleModal({ isOpen, onClose, onSuccess }: Props) {
   const { user } = useAuth();
+  const { workspaceId } = useRole();
   const [items,  setItems]  = useState<InventoryItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [form,   setForm]   = useState({
@@ -27,7 +29,7 @@ export function QuickSaleModal({ isOpen, onClose, onSuccess }: Props) {
 
   const load = useCallback(async () => {
     if (!user || !isOpen) return;
-    const inv = await listInventory(user.uid);
+    const inv = await listInventory(workspaceId);
     setItems(inv);
     if (inv.length) {
       setForm((p) => ({ ...p, inventoryId: inv[0].id, unitPrice: inv[0].salePrice }));
@@ -59,7 +61,7 @@ export function QuickSaleModal({ isOpen, onClose, onSuccess }: Props) {
       toast.error(`Stock insuficiente (disponible: ${selected.currentStock})`); return;
     }
     setSaving(true);
-    const r = await registerSale(user.uid, {
+    const r = await registerSale(workspaceId, {
       inventoryId: form.inventoryId,
       quantity: form.quantity,
       unitPrice: form.unitPrice,

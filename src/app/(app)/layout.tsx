@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Zap, LogOut, Truck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
+import { moduleForPath } from "@/lib/permissions";
 import { CajaProvider, useCaja } from "@/contexts/CajaContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -28,8 +30,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useStockNotifications();
   useOverdueOrders();
   const { user, loading, profile } = useAuth();
+  const { can } = useRole();
   const { session, loading: cajaLoading, needsCierre, requestLogout } = useCaja();
   const router = useRouter();
+  const pathname = usePathname();
   const [saleOpen,      setSaleOpen]      = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [skipApertura,  setSkipApertura]  = useState(false);
@@ -37,6 +41,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    const moduleKey = moduleForPath(pathname);
+    if (moduleKey && !can(moduleKey).canView) router.replace("/dashboard");
+  }, [pathname, loading, user, can, router]);
+
+  const canSell = can("ventas").canEdit;
+  const canUseCaja = can("caja").canView;
 
   if (loading) {
     return (
@@ -52,7 +65,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   // Show apertura modal if no open session today (and user hasn't skipped)
-  const showApertura = !cajaLoading && !session && !skipApertura;
+  const showApertura = canUseCaja && !cajaLoading && !session && !skipApertura;
 
   return (
     <div className="flex min-h-screen">
@@ -94,23 +107,25 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* FAB venta rápida */}
-      <button
-        onClick={() => setSaleOpen(true)}
-        title="Venta rápida (V)"
-        className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40 w-14 h-14 bg-brand-600 hover:bg-brand-700 active:scale-95 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center group animate-pulse-ring"
-      >
-        <Zap size={22} className="transition-transform group-hover:scale-110 duration-150" />
-      </button>
+      {canSell && (
+        <button
+          onClick={() => setSaleOpen(true)}
+          title="Venta rápida (V)"
+          className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40 w-14 h-14 bg-brand-600 hover:bg-brand-700 active:scale-95 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center group animate-pulse-ring"
+        >
+          <Zap size={22} className="transition-transform group-hover:scale-110 duration-150" />
+        </button>
+      )}
 
       <KeyboardShortcut
-        onSale={() => setSaleOpen((v) => !v)}
+        onSale={() => canSell && setSaleOpen((v) => !v)}
         onShortcuts={() => setShortcutsOpen((v) => !v)}
       />
       {shortcutsOpen && <ShortcutsModal onClose={() => setShortcutsOpen(false)} />}
 
       <BottomNav />
 
-      <QuickSaleModal isOpen={saleOpen} onClose={() => setSaleOpen(false)} />
+      {canSell && <QuickSaleModal isOpen={saleOpen} onClose={() => setSaleOpen(false)} />}
       <FeedbackButton />
 
       {profile && !profile.onboardingCompleted && (

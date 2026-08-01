@@ -4,6 +4,7 @@ import {
   createContext, useContext, useEffect, useState, useCallback, type ReactNode,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import {
   getOpenSession, openCajaSession, closeCajaSession,
   type CajaSession, type CierreData,
@@ -35,29 +36,31 @@ const Ctx = createContext<CajaCtx>(DEFAULT_CTX);
 
 export function CajaProvider({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const { workspaceId, can } = useRole();
+  const cajaEnabled = can("caja").canView;
   const [session,      setSession]      = useState<CajaSession | null>(null);
   const [loading,      setLoading]      = useState(true);
   const [needsCierre,  setNeedsCierre]  = useState(false);
 
   const reload = useCallback(async () => {
-    if (!user) { setSession(null); setLoading(false); return; }
+    if (!user || !cajaEnabled) { setSession(null); setLoading(false); return; }
     setLoading(true);
-    try { setSession(await getOpenSession(user.uid)); }
+    try { setSession(await getOpenSession(workspaceId)); }
     catch { setSession(null); }
     finally { setLoading(false); }
-  }, [user]);
+  }, [user, cajaEnabled, workspaceId]);
 
   useEffect(() => { reload(); }, [reload]);
 
   async function openCaja(initialCash: number) {
-    if (!user) return;
-    const s = await openCajaSession(user.uid, initialCash);
+    if (!user || !cajaEnabled) return;
+    const s = await openCajaSession(workspaceId, initialCash);
     setSession(s);
   }
 
   async function closeCaja(data: CierreData) {
     if (!user || !session) return;
-    await closeCajaSession(user.uid, session.id, data);
+    await closeCajaSession(workspaceId, session.id, data);
     setSession(null);
   }
 

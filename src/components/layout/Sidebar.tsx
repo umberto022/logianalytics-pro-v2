@@ -5,26 +5,28 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
   Settings, LogOut, Truck, Building2, MapPin, ClipboardList,
-  Users, Sun, Moon, Store, CreditCard, ShieldAlert,
+  Users, Sun, Moon, Store, CreditCard, ShieldAlert, PackageCheck, UsersRound,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCaja } from "@/contexts/CajaContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useTheme } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
+import type { ModuleKey } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/dashboard",     label: "Dashboard",     icon: LayoutDashboard, badge: null         },
-  { href: "/ventas",        label: "Ventas",        icon: ShoppingCart,    badge: null         },
-  { href: "/clientes",      label: "Clientes",      icon: Users,           badge: null         },
-  { href: "/cuentas-por-cobrar", label: "Por cobrar", icon: CreditCard,     badge: null         },
-  { href: "/rutas",         label: "Rutas",         icon: MapPin,          badge: null         },
-  { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp,      badge: null         },
-  { href: "/compras",       label: "Compras",       icon: ClipboardList,   badge: null         },
-  { href: "/proveedores",   label: "Proveedores",   icon: Store,           badge: null         },
-  { href: "/inventario",    label: "Inventario",    icon: Package,         badge: "stock" as const },
-  { href: "/configuracion", label: "Configuración", icon: Settings,        badge: null         },
+const NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: "stock" | null; module: ModuleKey }[] = [
+  { href: "/dashboard",     label: "Dashboard",     icon: LayoutDashboard, badge: null,             module: "dashboard" },
+  { href: "/ventas",        label: "Ventas",        icon: ShoppingCart,    badge: null,             module: "ventas" },
+  { href: "/clientes",      label: "Clientes",      icon: Users,           badge: null,             module: "clientes" },
+  { href: "/cuentas-por-cobrar", label: "Por cobrar", icon: CreditCard,     badge: null,             module: "cuentasPorCobrar" },
+  { href: "/rutas",         label: "Rutas",         icon: MapPin,          badge: null,             module: "rutas" },
+  { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp,      badge: null,             module: "rentabilidad" },
+  { href: "/compras",       label: "Compras",       icon: ClipboardList,   badge: null,             module: "compras" },
+  { href: "/recepciones",   label: "Recepciones",   icon: PackageCheck,    badge: null,             module: "recepciones" },
+  { href: "/proveedores",   label: "Proveedores",   icon: Store,           badge: null,             module: "proveedores" },
+  { href: "/inventario",    label: "Inventario",    icon: Package,         badge: "stock" as const, module: "inventario" },
+  { href: "/configuracion", label: "Configuración", icon: Settings,        badge: null,             module: "configuracion" },
 ];
 
 export function Sidebar() {
@@ -33,7 +35,8 @@ export function Sidebar() {
   const { requestLogout, session } = useCaja();
   const criticalCount          = useStockAlerts();
   const { isDark, toggle }     = useTheme();
-  const { isAdmin }            = useRole();
+  const { isAdmin, isPlatformAdmin, can } = useRole();
+  const visibleNav = NAV.filter((item) => can(item.module).canView);
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[var(--sidebar-width)] bg-sidebar text-slate-200 flex-col z-20">
@@ -86,7 +89,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV.map(({ href, label, icon: Icon, badge }) => {
+        {visibleNav.map(({ href, label, icon: Icon, badge }) => {
           const active    = pathname === href || pathname.startsWith(href + "/");
           const showBadge = badge === "stock" && criticalCount > 0;
 
@@ -111,20 +114,35 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Admin link */}
-      {isAdmin && (
-        <div className="px-3 pb-2 border-t border-white/10 pt-3">
-          <Link href="/admin"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
-              pathname.startsWith("/admin")
-                ? "bg-amber-500/20 text-amber-300"
-                : "text-slate-500 hover:bg-white/10 hover:text-amber-300"
-            )}
-          >
-            <ShieldAlert size={15} className="flex-shrink-0" />
-            Panel Admin
-          </Link>
+      {/* Equipo / Admin links */}
+      {(isAdmin || isPlatformAdmin) && (
+        <div className="px-3 pb-2 border-t border-white/10 pt-3 space-y-0.5">
+          {isAdmin && (
+            <Link href="/equipo"
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
+                pathname.startsWith("/equipo")
+                  ? "bg-brand-500/20 text-brand-300"
+                  : "text-slate-500 hover:bg-white/10 hover:text-brand-300"
+              )}
+            >
+              <UsersRound size={15} className="flex-shrink-0" />
+              Mi Equipo
+            </Link>
+          )}
+          {isPlatformAdmin && (
+            <Link href="/admin"
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
+                pathname.startsWith("/admin")
+                  ? "bg-amber-500/20 text-amber-300"
+                  : "text-slate-500 hover:bg-white/10 hover:text-amber-300"
+              )}
+            >
+              <ShieldAlert size={15} className="flex-shrink-0" />
+              Panel Admin
+            </Link>
+          )}
         </div>
       )}
 

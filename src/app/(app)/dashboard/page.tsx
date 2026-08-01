@@ -12,6 +12,7 @@ import {
 import { useInventory } from "@/hooks/useInventory";
 import { useSales } from "@/hooks/useSales";
 import { usePurchaseOrders } from "@/hooks/usePurchaseOrders";
+import { useRole } from "@/hooks/useRole";
 import { computeSummary, computeByRoute, computeByProduct, computeDailyStats, computeByClient } from "@/lib/firestore/sales";
 import { getStockStatus, fmtCurrency, fmt, fmtDate } from "@/lib/utils";
 import { KPICard } from "@/components/ui/KPICard";
@@ -32,10 +33,15 @@ export default function DashboardPage() {
   const [customTo,   setCustomTo]   = useState("");
   const [useCustom,  setUseCustom]  = useState(false);
 
+  const { can } = useRole();
+  const canViewSales = can("ventas").canView;
+  const canViewInv   = can("inventario").canView;
+  const canViewPO    = can("compras").canView || can("recepciones").canView;
+
   const [activeKPI, setActiveKPI] = useState<ActiveKPI>(null);
-  const { items, loading: loadingInv } = useInventory();
-  const { sales: allSales, loading: loadingSales } = useSales(180);
-  const { orders: purchaseOrders } = usePurchaseOrders();
+  const { items, loading: loadingInv } = useInventory(canViewInv);
+  const { sales: allSales, loading: loadingSales } = useSales(180, canViewSales);
+  const { orders: purchaseOrders } = usePurchaseOrders(canViewPO);
 
   const sales = useMemo(() => {
     if (!useCustom || !customFrom) return allSales.filter((s) => {
@@ -99,7 +105,10 @@ export default function DashboardPage() {
   const marginPct = summary.revenue > 0 ? summary.profit / summary.revenue * 100 : 0;
   const { revDelta, profDelta } = mom;
 
-  const isEmpty = summary.numSales === 0 && items.length === 0;
+  const isEmpty =
+    (!canViewSales || summary.numSales === 0) &&
+    (!canViewInv || items.length === 0) &&
+    (!canViewPO || purchaseOrders.length === 0);
 
   if (loadingInv || loadingSales) return <DashboardSkeleton />;
 
@@ -159,33 +168,41 @@ export default function DashboardPage() {
 
       {/* KPIs — clic abre modal de desglose */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <KPICard label="Ingresos"         value={fmtCurrency(summary.revenue)}                  icon={DollarSign}  color="indigo"
-          delta={fmtDelta(revDelta)}
-          deltaType={revDelta === null ? "neutral" : revDelta >= 0 ? "positive" : "negative"}
-          onClick={() => setActiveKPI("revenue")}
-        />
-        <KPICard label="Ganancia"         value={fmtCurrency(summary.profit)}                   icon={TrendingUp}  color="green"
-          delta={profDelta !== null ? fmtDelta(profDelta) : `Margen ${fmt(marginPct, 1)}%`}
-          deltaType={profDelta === null ? (marginPct >= 20 ? "positive" : marginPct >= 10 ? "neutral" : "negative") : profDelta >= 0 ? "positive" : "negative"}
-          onClick={() => setActiveKPI("profit")}
-        />
-        <KPICard label="Ventas"           value={fmt(summary.numSales, 0)}                      icon={ShoppingCart} color="blue"
-          delta={`${fmt(summary.numSales / Math.max(period, 1), 1)} /día`}
-          deltaType="neutral"
-          onClick={() => setActiveKPI("sales")}
-        />
-        <KPICard label="Valor inventario" value={fmtCurrency(invValue)}                         icon={Package}     color="amber"
-          delta={`${items.length} productos`}
-          deltaType="neutral"
-          onClick={() => setActiveKPI("inventory")}
-        />
-        <KPICard label="Alertas stock"
-          value={`${criticalItems.length} crít · ${lowItems.length} bajos`}
-          icon={AlertTriangle}
-          color={criticalItems.length > 0 ? "red" : "green"}
-          deltaType={criticalItems.length > 0 ? "negative" : "positive"}
-          onClick={() => setActiveKPI("alerts")}
-        />
+        {canViewSales && (
+          <>
+            <KPICard label="Ingresos"         value={fmtCurrency(summary.revenue)}                  icon={DollarSign}  color="indigo"
+              delta={fmtDelta(revDelta)}
+              deltaType={revDelta === null ? "neutral" : revDelta >= 0 ? "positive" : "negative"}
+              onClick={() => setActiveKPI("revenue")}
+            />
+            <KPICard label="Ganancia"         value={fmtCurrency(summary.profit)}                   icon={TrendingUp}  color="green"
+              delta={profDelta !== null ? fmtDelta(profDelta) : `Margen ${fmt(marginPct, 1)}%`}
+              deltaType={profDelta === null ? (marginPct >= 20 ? "positive" : marginPct >= 10 ? "neutral" : "negative") : profDelta >= 0 ? "positive" : "negative"}
+              onClick={() => setActiveKPI("profit")}
+            />
+            <KPICard label="Ventas"           value={fmt(summary.numSales, 0)}                      icon={ShoppingCart} color="blue"
+              delta={`${fmt(summary.numSales / Math.max(period, 1), 1)} /día`}
+              deltaType="neutral"
+              onClick={() => setActiveKPI("sales")}
+            />
+          </>
+        )}
+        {canViewInv && (
+          <>
+            <KPICard label="Valor inventario" value={fmtCurrency(invValue)}                         icon={Package}     color="amber"
+              delta={`${items.length} productos`}
+              deltaType="neutral"
+              onClick={() => setActiveKPI("inventory")}
+            />
+            <KPICard label="Alertas stock"
+              value={`${criticalItems.length} crít · ${lowItems.length} bajos`}
+              icon={AlertTriangle}
+              color={criticalItems.length > 0 ? "red" : "green"}
+              deltaType={criticalItems.length > 0 ? "negative" : "positive"}
+              onClick={() => setActiveKPI("alerts")}
+            />
+          </>
+        )}
       </div>
 
       {/* KPI detail modal */}
@@ -214,7 +231,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stock alerts */}
-      {(criticalItems.length > 0 || lowItems.length > 0) && (
+      {canViewInv && (criticalItems.length > 0 || lowItems.length > 0) && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
           <p className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
             <AlertTriangle size={16} /> {criticalItems.length + lowItems.length} alerta(s) de inventario
@@ -234,7 +251,7 @@ export default function DashboardPage() {
       )}
 
       {/* Revenue trend */}
-      {daily.length > 1 && (
+      {canViewSales && daily.length > 1 && (
         <div className="bg-white rounded-2xl border border-slate-100 p-5 mb-6 shadow-sm">
           <h3 className="font-semibold text-slate-700 mb-4">Ingresos y ganancia — últimos {period} días</h3>
           <ResponsiveContainer width="100%" height={220}>
@@ -252,6 +269,7 @@ export default function DashboardPage() {
       )}
 
       {/* Route + Product charts */}
+      {canViewSales && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {routes.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
@@ -291,9 +309,10 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Inventory status */}
-      {items.length > 0 && (
+      {canViewInv && items.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6">
           <h3 className="font-semibold text-slate-700 mb-4">Estado del inventario</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -341,7 +360,7 @@ export default function DashboardPage() {
       )}
 
       {/* Top 5 esta semana */}
-      {topWeek.length > 0 && (
+      {canViewSales && topWeek.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6">
           <h3 className="font-semibold text-slate-700 mb-3">🔥 Top 5 productos esta semana</h3>
           <div className="space-y-2">
@@ -358,7 +377,7 @@ export default function DashboardPage() {
       )}
 
       {/* OC pendientes */}
-      {pendingOrders.length > 0 && (
+      {canViewPO && pendingOrders.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6">
           <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
             <Clock size={15} className="text-amber-500" />
@@ -392,7 +411,7 @@ export default function DashboardPage() {
       )}
 
       {/* Recent sales */}
-      {sales.length > 0 && (
+      {canViewSales && sales.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
           <h3 className="font-semibold text-slate-700 mb-4">Ventas recientes</h3>
           <div className="overflow-x-auto">

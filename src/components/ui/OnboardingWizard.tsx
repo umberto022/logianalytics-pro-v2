@@ -6,6 +6,7 @@ import {
   ArrowRight, CheckCircle2, Sparkles, Building2, MapPin,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { completeOnboarding } from "@/lib/firestore/users";
 import { seedDemoData } from "@/lib/firestore/seedDemo";
 import toast from "react-hot-toast";
@@ -26,6 +27,7 @@ interface Props {
 
 export function OnboardingWizard({ onDone }: Props) {
   const { user, refreshProfile } = useAuth();
+  const { workspaceId } = useRole();
   const [step,        setStep]        = useState(0);
   const [companyName, setCompanyName] = useState("");
   const [industry,    setIndustry]    = useState("");
@@ -39,7 +41,7 @@ export function OnboardingWizard({ onDone }: Props) {
     try {
       await completeOnboarding(user.uid, { companyName, industry, country });
       if (loadDemo) {
-        await seedDemoData(user.uid);
+        await seedDemoData(workspaceId);
         toast.success("Datos de demo cargados. ¡Explora la app!");
       } else {
         toast.success("¡Bienvenido a LogiAnalytics!");

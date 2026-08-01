@@ -15,9 +15,15 @@ export async function createUserProfile(
     fullName:         data.fullName,
     phone:            data.phone ?? "",
     role:             "admin",
+    workspaceId:      uid,
     subscriptionPlan: "free",
     createdAt:        Timestamp.now(),
   });
+}
+
+/** One-time self-heal for profiles created before `workspaceId` existed. */
+export async function backfillWorkspaceId(uid: string): Promise<void> {
+  await updateDoc(userDoc(uid), { workspaceId: uid });
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {

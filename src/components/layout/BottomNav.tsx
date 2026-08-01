@@ -7,28 +7,31 @@ import {
   LayoutDashboard, ShoppingCart, Package,
   ClipboardList, Users, MoreHorizontal,
   MapPin, TrendingUp, Settings, LogOut, X, Download, Store, CreditCard, ShieldAlert,
+  PackageCheck, UsersRound,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCaja } from "@/contexts/CajaContext";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useRole } from "@/hooks/useRole";
+import type { ModuleKey } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-const MAIN_NAV = [
-  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard, badge: false },
-  { href: "/ventas",     label: "Ventas",     icon: ShoppingCart,    badge: false },
-  { href: "/clientes",   label: "Clientes",   icon: Users,           badge: false },
-  { href: "/compras",    label: "Compras",    icon: ClipboardList,   badge: false },
-  { href: "/inventario", label: "Inventario", icon: Package,         badge: true  },
+const MAIN_NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: boolean; module: ModuleKey }[] = [
+  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard, badge: false, module: "dashboard" },
+  { href: "/ventas",     label: "Ventas",     icon: ShoppingCart,    badge: false, module: "ventas" },
+  { href: "/clientes",   label: "Clientes",   icon: Users,           badge: false, module: "clientes" },
+  { href: "/compras",    label: "Compras",    icon: ClipboardList,   badge: false, module: "compras" },
+  { href: "/inventario", label: "Inventario", icon: Package,         badge: true,  module: "inventario" },
 ];
 
-const MORE_NAV = [
-  { href: "/rutas",               label: "Rutas",           icon: MapPin    },
-  { href: "/proveedores",         label: "Proveedores",     icon: Store     },
-  { href: "/cuentas-por-cobrar",  label: "Por cobrar",      icon: CreditCard },
-  { href: "/rentabilidad",        label: "Rentabilidad",    icon: TrendingUp },
-  { href: "/configuracion",       label: "Configuración",   icon: Settings  },
+const MORE_NAV: { href: string; label: string; icon: typeof LayoutDashboard; module: ModuleKey }[] = [
+  { href: "/rutas",               label: "Rutas",           icon: MapPin,       module: "rutas" },
+  { href: "/recepciones",         label: "Recepciones",     icon: PackageCheck, module: "recepciones" },
+  { href: "/proveedores",         label: "Proveedores",     icon: Store,        module: "proveedores" },
+  { href: "/cuentas-por-cobrar",  label: "Por cobrar",      icon: CreditCard,   module: "cuentasPorCobrar" },
+  { href: "/rentabilidad",        label: "Rentabilidad",    icon: TrendingUp,   module: "rentabilidad" },
+  { href: "/configuracion",       label: "Configuración",   icon: Settings,     module: "configuracion" },
 ];
 
 export function BottomNav() {
@@ -36,11 +39,13 @@ export function BottomNav() {
   const criticalCount = useStockAlerts();
   const { logout }    = useAuth();
   const { canInstall, install } = usePWAInstall();
-  const { isAdmin }           = useRole();
+  const { isAdmin, isPlatformAdmin, can } = useRole();
   const { requestLogout }     = useCaja();
   const [moreOpen, setMoreOpen] = useState(false);
+  const visibleMain = MAIN_NAV.filter((item) => can(item.module).canView);
+  const visibleMore = MORE_NAV.filter((item) => can(item.module).canView);
 
-  const moreActive = MORE_NAV.some(
+  const moreActive = visibleMore.some(
     ({ href }) => pathname === href || pathname.startsWith(href + "/")
   );
 
@@ -75,7 +80,7 @@ export function BottomNav() {
 
             {/* Links */}
             <div className="px-4 pb-6 space-y-1">
-              {MORE_NAV.map(({ href, label, icon: Icon }) => {
+              {visibleMore.map(({ href, label, icon: Icon }) => {
                 const active = pathname === href || pathname.startsWith(href + "/");
                 return (
                   <Link
@@ -108,12 +113,20 @@ export function BottomNav() {
               {isAdmin && (
                 <>
                   <div className="h-px bg-slate-100 my-1" />
-                  <Link href="/admin" onClick={() => setMoreOpen(false)}
+                  <Link href="/equipo" onClick={() => setMoreOpen(false)}
                     className={cn("flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold",
-                      pathname.startsWith("/admin") ? "bg-amber-50 text-amber-600" : "text-amber-600 active:bg-amber-50")}>
-                    <ShieldAlert size={20} /> Panel Admin
+                      pathname.startsWith("/equipo") ? "bg-brand-50 text-brand-600" : "text-brand-600 active:bg-brand-50")}>
+                    <UsersRound size={20} /> Mi Equipo
                   </Link>
                 </>
+              )}
+
+              {isPlatformAdmin && (
+                <Link href="/admin" onClick={() => setMoreOpen(false)}
+                  className={cn("flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold",
+                    pathname.startsWith("/admin") ? "bg-amber-50 text-amber-600" : "text-amber-600 active:bg-amber-50")}>
+                  <ShieldAlert size={20} /> Panel Admin
+                </Link>
               )}
 
               <div className="h-px bg-slate-100 my-1" />
@@ -132,7 +145,7 @@ export function BottomNav() {
 
       {/* ── Bottom nav bar ── */}
       <nav className="fixed bottom-0 inset-x-0 z-[80] bg-sidebar border-t border-white/10 flex lg:hidden safe-area-bottom">
-        {MAIN_NAV.map(({ href, label, icon: Icon, badge }) => {
+        {visibleMain.map(({ href, label, icon: Icon, badge }) => {
           const active    = pathname === href || pathname.startsWith(href + "/");
           const showBadge = badge && criticalCount > 0;
 

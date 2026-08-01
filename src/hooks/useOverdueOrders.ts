@@ -3,18 +3,18 @@
 import { useEffect, useRef } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { isPushEnabled } from "@/lib/notifications";
 import type { PurchaseOrder } from "@/types";
 
 export function useOverdueOrders() {
-  const { user } = useAuth();
+  const { workspaceId, can } = useRole();
   const notifiedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!user) return;
+    if (!workspaceId || (!can("compras").canView && !can("recepciones").canView)) return;
 
-    const col = collection(db, "purchaseOrders", user.uid, "orders");
+    const col = collection(db, "purchaseOrders", workspaceId, "orders");
 
     const unsub = onSnapshot(col, (snap) => {
       if (!isPushEnabled()) return;
@@ -41,5 +41,6 @@ export function useOverdueOrders() {
     });
 
     return () => unsub();
-  }, [user]);
+  }, [workspaceId, can]);
 }
+

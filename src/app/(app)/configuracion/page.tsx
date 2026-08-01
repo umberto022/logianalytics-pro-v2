@@ -8,6 +8,7 @@ import { auth, db } from "@/lib/firebase";
 import { updateUserProfile } from "@/lib/firestore/users";
 import { createCompany, getCompany, updateCompany } from "@/lib/firestore/companies";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
 import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck, Mail, Send } from "lucide-react";
@@ -56,6 +57,7 @@ const ACTION_COLOR: Record<AuditAction, string> = {
 
 export default function ConfiguracionPage() {
   const { user, profile, refreshProfile } = useAuth();
+  const { workspaceId, isAdmin } = useRole();
   const [company, setCompany] = useState<Company | null>(null);
   const [auditLog,     setAuditLog]     = useState<AuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -145,9 +147,9 @@ export default function ConfiguracionPage() {
   }, [profile]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
     setAuditLoading(true);
-    listAuditLog(user.uid, auditDays).then((entries) => {
+    listAuditLog(workspaceId, auditDays).then((entries) => {
       setAuditLog(entries);
       setAuditLoading(false);
     });
@@ -316,7 +318,8 @@ export default function ConfiguracionPage() {
           </form>
         </div>
 
-        {/* Company — full width */}
+        {/* Company — full width, admin only */}
+        {isAdmin && (
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
           <h2 className="font-semibold text-slate-700 mb-5">
             {company ? "Datos de la empresa" : "Registrar empresa"}
@@ -364,6 +367,7 @@ export default function ConfiguracionPage() {
             </button>
           </form>
         </div>
+        )}
         {/* Push Notifications */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
           <h2 className="font-semibold text-slate-700 mb-1">Notificaciones de stock</h2>
@@ -429,7 +433,8 @@ export default function ConfiguracionPage() {
           </button>
         </div>
 
-        {/* Audit Log */}
+        {/* Audit Log — admin only */}
+        {isAdmin && (
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -489,6 +494,7 @@ export default function ConfiguracionPage() {
             </div>
           )}
         </div>
+        )}
 
       </div>
     </div>

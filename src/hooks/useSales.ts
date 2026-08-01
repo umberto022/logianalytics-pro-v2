@@ -1,19 +1,19 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useRole } from "@/hooks/useRole";
 import { getSales } from "@/lib/firestore/sales";
 import type { Period } from "@/types";
 
 export const SALES_KEY = (uid: string, period: Period) => ["sales", uid, period];
 
-export function useSales(period: Period) {
-  const { user } = useAuth();
+export function useSales(period: Period, enabled: boolean = true) {
+  const { workspaceId } = useRole();
 
   const query = useQuery({
-    queryKey:  SALES_KEY(user?.uid ?? "", period),
-    queryFn:   () => getSales(user!.uid, period),
-    enabled:   !!user,
+    queryKey:  SALES_KEY(workspaceId, period),
+    queryFn:   () => getSales(workspaceId, period),
+    enabled:   !!workspaceId && enabled,
     staleTime: 60 * 1000,
   });
 
@@ -26,7 +26,7 @@ export function useSales(period: Period) {
 }
 
 export function useInvalidateSales() {
-  const { user } = useAuth();
+  const { workspaceId } = useRole();
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["sales", user?.uid ?? ""] });
+  return () => qc.invalidateQueries({ queryKey: ["sales", workspaceId] });
 }
