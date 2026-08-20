@@ -22,6 +22,8 @@ export interface UserProfile {
   lastLogin?: Timestamp;
 }
 
+export type TaxpayerType = "grande" | "mediano" | "pequeno" | "micro";
+
 export interface Company {
   id: string;
   name: string;
@@ -33,6 +35,20 @@ export interface Company {
   country: string;
   ownerId: string;
   createdAt: Timestamp;
+  // ─── Facturación electrónica (DGII / e-CF, República Dominicana) ───────────
+  /** Categoría de contribuyente ante DGII — define el plazo de obligatoriedad del e-CF. */
+  taxpayerType?: TaxpayerType;
+  /** Ambiente del facilitador (Alanube): pruebas hasta certificar, luego producción. */
+  eCfEnvironment?: "sandbox" | "production";
+  /** Id de la empresa dentro de Alanube, devuelto al darla de alta vía su API (createCompany). */
+  alanubeCompanyId?: string;
+  /**
+   * Rangos de e-NCF autorizados por DGII, uno por tipo de comprobante.
+   * Se configuran a mano en Configuración cuando DGII aprueba el rango
+   * ("Autorización de Comprobantes Fiscales Electrónicos"). Sin esto no se
+   * puede emitir — no inventamos numeración.
+   */
+  eCfSequences?: Partial<Record<ECfType, { nextNumber: number; rangeEnd: number }>>;
 }
 
 export interface PriceHistoryEntry {
@@ -234,6 +250,58 @@ export interface PurchaseOrder {
   note: string;
   expectedDate: Timestamp;
   receivedDate?: Timestamp;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// ─── Facturación electrónica (e-CF / DGII) ────────────────────────────────────
+// Códigos oficiales de comprobante fiscal electrónico (Ley 32-23 / Decreto 587-24).
+// Cubrimos por ahora los que puede emitir un negocio de ventas/logística; el resto
+// (regímenes especiales, gubernamental, exportación, pagos al exterior) se agregan
+// si algún cliente los necesita.
+export type ECfType =
+  | "31" // Factura de Crédito Fiscal Electrónica
+  | "32" // Factura de Consumo Electrónica
+  | "33" // Nota de Débito Electrónica
+  | "34" // Nota de Crédito Electrónica
+  | "41"; // Comprobante Electrónico de Compras
+
+export const ECF_TYPE_LABELS: Record<ECfType, string> = {
+  "31": "Factura de Crédito Fiscal",
+  "32": "Factura de Consumo",
+  "33": "Nota de Débito",
+  "34": "Nota de Crédito",
+  "41": "Comprobante de Compras",
+};
+
+export type ECfStatus =
+  | "borrador"   // armado localmente, aún no enviado
+  | "enviado"    // enviado a Alanube, esperando respuesta de DGII
+  | "aceptado"   // DGII aceptó el e-CF
+  | "rechazado"  // DGII lo rechazó (ver errorMessage)
+  | "anulado"    // anulado después de aceptado
+  | "error";     // falló la llamada a Alanube antes de llegar a DGII
+
+export interface ElectronicInvoice {
+  id: string;
+  /** Vínculo con la venta origen. Para ventas multi-ítem, todas comparten saleOrderId. */
+  saleOrderId?: string;
+  saleIds: string[];
+  eCfType: ECfType;
+  status: ECfStatus;
+  /** e-NCF asignado (ej. E320000000005). Ausente mientras status === "borrador". */
+  eNcf?: string;
+  buyerRnc?: string;
+  buyerName: string;
+  totalAmount: number;
+  itbis: number;
+  currency: string;
+  /** Id de seguimiento devuelto por Alanube/DGII. */
+  trackId?: string;
+  securityCode?: string;
+  /** URL de la representación impresa (PDF) del e-CF, si Alanube ya la generó. */
+  printUrl?: string;
+  errorMessage?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

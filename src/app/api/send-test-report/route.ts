@@ -20,11 +20,12 @@ export async function POST(req: NextRequest) {
     const userDoc = await db.collection("users").doc(uid).get();
     if (!userDoc.exists) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const profile  = userDoc.data()!;
-    const email    = profile.email as string;
-    const fullName = (profile.fullName as string) ?? "";
+    const profile     = userDoc.data()!;
+    const email       = profile.email as string;
+    const fullName    = (profile.fullName as string) ?? "";
+    const workspaceId = (profile.workspaceId as string | undefined) ?? uid;
 
-    const report = await buildMonthlyReport(db, uid, true); // testMode = current month
+    const report = await buildMonthlyReport(db, workspaceId, true); // testMode = current month
     await getResend().emails.send({
       from:    process.env.REPORT_FROM_EMAIL ?? "reportes@logianalytics.app",
       to:      email,

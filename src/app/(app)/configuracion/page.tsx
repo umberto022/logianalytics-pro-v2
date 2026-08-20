@@ -10,8 +10,8 @@ import { createCompany, getCompany, updateCompany } from "@/lib/firestore/compan
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { INDUSTRIES, COUNTRIES, type Company } from "@/types";
-import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck, Mail, Send } from "lucide-react";
+import { INDUSTRIES, COUNTRIES, ECF_TYPE_LABELS, type Company, type TaxpayerType, type ECfType } from "@/types";
+import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck, Mail, Send, Receipt } from "lucide-react";
 import { listAuditLog, type AuditEntry, type AuditAction } from "@/lib/firestore/auditLog";
 import {
   isPushEnabled,
@@ -131,6 +131,20 @@ export default function ConfiguracionPage() {
   });
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
 
+  const [savingECf, setSavingECf] = useState(false);
+  const [savedECf,  setSavedECf]  = useState(false);
+  const [eCf, setECf] = useState<{
+    taxpayerType: TaxpayerType | "";
+    eCfEnvironment: "sandbox" | "production";
+    alanubeCompanyId: string;
+    sequences: Record<Extract<ECfType, "31" | "32">, { nextNumber: string; rangeEnd: string }>;
+  }>({
+    taxpayerType: "",
+    eCfEnvironment: "sandbox",
+    alanubeCompanyId: "",
+    sequences: { "31": { nextNumber: "", rangeEnd: "" }, "32": { nextNumber: "", rangeEnd: "" } },
+  });
+
   useEffect(() => {
     if (profile) setProf({ fullName: profile.fullName, phone: profile.phone });
   }, [profile]);
@@ -141,6 +155,21 @@ export default function ConfiguracionPage() {
         if (c) {
           setCompany(c);
           setComp({ name: c.name, rif: c.rif, address: c.address, phone: c.phone, email: c.email, industry: c.industry, country: c.country });
+          setECf({
+            taxpayerType: c.taxpayerType ?? "",
+            eCfEnvironment: c.eCfEnvironment ?? "sandbox",
+            alanubeCompanyId: c.alanubeCompanyId ?? "",
+            sequences: {
+              "31": {
+                nextNumber: c.eCfSequences?.["31"]?.nextNumber?.toString() ?? "",
+                rangeEnd:   c.eCfSequences?.["31"]?.rangeEnd?.toString()   ?? "",
+              },
+              "32": {
+                nextNumber: c.eCfSequences?.["32"]?.nextNumber?.toString() ?? "",
+                rangeEnd:   c.eCfSequences?.["32"]?.rangeEnd?.toString()   ?? "",
+              },
+            },
+          });
         }
       });
     }
@@ -217,6 +246,31 @@ export default function ConfiguracionPage() {
       }
     }
     setSavingCompany(false);
+  }
+
+  async function saveECf(e: React.FormEvent) {
+    e.preventDefault();
+    if (!company) return;
+    setSavingECf(true);
+    try {
+      const sequences: Company["eCfSequences"] = {};
+      for (const type of ["31", "32"] as const) {
+        const { nextNumber, rangeEnd } = eCf.sequences[type];
+        if (nextNumber !== "" && rangeEnd !== "") {
+          sequences[type] = { nextNumber: Number(nextNumber), rangeEnd: Number(rangeEnd) };
+        }
+      }
+      await updateCompany(company.id, {
+        taxpayerType: eCf.taxpayerType || undefined,
+        eCfEnvironment: eCf.eCfEnvironment,
+        alanubeCompanyId: eCf.alanubeCompanyId || undefined,
+        eCfSequences: sequences,
+      });
+      flashSaved(setSavedECf);
+    } catch {
+      toast.error("Error al guardar la configuración de facturación electrónica");
+    }
+    setSavingECf(false);
   }
 
   async function savePassword(e: React.FormEvent) {
@@ -368,6 +422,100 @@ export default function ConfiguracionPage() {
           </form>
         </div>
         )}
+
+        {/* Facturación electrónica (DGII / e-CF) — admin only, requiere empresa ya registrada */}
+        {isAdmin && company && (
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-700 mb-1 flex items-center gap-2">
+            <Receipt size={16} className="text-brand-500" /> Facturación electrónica (DGII)
+          </h2>
+          <p className="text-sm text-slate-500 mb-5">
+            El RNC se toma del campo &quot;RIF / NIT / RFC&quot; de arriba. LogiAnalytics es la cuenta
+            principal en Alanube — esta empresa debe registrarse ahí como compañía asociada primero;
+            pegá acá el ID que Alanube le asigne, más la categoría de contribuyente y el rango de
+            e-NCF que le haya autorizado DGII para cada tipo de comprobante.
+          </p>
+          <form onSubmit={saveECf}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+              <div>
+                <label className={labelCls}>ID de empresa asociada en Alanube</label>
+                <input
+                  value={eCf.alanubeCompanyId}
+                  onChange={(e) => setECf((p) => ({ ...p, alanubeCompanyId: e.target.value }))}
+                  placeholder="Ej: 01FVK1KD4581EF7CCK7TX55420"
+                  className={`${inputCls} font-mono text-xs`}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Categoría de contribuyente (DGII)</label>
+                <select
+                  value={eCf.taxpayerType}
+                  onChange={(e) => setECf((p) => ({ ...p, taxpayerType: e.target.value as TaxpayerType | "" }))}
+                  className={inputCls}
+                >
+                  <option value="">Sin definir</option>
+                  <option value="grande">Gran contribuyente</option>
+                  <option value="mediano">Mediano contribuyente</option>
+                  <option value="pequeno">Pequeño contribuyente</option>
+                  <option value="micro">Micro contribuyente</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Ambiente Alanube</label>
+                <select
+                  value={eCf.eCfEnvironment}
+                  onChange={(e) => setECf((p) => ({ ...p, eCfEnvironment: e.target.value as "sandbox" | "production" }))}
+                  className={inputCls}
+                >
+                  <option value="sandbox">Pruebas (sandbox)</option>
+                  <option value="production">Producción</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              {(["31", "32"] as const).map((type) => (
+                <div key={type} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end p-3 bg-slate-50 rounded-xl">
+                  <div className="sm:col-span-1">
+                    <p className="text-xs font-semibold text-slate-600">{ECF_TYPE_LABELS[type]}</p>
+                    <p className="text-[11px] text-slate-400">e-NCF tipo {type}</p>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Próximo número</label>
+                    <input
+                      type="number" min={1}
+                      value={eCf.sequences[type].nextNumber}
+                      onChange={(e) => setECf((p) => ({
+                        ...p, sequences: { ...p.sequences, [type]: { ...p.sequences[type], nextNumber: e.target.value } },
+                      }))}
+                      placeholder="Ej: 1"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Hasta (fin del rango autorizado)</label>
+                    <input
+                      type="number" min={1}
+                      value={eCf.sequences[type].rangeEnd}
+                      onChange={(e) => setECf((p) => ({
+                        ...p, sequences: { ...p.sequences, [type]: { ...p.sequences[type], rangeEnd: e.target.value } },
+                      }))}
+                      placeholder="Ej: 50000"
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button type="submit" disabled={savingECf}
+              className={`font-semibold px-6 py-2.5 rounded-lg transition disabled:opacity-50 flex items-center gap-2 ${savedECf ? "bg-emerald-600 text-white" : "bg-brand-600 hover:bg-brand-700 text-white"}`}>
+              {savingECf ? "Guardando…" : savedECf ? <><CheckCircle2 size={16} /> Guardado</> : "Guardar configuración"}
+            </button>
+          </form>
+        </div>
+        )}
+
         {/* Push Notifications */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
           <h2 className="font-semibold text-slate-700 mb-1">Notificaciones de stock</h2>

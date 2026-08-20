@@ -31,6 +31,9 @@ export interface CierreData {
   cardSales: number;
   transferSales: number;
   creditSales: number;
+  /** Total facturado con estado "pagado" según el sistema — base de comparación del cuadre. */
+  expectedCash: number;
+  /** Total declarado por el cajero (efectivo + tarjeta + transferencia). */
   actualCash: number;
   closingNotes?: string;
 }
@@ -59,10 +62,9 @@ export async function openCajaSession(uid: string, initialCash: number): Promise
 export async function closeCajaSession(
   uid: string, sessionId: string, data: CierreData
 ): Promise<void> {
-  const expectedCash = data.cashSales;
-  const difference   = data.actualCash - expectedCash;
+  const difference = data.actualCash - data.expectedCash;
   await updateDoc(doc(db, "caja", uid, "sessions", sessionId), {
-    ...data, expectedCash, difference, closedAt: Timestamp.now(), status: "closed",
+    ...data, difference, closedAt: Timestamp.now(), status: "closed",
   });
 }
 

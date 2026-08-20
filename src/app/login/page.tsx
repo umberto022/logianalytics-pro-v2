@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Truck, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Truck, Mail, Lock, Eye, EyeOff, X } from "lucide-react";
+import { getRecentAccounts, removeRecentAccount, type RecentAccount } from "@/lib/recentAccounts";
 
 function GoogleIcon() {
   return (
@@ -33,6 +34,37 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetSent,     setResetSent]     = useState(false);
   const [resetLoading,  setResetLoading]  = useState(false);
+
+  // Selector rápido de cuentas ya usadas en este dispositivo (tipo Facebook/Google).
+  const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>([]);
+  const [manualMode,     setManualMode]     = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setRecentAccounts(getRecentAccounts());
+  }, []);
+
+  function handleQuickAccount(acc: RecentAccount) {
+    if (acc.provider === "google.com") {
+      handleGoogle();
+      return;
+    }
+    // Cuenta de email/contraseña: nunca guardamos la contraseña — solo
+    // precargamos el email y le pedimos que escriba la contraseña.
+    setEmail(acc.email);
+    setManualMode(true);
+    setTimeout(() => passwordRef.current?.focus(), 0);
+  }
+
+  function handleRemoveAccount(uid: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    removeRecentAccount(uid);
+    setRecentAccounts((prev) => prev.filter((a) => a.uid !== uid));
+  }
+
+  function initials(name: string) {
+    return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
+  }
 
   async function handleReset() {
     if (!email) { toast.error("Ingresa tu email primero"); return; }
@@ -112,83 +144,144 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-3xl font-bold mb-2 dark:text-slate-100">Bienvenido de vuelta</h1>
-          <p className="text-slate-500 dark:text-slate-400 mb-8">Ingresa a tu cuenta para continuar</p>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">
+            {recentAccounts.length > 0 && !manualMode ? "Elige una cuenta para continuar" : "Ingresa a tu cuenta para continuar"}
+          </p>
 
-          <button
-            onClick={handleGoogle}
-            disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 dark:hover:bg-slate-800 transition font-medium disabled:opacity-50 dark:text-slate-200"
-          >
-            <GoogleIcon />
-            {googleLoading ? "Conectando…" : "Continuar con Google"}
-          </button>
-
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-            <span className="text-slate-400 text-sm">o con email</span>
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="login-email" className={labelCls}>Email</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@empresa.com"
-                  className={inputCls}
-                  required
-                />
+          {recentAccounts.length > 0 && !manualMode ? (
+            <div className="mb-2">
+              <div className="space-y-2 mb-4">
+                {recentAccounts.map((acc) => (
+                  <button
+                    key={acc.uid}
+                    type="button"
+                    onClick={() => handleQuickAccount(acc)}
+                    className="group w-full flex items-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
+                  >
+                    {acc.photoURL ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={acc.photoURL} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-200 flex items-center justify-center font-semibold shrink-0">
+                        {initials(acc.fullName)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm dark:text-slate-100 truncate">{acc.fullName}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{acc.email}</div>
+                    </div>
+                    {acc.provider === "google.com" && <GoogleIcon />}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => handleRemoveAccount(acc.uid, e)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleRemoveAccount(acc.uid, e as unknown as React.MouseEvent); }}
+                      aria-label={`Quitar ${acc.fullName} de este dispositivo`}
+                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1 shrink-0"
+                    >
+                      <X size={16} />
+                    </span>
+                  </button>
+                ))}
               </div>
-            </div>
-
-            <div>
-              <label htmlFor="login-password" className={labelCls}>Contraseña</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  id="login-password"
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className={inputCls}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-                  aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"}
-                >
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end">
               <button
                 type="button"
-                onClick={handleReset}
-                disabled={resetLoading}
-                className="text-xs text-brand-600 hover:underline disabled:opacity-50 transition"
+                onClick={() => setManualMode(true)}
+                className="w-full text-center text-sm text-brand-600 hover:underline py-2"
               >
-                {resetSent ? "Email enviado ✓" : resetLoading ? "Enviando…" : "¿Olvidaste tu contraseña?"}
+                Usar otra cuenta
               </button>
             </div>
+          ) : (
+            <>
+              {recentAccounts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setManualMode(false)}
+                  className="text-sm text-brand-600 hover:underline mb-4 inline-block"
+                >
+                  ← Ver cuentas guardadas
+                </button>
+              )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50"
-            >
-              {loading ? "Ingresando…" : "Ingresar"}
-            </button>
-          </form>
+              <button
+                onClick={handleGoogle}
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 dark:hover:bg-slate-800 transition font-medium disabled:opacity-50 dark:text-slate-200"
+              >
+                <GoogleIcon />
+                {googleLoading ? "Conectando…" : "Continuar con Google"}
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                <span className="text-slate-400 text-sm">o con email</span>
+                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="login-email" className={labelCls}>Email</label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      id="login-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tu@empresa.com"
+                      className={inputCls}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="login-password" className={labelCls}>Contraseña</label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      ref={passwordRef}
+                      id="login-password"
+                      type={showPw ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className={inputCls}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                      aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    >
+                      {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    disabled={resetLoading}
+                    className="text-xs text-brand-600 hover:underline disabled:opacity-50 transition"
+                  >
+                    {resetSent ? "Email enviado ✓" : resetLoading ? "Enviando…" : "¿Olvidaste tu contraseña?"}
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50"
+                >
+                  {loading ? "Ingresando…" : "Ingresar"}
+                </button>
+              </form>
+            </>
+          )}
 
           <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-6">
             ¿No tienes cuenta?{" "}

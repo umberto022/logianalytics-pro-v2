@@ -14,7 +14,19 @@ import { auth } from "@/lib/firebase";
 import {
   createUserProfile, getUserProfile, touchLastLogin, backfillWorkspaceId,
 } from "@/lib/firestore/users";
+import { saveRecentAccount } from "@/lib/recentAccounts";
 import type { UserProfile } from "@/types";
+
+/** Guarda la cuenta en el selector rápido de /login (ver recentAccounts.ts). */
+function rememberAccount(u: User, provider: "password" | "google.com") {
+  saveRecentAccount({
+    uid:      u.uid,
+    email:    u.email ?? "",
+    fullName: u.displayName ?? u.email ?? "",
+    photoURL: u.photoURL ?? undefined,
+    provider,
+  });
+}
 
 interface AuthCtx {
   user:         User | null;
@@ -61,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             fullName: result.user.displayName ?? "",
           });
         }
+        rememberAccount(result.user, "google.com");
       }
     }).catch(console.error);
 
@@ -83,25 +96,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await setPersistence(auth, browserSessionPersistence);
     const cred = await signInWithEmailAndPassword(auth, email, password);
     await loadProfile(cred.user);
+    rememberAccount(cred.user, "password");
   }
 
   async function signInGoogle() {
-    await setPersistence(auth, browserSessionPersistence);
-    const provider = new GoogleAuthProvider();
-    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-    if (isMobile) {
-      await signInWithRedirect(auth, provider);
-      return; // page will reload after redirect
+    try {
+      await setPersistence(auth, browserSessionPersistence);
+      const provider = new GoogleAuthProvider();
+      const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+        return; // page will reload after redirect
+      }
+      const cred = await signInWithPopup(auth, provider);
+      const exists = await getUserProfile(cred.user.uid).catch(() => null);
+      if (!exists) {
+        await createUserProfile(cred.user.uid, {
+          email:    cred.user.email!,
+          fullName: cred.user.displayName ?? "",
+        });
+      }
+      await loadProfile(cred.user);
+      rememberAccount(cred.user, "google.com");
+    } catch (e) {
+      // Callers only show a generic toast — log the real Firebase error code
+      // (e.g. auth/operation-not-allowed, auth/popup-blocked, auth/unauthorized-domain)
+      // so it's diagnosable from the browser console instead of guessing.
+      console.error("signInGoogle error:", e);
+      throw e;
     }
-    const cred = await signInWithPopup(auth, provider);
-    const exists = await getUserProfile(cred.user.uid).catch(() => null);
-    if (!exists) {
-      await createUserProfile(cred.user.uid, {
-        email:    cred.user.email!,
-        fullName: cred.user.displayName ?? "",
-      });
-    }
-    await loadProfile(cred.user);
   }
 
   async function register(
@@ -112,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateProfile(cred.user, { displayName: fullName });
     await createUserProfile(cred.user.uid, { email, fullName, phone });
     await loadProfile(cred.user);
+    saveRecentAccount({ uid: cred.user.uid, email, fullName, provider: "password" });
   }
 
   async function logout() {

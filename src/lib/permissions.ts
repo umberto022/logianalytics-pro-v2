@@ -13,7 +13,8 @@ export type ModuleKey =
   | "recepciones"
   | "rentabilidad"
   | "configuracion"
-  | "equipo";
+  | "equipo"
+  | "facturacionElectronica";
 
 const ALL: Department[] = ["admin", "ventas", "compras", "logistica"];
 
@@ -31,6 +32,8 @@ export const MODULE_ACCESS: Record<ModuleKey, { edit: Department[]; readOnly?: D
   rentabilidad:      { edit: ["admin"] },
   configuracion:     { edit: ALL },
   equipo:            { edit: ["admin"] },
+  // Ventas emite e-CF desde sus propias ventas; Admin ve/gestiona todo.
+  facturacionElectronica: { edit: ["admin", "ventas"] },
 };
 
 /** Maps a pathname prefix to the module it belongs to, for route guarding. */
@@ -47,6 +50,7 @@ export const ROUTE_MODULE: Record<string, ModuleKey> = {
   "/rentabilidad": "rentabilidad",
   "/configuracion": "configuracion",
   "/equipo": "equipo",
+  "/facturacion-electronica": "facturacionElectronica",
 };
 
 export function moduleForPath(pathname: string): ModuleKey | null {

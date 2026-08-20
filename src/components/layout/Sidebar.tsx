@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
   Settings, LogOut, Truck, Building2, MapPin, ClipboardList,
-  Users, Sun, Moon, Store, CreditCard, ShieldAlert, PackageCheck, UsersRound,
+  Users, Sun, Moon, Store, CreditCard, ShieldAlert, PackageCheck, UsersRound, Receipt,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCaja } from "@/contexts/CajaContext";
@@ -20,6 +20,7 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: "
   { href: "/ventas",        label: "Ventas",        icon: ShoppingCart,    badge: null,             module: "ventas" },
   { href: "/clientes",      label: "Clientes",      icon: Users,           badge: null,             module: "clientes" },
   { href: "/cuentas-por-cobrar", label: "Por cobrar", icon: CreditCard,     badge: null,             module: "cuentasPorCobrar" },
+  { href: "/facturacion-electronica", label: "Fact. electrónica", icon: Receipt, badge: null,        module: "facturacionElectronica" },
   { href: "/rutas",         label: "Rutas",         icon: MapPin,          badge: null,             module: "rutas" },
   { href: "/rentabilidad",  label: "Rentabilidad",  icon: TrendingUp,      badge: null,             module: "rentabilidad" },
   { href: "/compras",       label: "Compras",       icon: ClipboardList,   badge: null,             module: "compras" },

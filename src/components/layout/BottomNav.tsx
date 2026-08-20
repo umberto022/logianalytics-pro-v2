@@ -7,7 +7,7 @@ import {
   LayoutDashboard, ShoppingCart, Package,
   ClipboardList, Users, MoreHorizontal,
   MapPin, TrendingUp, Settings, LogOut, X, Download, Store, CreditCard, ShieldAlert,
-  PackageCheck, UsersRound,
+  PackageCheck, UsersRound, Receipt,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +30,7 @@ const MORE_NAV: { href: string; label: string; icon: typeof LayoutDashboard; mod
   { href: "/recepciones",         label: "Recepciones",     icon: PackageCheck, module: "recepciones" },
   { href: "/proveedores",         label: "Proveedores",     icon: Store,        module: "proveedores" },
   { href: "/cuentas-por-cobrar",  label: "Por cobrar",      icon: CreditCard,   module: "cuentasPorCobrar" },
+  { href: "/facturacion-electronica", label: "Fact. electrónica", icon: Receipt, module: "facturacionElectronica" },
   { href: "/rentabilidad",        label: "Rentabilidad",    icon: TrendingUp,   module: "rentabilidad" },
   { href: "/configuracion",       label: "Configuración",   icon: Settings,     module: "configuracion" },
 ];

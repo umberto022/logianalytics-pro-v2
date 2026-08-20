@@ -124,5 +124,12 @@ service cloud.firestore {
     match /conteos/{workspaceId}/records/{conteoId} {
       allow read, write: if roleIn(workspaceId, ['admin', 'logistica']);
     }
+
+    // e-CF (facturación electrónica DGII): Ventas emite, Admin gestiona.
+    // El envío real a Alanube pasa por /api/einvoicing (Admin SDK, API key
+    // secreta) — estas reglas solo protegen el registro/estado guardado acá.
+    match /electronicInvoices/{workspaceId}/records/{invoiceId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
+    }
   }
 }

@@ -22,13 +22,14 @@ export async function POST(req: NextRequest) {
     const usersSnap = await db.collection("users").get();
 
     for (const userDoc of usersSnap.docs) {
-      const profile = userDoc.data();
-      const uid     = userDoc.id;
-      const email   = profile.email as string | undefined;
+      const profile     = userDoc.data();
+      const uid         = userDoc.id;
+      const email       = profile.email as string | undefined;
+      const workspaceId = (profile.workspaceId as string | undefined) ?? uid;
       if (!uid || !email) continue;
 
       try {
-        const report = await buildMonthlyReport(db, uid);
+        const report = await buildMonthlyReport(db, workspaceId);
         await resend.emails.send({
           from:    process.env.REPORT_FROM_EMAIL ?? "reportes@logianalytics.app",
           to:      email,

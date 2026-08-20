@@ -551,7 +551,8 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
         cardSales:     typeof tarjeta       === "number" ? tarjeta       : 0,
         transferSales: typeof transferencia === "number" ? transferencia : 0,
         creditSales:   totalCredito,
-        actualCash:    typeof efectivo      === "number" ? efectivo      : 0,
+        expectedCash:  totalPagado,
+        actualCash:    totalDeclarado,
         closingNotes:  notas,
       });
       await reload();
