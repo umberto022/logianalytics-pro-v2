@@ -88,18 +88,18 @@ function StatCard({ label, value, sub, icon: Icon, color, active, onClick }: {
 }) {
   return (
     <button onClick={onClick}
-      className={`w-full text-left bg-white rounded-2xl border p-5 shadow-sm
+      className={`w-full text-left bg-white dark:bg-slate-800 rounded-2xl border p-5 shadow-sm
         hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative overflow-hidden
-        ${active ? "ring-2 ring-brand-500 border-brand-200" : "border-slate-100"}`}>
+        ${active ? "ring-2 ring-brand-500 border-brand-200 dark:border-brand-500/40" : "border-slate-100 dark:border-slate-700"}`}>
       <div className={`absolute top-0 left-0 right-0 h-0.5 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-60"} ${color} transition-opacity`} />
       <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wide">{label}</p>
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${color.replace("bg-","bg-").replace("500","50")} ${color.replace("bg-","text-").replace("500","600")}`}>
           <Icon size={17} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-900 leading-none tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-slate-400 mt-1.5">{sub}</p>}
+      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-none tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-slate-400 dark:text-slate-400 mt-1.5">{sub}</p>}
       {active && (
         <span className="absolute bottom-3 right-3 text-xs text-brand-500 font-medium flex items-center gap-0.5">
           Filtrando <ChevronRight size={12} />
@@ -195,13 +195,13 @@ function PhotoPicker({ current, onChange, onUploading }: {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-2">
-        Foto del producto <span className="text-slate-400 font-normal">(opcional)</span>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        Foto del producto <span className="text-slate-400 dark:text-slate-400 font-normal">(opcional)</span>
       </label>
       {preview && (
         <div className="relative w-24 h-24 mb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="producto" className="w-24 h-24 object-cover rounded-xl border border-slate-200"
+          <img src={preview} alt="producto" className="w-24 h-24 object-cover rounded-xl border border-slate-200 dark:border-slate-700"
             onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <button type="button" onClick={() => { setPreview(""); onChange(""); }}
             className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
@@ -210,7 +210,7 @@ function PhotoPicker({ current, onChange, onUploading }: {
         </div>
       )}
       {mode === "camera" && (
-        <div className="mb-3 rounded-xl overflow-hidden border border-slate-200 bg-black relative">
+        <div className="mb-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black relative">
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video ref={videoRef} className="w-full max-h-56 object-cover" autoPlay playsInline />
           <canvas ref={canvasRef} className="hidden" />
@@ -227,15 +227,15 @@ function PhotoPicker({ current, onChange, onUploading }: {
         </div>
       )}
       {uploading ? (
-        <p className="text-sm text-brand-600 animate-pulse">Subiendo imagen…</p>
+        <p className="text-sm text-brand-600 dark:text-brand-400 animate-pulse">Subiendo imagen…</p>
       ) : mode === "idle" && (
         <div className="flex gap-2">
           <button type="button" onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition">
             <ImageIcon size={14} /> Subir foto
           </button>
           <button type="button" onClick={startCamera}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition">
             <Camera size={14} /> Tomar foto
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -253,12 +253,12 @@ function ProductThumb({ url, name }: { url?: string; name: string }) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img src={url} alt={name}
-        className="w-10 h-10 object-cover rounded-lg border border-slate-200"
+        className="w-10 h-10 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
         onError={() => setErr(true)} />
     );
   }
   return (
-    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-300">
+    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-500">
       <Package size={16} />
     </div>
   );
@@ -282,22 +282,22 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust, canEdit }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Image header */}
-        <div className="relative bg-slate-100 h-56 flex items-center justify-center">
+        <div className="relative bg-slate-100 dark:bg-slate-700 h-56 flex items-center justify-center">
           {item.imageUrl && !imgErr ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={item.imageUrl} alt={item.name}
               className="w-full h-full object-cover"
               onError={() => setImgErr(true)} />
           ) : (
-            <div className="flex flex-col items-center gap-2 text-slate-300">
+            <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-500">
               <Package size={56} />
               <span className="text-sm">Sin foto</span>
             </div>
           )}
           <button onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition shadow">
+            className="absolute top-3 right-3 w-8 h-8 bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-slate-900 transition shadow">
             <X size={15} />
           </button>
           <div className="absolute bottom-3 left-3">
@@ -308,36 +308,36 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust, canEdit }: {
         {/* Content */}
         <div className="p-6">
           <div className="mb-4">
-            <p className="text-xs font-mono text-slate-400 mb-1">{item.sku}</p>
-            <h2 className="text-xl font-bold text-slate-900 leading-tight">{item.name}</h2>
+            <p className="text-xs font-mono text-slate-400 dark:text-slate-400 mb-1">{item.sku}</p>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">{item.name}</h2>
             {item.category && (
-              <p className="text-sm text-slate-500 mt-0.5 flex items-center gap-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
                 <Layers size={12} /> {item.category}
                 {item.color ? ` · ${item.color}` : ""}
               </p>
             )}
             {item.supplier && (
-              <p className="text-xs text-slate-400 mt-0.5">Proveedor: {item.supplier}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">Proveedor: {item.supplier}</p>
             )}
           </div>
 
           {/* Price & stock grid */}
           <div className={`grid gap-3 mb-5 ${canEdit ? "grid-cols-3" : "grid-cols-1"}`}>
-            <div className="bg-emerald-50 rounded-xl p-3 text-center">
-              <p className="text-xs text-emerald-600 font-medium mb-1 flex items-center justify-center gap-1">
+            <div className="bg-emerald-50 dark:bg-emerald-500/15 rounded-xl p-3 text-center">
+              <p className="text-xs text-emerald-600 dark:text-emerald-300 font-medium mb-1 flex items-center justify-center gap-1">
                 <Tag size={11} /> Precio venta
               </p>
-              <p className="text-lg font-bold text-emerald-700">{fmtCurrency(item.salePrice)}</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{fmtCurrency(item.salePrice)}</p>
             </div>
             {canEdit && (
               <>
-                <div className="bg-slate-50 rounded-xl p-3 text-center">
-                  <p className="text-xs text-slate-500 font-medium mb-1">Costo</p>
-                  <p className="text-lg font-bold text-slate-700">{fmtCurrency(item.unitCost)}</p>
+                <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-3 text-center">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">Costo</p>
+                  <p className="text-lg font-bold text-slate-700 dark:text-slate-200">{fmtCurrency(item.unitCost)}</p>
                 </div>
-                <div className="bg-indigo-50 rounded-xl p-3 text-center">
-                  <p className="text-xs text-indigo-600 font-medium mb-1">Margen</p>
-                  <p className="text-lg font-bold text-indigo-700">{margin}%</p>
+                <div className="bg-indigo-50 dark:bg-indigo-500/15 rounded-xl p-3 text-center">
+                  <p className="text-xs text-indigo-600 dark:text-indigo-300 font-medium mb-1">Margen</p>
+                  <p className="text-lg font-bold text-indigo-700 dark:text-indigo-300">{margin}%</p>
                 </div>
               </>
             )}
@@ -345,11 +345,11 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust, canEdit }: {
 
           {/* Stock bar */}
           <div className="mb-5">
-            <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5">
               <span>Stock actual</span>
               <span>{item.currentStock} / {item.maxStock} unidades</span>
             </div>
-            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
                   status === "critical" ? "bg-red-500" :
@@ -358,7 +358,7 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust, canEdit }: {
                 style={{ width: `${item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-slate-400 mt-1">
+            <div className="flex justify-between text-xs text-slate-400 dark:text-slate-400 mt-1">
               <span>Mín: {item.minStock}</span>
               <span>Lead time: {item.leadTimeDays}d</span>
             </div>
@@ -375,7 +375,7 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust, canEdit }: {
               }));
             return (
               <div className="mb-5">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
                   <History size={11} /> Evolución de precios
                 </p>
                 <div className="h-28">
@@ -405,7 +405,7 @@ function ProductDetailModal({ item, onClose, onEdit, onAdjust, canEdit }: {
           {canEdit && (
             <div className="flex gap-2">
               <button onClick={() => { onAdjust(); onClose(); }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 <SlidersHorizontal size={14} /> Ajustar stock
               </button>
               <button onClick={() => { onEdit(); onClose(); }}
@@ -447,17 +447,17 @@ function QuickAdjustModal({ item, onClose, onDone }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-slate-900">Ajuste rápido de stock</h3>
-            <p className="text-sm text-slate-500">{item.name} · Stock actual: <b>{item.currentStock}</b></p>
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Ajuste rápido de stock</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{item.name} · Stock actual: <b>{item.currentStock}</b></p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"><X size={16} /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de movimiento</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de movimiento</label>
             <div className="grid grid-cols-3 gap-2">
               {([
                 { v: "purchase", label: "Entrada", color: "emerald" },
@@ -467,33 +467,33 @@ function QuickAdjustModal({ item, onClose, onDone }: {
                 <button key={v} type="button" onClick={() => setType(v)}
                   className={`py-2 rounded-lg text-sm font-medium border transition
                     ${type === v
-                      ? color === "emerald" ? "bg-emerald-50 border-emerald-400 text-emerald-700"
-                        : color === "red"   ? "bg-red-50 border-red-400 text-red-700"
-                        : "bg-amber-50 border-amber-400 text-amber-700"
-                      : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      ? color === "emerald" ? "bg-emerald-50 border-emerald-400 text-emerald-700 dark:bg-emerald-500/15 dark:border-emerald-500/40 dark:text-emerald-300"
+                        : color === "red"   ? "bg-red-50 border-red-400 text-red-700 dark:bg-red-500/15 dark:border-red-500/40 dark:text-red-300"
+                        : "bg-amber-50 border-amber-400 text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/40 dark:text-amber-300"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`}>
                   {label}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cantidad</label>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => setDelta(d => Math.max(1, d - 1))}
-                className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
+                className="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 <Minus size={14} />
               </button>
               <input type="number" value={delta} min={1}
                 onChange={(e) => setDelta(Math.max(1, Number(e.target.value)))}
-                className="flex-1 text-center border border-slate-200 rounded-lg py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                className="flex-1 text-center border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               <button type="button" onClick={() => setDelta(d => d + 1)}
-                className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
+                className="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 <Plus size={14} />
               </button>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">
               Nuevo stock estimado: <b className={
-                type === "sale" ? "text-red-600" : type === "purchase" ? "text-emerald-600" : "text-amber-600"
+                type === "sale" ? "text-red-600 dark:text-red-400" : type === "purchase" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
               }>
                 {type === "sale" ? Math.max(0, item.currentStock - delta)
                   : type === "purchase" ? item.currentStock + delta
@@ -502,10 +502,10 @@ function QuickAdjustModal({ item, onClose, onDone }: {
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nota <span className="text-slate-400 font-normal">(opcional)</span></label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nota <span className="text-slate-400 dark:text-slate-400 font-normal">(opcional)</span></label>
             <input value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="ej. Recepción de proveedor, merma…"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
           </div>
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving}
@@ -513,7 +513,7 @@ function QuickAdjustModal({ item, onClose, onDone }: {
               {saving ? "Guardando…" : "Confirmar ajuste"}
             </button>
             <button type="button" onClick={onClose}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm hover:bg-slate-50 transition">
+              className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition">
               Cancelar
             </button>
           </div>
@@ -554,15 +554,15 @@ function QRModal({ item, onClose }: { item: InventoryItem; onClose: () => void }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-6 text-center">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-xs p-6 text-center">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-900">Código QR</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">Código QR</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"><X size={16} /></button>
         </div>
         <canvas ref={canvasRef} className="mx-auto rounded-xl" />
-        <p className="text-sm font-medium text-slate-900 mt-3">{item.name}</p>
-        <p className="text-xs text-slate-500 font-mono">{item.sku}</p>
-        <p className="text-xs text-slate-400 mt-1">Stock: {item.currentStock} · {fmtCurrency(item.salePrice)}</p>
+        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mt-3">{item.name}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{item.sku}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">Stock: {item.currentStock} · {fmtCurrency(item.salePrice)}</p>
         <button onClick={handlePrint}
           className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition">
           <Printer size={14} /> Imprimir etiqueta
@@ -648,13 +648,13 @@ function InventoryDashboard({ items, activeFilter, onFilter }: {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <BarChart2 size={16} className="text-indigo-500" />
-            <h3 className="text-sm font-semibold text-slate-700">Top productos por valor en stock</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Top productos por valor en stock</h3>
           </div>
           {topProducts.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-8">Sin datos</p>
+            <p className="text-slate-400 dark:text-slate-400 text-sm text-center py-8">Sin datos</p>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={topProducts} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -673,13 +673,13 @@ function InventoryDashboard({ items, activeFilter, onFilter }: {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <ShoppingBag size={16} className="text-emerald-500" />
-            <h3 className="text-sm font-semibold text-slate-700">Estado del stock</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Estado del stock</h3>
           </div>
           {pieData.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-8">Sin datos</p>
+            <p className="text-slate-400 dark:text-slate-400 text-sm text-center py-8">Sin datos</p>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
@@ -696,21 +696,21 @@ function InventoryDashboard({ items, activeFilter, onFilter }: {
           <div className="flex flex-col gap-1.5 mt-2">
             {pieData.map((d) => (
               <div key={d.name} className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-slate-600">
+                <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                   <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
                   {d.name}
                 </span>
-                <span className="font-semibold text-slate-800">{d.value}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{d.value}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-700 mb-4">Stock por categoría</h3>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Stock por categoría</h3>
         {byCategory.length === 0 ? (
-          <p className="text-slate-400 text-sm text-center py-4">Sin datos</p>
+          <p className="text-slate-400 dark:text-slate-400 text-sm text-center py-4">Sin datos</p>
         ) : (
           <div className="space-y-3">
             {byCategory.map(({ name, units, value, count }, idx) => {
@@ -719,16 +719,16 @@ function InventoryDashboard({ items, activeFilter, onFilter }: {
               const isActive = activeFilter === name;
               return (
                 <button key={name} onClick={() => toggle(name)}
-                  className={`w-full text-left group transition-all rounded-xl p-2 -mx-2 ${isActive ? "bg-indigo-50" : "hover:bg-slate-50"}`}>
+                  className={`w-full text-left group transition-all rounded-xl p-2 -mx-2 ${isActive ? "bg-indigo-50 dark:bg-indigo-500/15" : "hover:bg-slate-50 dark:hover:bg-slate-700/50"}`}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className={`text-sm font-medium flex items-center gap-2 ${isActive ? "text-indigo-700" : "text-slate-700"}`}>
+                    <span className={`text-sm font-medium flex items-center gap-2 ${isActive ? "text-indigo-700 dark:text-indigo-300" : "text-slate-700 dark:text-slate-300"}`}>
                       <span className="w-2.5 h-2.5 rounded-full" style={{ background: CHART_COLORS[idx % CHART_COLORS.length] }} />
                       {name}
-                      <span className="text-slate-400 font-normal text-xs">({count} prod.)</span>
+                      <span className="text-slate-400 dark:text-slate-400 font-normal text-xs">({count} prod.)</span>
                     </span>
-                    <span className="text-sm font-semibold text-slate-800">{fmt(units, 0)} u · {fmtCurrency(value)}</span>
+                    <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fmt(units, 0)} u · {fmtCurrency(value)}</span>
                   </div>
-                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${pct}%`, background: CHART_COLORS[idx % CHART_COLORS.length] }} />
                   </div>
@@ -757,17 +757,17 @@ function HistorialTab({ uid }: { uid: string }) {
   }, [uid, days]);
 
   const typeLabel: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-    purchase:   { label: "Entrada",  icon: <ArrowUpCircle size={14} />,   color: "text-emerald-600 bg-emerald-50" },
-    sale:       { label: "Venta",    icon: <ArrowDownCircle size={14} />, color: "text-red-600 bg-red-50" },
-    adjustment: { label: "Ajuste",   icon: <SlidersHorizontal size={14} />, color: "text-amber-600 bg-amber-50" },
+    purchase:   { label: "Entrada",  icon: <ArrowUpCircle size={14} />,   color: "text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/15" },
+    sale:       { label: "Venta",    icon: <ArrowDownCircle size={14} />, color: "text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-500/15" },
+    adjustment: { label: "Ajuste",   icon: <SlidersHorizontal size={14} />, color: "text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15" },
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-slate-800">Historial de movimientos</h2>
+        <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">Historial de movimientos</h2>
         <select value={days} onChange={(e) => setDays(Number(e.target.value))}
-          className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
           <option value={7}>Últimos 7 días</option>
           <option value={15}>Últimos 15 días</option>
           <option value={30}>Últimos 30 días</option>
@@ -776,17 +776,17 @@ function HistorialTab({ uid }: { uid: string }) {
         </select>
       </div>
       {loading ? (
-        <div className="text-center py-12 text-slate-400">Cargando…</div>
+        <div className="text-center py-12 text-slate-400 dark:text-slate-400">Cargando…</div>
       ) : movements.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-          <History size={40} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-slate-500">No hay movimientos en este período</p>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-16 text-center shadow-sm">
+          <History size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+          <p className="text-slate-500 dark:text-slate-400">No hay movimientos en este período</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+              <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
                 {["Tipo","Producto","SKU","Cantidad","Nota","Fecha"].map((h) => (
                   <th key={h} className="text-left py-3 px-4 font-medium">{h}</th>
                 ))}
@@ -797,19 +797,19 @@ function HistorialTab({ uid }: { uid: string }) {
                 const t = typeLabel[m.movementType] ?? typeLabel.adjustment;
                 const date = m.createdAt?.toDate?.() ?? new Date();
                 return (
-                  <tr key={m.id} className="border-t border-slate-50 hover:bg-slate-50">
+                  <tr key={m.id} className="border-t border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${t.color}`}>
                         {t.icon} {t.label}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-800">{m.productName}</td>
-                    <td className="py-3 px-4 font-mono text-xs text-slate-500">{m.sku}</td>
-                    <td className={`py-3 px-4 font-semibold ${m.quantity > 0 ? "text-emerald-600" : "text-red-600"}`}>
+                    <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{m.productName}</td>
+                    <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{m.sku}</td>
+                    <td className={`py-3 px-4 font-semibold ${m.quantity > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                       {m.quantity > 0 ? "+" : ""}{m.quantity}
                     </td>
-                    <td className="py-3 px-4 text-slate-500">{m.note || "—"}</td>
-                    <td className="py-3 px-4 text-slate-400 text-xs whitespace-nowrap">
+                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{m.note || "—"}</td>
+                    <td className="py-3 px-4 text-slate-400 dark:text-slate-400 text-xs whitespace-nowrap">
                       {date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
                       {" "}
                       {date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
@@ -828,10 +828,10 @@ function HistorialTab({ uid }: { uid: string }) {
 // ─── Órdenes de reabastecimiento ─────────────────────────────────────────────
 
 const PO_STATUS: Record<PurchaseOrderStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  pendiente: { label: "Pendiente", color: "bg-amber-50 text-amber-700 border-amber-200",     icon: <Clock size={11} /> },
-  recibida:  { label: "Recibida",  color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle2 size={11} /> },
-  parcial:   { label: "Parcial",   color: "bg-blue-50 text-blue-700 border-blue-200",        icon: <PackageCheck size={11} /> },
-  cancelada: { label: "Cancelada", color: "bg-red-50 text-red-700 border-red-200",           icon: <XCircle size={11} /> },
+  pendiente: { label: "Pendiente", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",     icon: <Clock size={11} /> },
+  recibida:  { label: "Recibida",  color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30", icon: <CheckCircle2 size={11} /> },
+  parcial:   { label: "Parcial",   color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",        icon: <PackageCheck size={11} /> },
+  cancelada: { label: "Cancelada", color: "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30",           icon: <XCircle size={11} /> },
 };
 
 function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryItem[]; uid: string; canViewPO: boolean; canReceive: boolean }) {
@@ -985,14 +985,14 @@ function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryIte
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-800">Necesidades de reabastecimiento</h2>
-            <p className="text-sm text-slate-500">Productos en o por debajo del stock mínimo</p>
+            <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">Necesidades de reabastecimiento</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Productos en o por debajo del stock mínimo</p>
           </div>
           <div className="flex gap-2">
             {needRestock.length > 0 && (
               <>
                 <button onClick={printNeedsList}
-                  className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
+                  className="flex items-center gap-2 px-3 py-2 border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                   <Printer size={14} /> Imprimir lista
                 </button>
                 <button onClick={goToCreateOrder}
@@ -1005,31 +1005,31 @@ function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryIte
         </div>
 
         {needRestock.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center shadow-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-12 text-center shadow-sm">
             <ShoppingCart size={40} className="mx-auto mb-3 text-emerald-400" />
-            <p className="text-slate-700 font-medium">Todo en orden ✓</p>
-            <p className="text-slate-400 text-sm mt-1">Ningún producto está por debajo del stock mínimo</p>
+            <p className="text-slate-700 dark:text-slate-200 font-medium">Todo en orden ✓</p>
+            <p className="text-slate-400 dark:text-slate-400 text-sm mt-1">Ningún producto está por debajo del stock mínimo</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-                <p className="text-xs text-slate-400 mb-1">Productos a reabastecer</p>
-                <p className="text-2xl font-bold text-slate-900">{needRestock.length}</p>
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
+                <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Productos a reabastecer</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{needRestock.length}</p>
               </div>
-              <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-                <p className="text-xs text-slate-400 mb-1">Unidades a pedir</p>
-                <p className="text-2xl font-bold text-slate-900">{needRestock.reduce((s, i) => s + i.qtyNeeded, 0)}</p>
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
+                <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Unidades a pedir</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{needRestock.reduce((s, i) => s + i.qtyNeeded, 0)}</p>
               </div>
-              <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-                <p className="text-xs text-slate-400 mb-1">Costo estimado total</p>
-                <p className="text-2xl font-bold text-red-600">{fmtCurrency(totalCost)}</p>
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
+                <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Costo estimado total</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{fmtCurrency(totalCost)}</p>
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                  <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
                     {["SKU","Producto","Proveedor","Stock actual","Mínimo","A pedir","Costo unit.","Total est.","Estado"].map((h) => (
                       <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                     ))}
@@ -1037,15 +1037,15 @@ function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryIte
                 </thead>
                 <tbody>
                   {needRestock.map((item) => (
-                    <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
-                      <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
-                      <td className="py-3 px-4 font-medium">{item.name}</td>
-                      <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
-                      <td className="py-3 px-4 font-semibold text-red-600">{item.currentStock}</td>
-                      <td className="py-3 px-4 text-slate-500">{item.minStock}</td>
-                      <td className="py-3 px-4 font-semibold text-emerald-600">{item.qtyNeeded}</td>
-                      <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>
-                      <td className="py-3 px-4 font-semibold">{fmtCurrency(item.estimatedCost)}</td>
+                    <tr key={item.id} className="border-t border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                      <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{item.sku}</td>
+                      <td className="py-3 px-4 font-medium dark:text-slate-200">{item.name}</td>
+                      <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{item.supplier || "—"}</td>
+                      <td className="py-3 px-4 font-semibold text-red-600 dark:text-red-400">{item.currentStock}</td>
+                      <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{item.minStock}</td>
+                      <td className="py-3 px-4 font-semibold text-emerald-600 dark:text-emerald-400">{item.qtyNeeded}</td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{fmtCurrency(item.unitCost)}</td>
+                      <td className="py-3 px-4 font-semibold dark:text-slate-200">{fmtCurrency(item.estimatedCost)}</td>
                       <td className="py-3 px-4"><StockBadge status={item.status} /></td>
                     </tr>
                   ))}
@@ -1059,31 +1059,31 @@ function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryIte
       {/* ── Órdenes de compra registradas ── */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-slate-800">
+          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
             Órdenes de compra registradas
             {activeOrders.length > 0 && (
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 font-medium">
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 font-medium">
                 {activeOrders.length} activa{activeOrders.length !== 1 ? "s" : ""}
               </span>
             )}
           </h2>
           <button onClick={() => router.push("/compras")}
-            className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-800 font-medium transition">
+            className="flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition">
             Ver todas <ExternalLink size={12} />
           </button>
         </div>
 
         {loadingOrders ? (
-          <div className="text-center py-8 text-slate-400 text-sm">Cargando órdenes…</div>
+          <div className="text-center py-8 text-slate-400 dark:text-slate-400 text-sm">Cargando órdenes…</div>
         ) : allOrders.length === 0 ? (
-          <div className="bg-slate-50 rounded-xl border border-slate-100 p-8 text-center text-slate-400 text-sm">
+          <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl border border-slate-100 dark:border-slate-700 p-8 text-center text-slate-400 dark:text-slate-400 text-sm">
             No hay órdenes de compra registradas aún
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
                   {["N° Orden","Proveedor","RNC","Productos","Total","Fecha esperada","Estado","Acciones"].map((h) => (
                     <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                   ))}
@@ -1093,13 +1093,13 @@ function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryIte
                 {allOrders.map((order) => {
                   const sm = PO_STATUS[order.status];
                   return (
-                    <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50">
-                      <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</td>
-                      <td className="py-3 px-4 font-medium">{order.supplierName}</td>
-                      <td className="py-3 px-4 text-slate-400 font-mono text-xs">{order.supplierRnc || "—"}</td>
-                      <td className="py-3 px-4 text-slate-600">{order.items.length} prod.</td>
-                      <td className="py-3 px-4 font-semibold">{fmtCurrency(order.total)}</td>
-                      <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                    <tr key={order.id} className="border-t border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                      <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600 dark:text-brand-400">{order.orderNumber}</td>
+                      <td className="py-3 px-4 font-medium dark:text-slate-200">{order.supplierName}</td>
+                      <td className="py-3 px-4 text-slate-400 dark:text-slate-400 font-mono text-xs">{order.supplierRnc || "—"}</td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{order.items.length} prod.</td>
+                      <td className="py-3 px-4 font-semibold dark:text-slate-200">{fmtCurrency(order.total)}</td>
+                      <td className="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES",{day:"2-digit",month:"short",year:"numeric"}) ?? "—"}
                       </td>
                       <td className="py-3 px-4">
@@ -1119,7 +1119,7 @@ function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryIte
                             </button>
                           )}
                           <button onClick={() => printPurchaseOrder(order)}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Imprimir">
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-700 rounded-lg transition" title="Imprimir">
                             <Printer size={14} />
                           </button>
                         </div>
@@ -1197,7 +1197,7 @@ function ConteoTab({ items, uid, onDone }: {
   const diffs = items.filter((i) => (counts[i.id] ?? i.currentStock) !== i.currentStock);
 
   if (loadingInfo) {
-    return <div className="text-center py-12 text-slate-400 text-sm">Cargando…</div>;
+    return <div className="text-center py-12 text-slate-400 dark:text-slate-400 text-sm">Cargando…</div>;
   }
 
   if (mode === "counting") {
@@ -1205,49 +1205,49 @@ function ConteoTab({ items, uid, onDone }: {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-800">Conteo físico en progreso</h2>
-            <p className="text-sm text-slate-500">Ingresa las cantidades reales que tienes en almacén</p>
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Conteo físico en progreso</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Ingresa las cantidades reales que tienes en almacén</p>
           </div>
           <button onClick={() => setMode("info")}
-            className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+            className="px-4 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition">
             Cancelar
           </button>
         </div>
 
         {diffs.length > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-700 flex items-center gap-2">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 text-xs text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-300 flex items-center gap-2">
             <AlertTriangle size={13} />
             {diffs.length} producto{diffs.length !== 1 ? "s" : ""} con diferencia respecto al sistema
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase">
+              <tr className="bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 uppercase">
                 {["Producto", "SKU", "Sistema", "Contado", "Diferencia"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
               {items.map((item) => {
                 const counted = counts[item.id] ?? item.currentStock;
                 const diff    = counted - item.currentStock;
                 return (
-                  <tr key={item.id} className={diff !== 0 ? "bg-amber-50/50" : ""}>
-                    <td className="px-4 py-2.5 font-medium text-slate-800">{item.name}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-400">{item.sku}</td>
-                    <td className="px-4 py-2.5 text-slate-600">{item.currentStock}</td>
+                  <tr key={item.id} className={diff !== 0 ? "bg-amber-50/50 dark:bg-amber-500/10" : ""}>
+                    <td className="px-4 py-2.5 font-medium text-slate-800 dark:text-slate-200">{item.name}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-400 dark:text-slate-400">{item.sku}</td>
+                    <td className="px-4 py-2.5 text-slate-600 dark:text-slate-400">{item.currentStock}</td>
                     <td className="px-4 py-2.5">
                       <input
                         type="number" min={0}
                         value={counted}
                         onChange={(e) => setCounts((p) => ({ ...p, [item.id]: Math.max(0, Number(e.target.value)) }))}
-                        className="w-20 text-center border border-slate-200 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="w-20 text-center border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg py-1 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     </td>
-                    <td className={`px-4 py-2.5 font-semibold ${diff > 0 ? "text-emerald-600" : diff < 0 ? "text-red-600" : "text-slate-300"}`}>
+                    <td className={`px-4 py-2.5 font-semibold ${diff > 0 ? "text-emerald-600 dark:text-emerald-400" : diff < 0 ? "text-red-600 dark:text-red-400" : "text-slate-300 dark:text-slate-600"}`}>
                       {diff === 0 ? "—" : `${diff > 0 ? "+" : ""}${diff}`}
                     </td>
                   </tr>
@@ -1273,15 +1273,15 @@ function ConteoTab({ items, uid, onDone }: {
   return (
     <div className="space-y-5">
       {/* Status */}
-      <div className={`rounded-2xl border p-5 ${needsConteo ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
+      <div className={`rounded-2xl border p-5 ${needsConteo ? "bg-amber-50 border-amber-200 dark:bg-amber-500/15 dark:border-amber-500/30" : "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/15 dark:border-emerald-500/30"}`}>
         <div className="flex items-center justify-between">
           <div>
-            <p className={`font-bold text-base ${needsConteo ? "text-amber-800" : "text-emerald-800"}`}>
+            <p className={`font-bold text-base ${needsConteo ? "text-amber-800 dark:text-amber-300" : "text-emerald-800 dark:text-emerald-300"}`}>
               {lastConteo === null ? "Sin conteos registrados" :
                needsConteo ? `Conteo recomendado (hace ${daysSinceLast} días)` :
                `Al día — último hace ${daysSinceLast} día${daysSinceLast !== 1 ? "s" : ""}`}
             </p>
-            <p className={`text-xs mt-1 ${needsConteo ? "text-amber-600" : "text-emerald-600"}`}>
+            <p className={`text-xs mt-1 ${needsConteo ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
               {!lastConteo ? "Se recomienda hacer un conteo físico cada 2 semanas" :
                `Último conteo: ${lastConteo.createdAt.toDate().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })} · ${lastConteo.adjustedItems} ajuste${lastConteo.adjustedItems !== 1 ? "s" : ""} aplicado${lastConteo.adjustedItems !== 1 ? "s" : ""}`}
             </p>
@@ -1301,17 +1301,17 @@ function ConteoTab({ items, uid, onDone }: {
 
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-          <p className="text-xs text-slate-400 mb-1">Productos a contar</p>
-          <p className="text-2xl font-bold text-slate-900">{items.length}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Productos a contar</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{items.length}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-          <p className="text-xs text-slate-400 mb-1">Conteos realizados</p>
-          <p className="text-2xl font-bold text-slate-900">{history.length}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Conteos realizados</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{history.length}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-          <p className="text-xs text-slate-400 mb-1">Próximo conteo en</p>
-          <p className="text-2xl font-bold text-slate-900">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
+          <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Próximo conteo en</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             {daysSinceLast === null ? "Ahora"
               : Math.max(0, DAYS_BETWEEN_CONTEOS - daysSinceLast) === 0
               ? "Hoy"
@@ -1322,27 +1322,27 @@ function ConteoTab({ items, uid, onDone }: {
 
       {/* History */}
       {history.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-slate-100">
-            <h3 className="text-sm font-semibold text-slate-700">Historial de conteos</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Historial de conteos</h3>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 text-xs text-slate-500 uppercase">
+              <tr className="bg-slate-50 dark:bg-slate-700/40 text-xs text-slate-500 dark:text-slate-400 uppercase">
                 {["Fecha", "Productos", "Ajustes aplicados"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
               {history.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-600">
+                <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                     {c.createdAt.toDate().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
                   </td>
-                  <td className="px-4 py-3">{c.totalProducts}</td>
+                  <td className="px-4 py-3 dark:text-slate-300">{c.totalProducts}</td>
                   <td className="px-4 py-3">
-                    <span className={`font-semibold ${c.adjustedItems > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                    <span className={`font-semibold ${c.adjustedItems > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                       {c.adjustedItems === 0 ? "Sin diferencias" : `${c.adjustedItems} producto${c.adjustedItems !== 1 ? "s" : ""}`}
                     </span>
                   </td>
@@ -1468,7 +1468,7 @@ export default function InventarioPage() {
   }
 
   function SortIcon({ k }: { k: SortKey }) {
-    if (sortKey !== k) return <ChevronDown size={12} className="text-slate-300" />;
+    if (sortKey !== k) return <ChevronDown size={12} className="text-slate-300 dark:text-slate-600" />;
     return sortDir === "asc" ? <ChevronUp size={12} className="text-brand-500" /> : <ChevronDown size={12} className="text-brand-500" />;
   }
 
@@ -1662,21 +1662,21 @@ export default function InventarioPage() {
         action={
           <div className="flex gap-2 flex-wrap">
             <button onClick={exportCSV}
-              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition">
               <Download size={15} /> CSV
             </button>
             <button onClick={exportPDF}
-              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition">
               <Printer size={15} /> PDF
             </button>
             {canEditInv && (
               <>
                 <button onClick={downloadCSVTemplate}
-                  className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                  className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                   title="Descargar plantilla CSV para importación masiva">
                   <FileText size={15} /> Plantilla
                 </button>
-                <label className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer">
+                <label className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
                   <Upload size={15} /> Importar CSV
                   <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
                 </label>
@@ -1691,11 +1691,11 @@ export default function InventarioPage() {
       />
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit overflow-x-auto">
+      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 mb-6 w-fit overflow-x-auto">
         {TABS.map((t) => (
           <button key={t.key}
             onClick={() => { setTab(t.key); if (t.key !== "add") { setEditing(null); setForm(EMPTY); } }}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap ${tab === t.key ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}>
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap ${tab === t.key ? "bg-white dark:bg-slate-700 shadow-sm text-brand-600 dark:text-brand-400" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
             {t.label}
           </button>
         ))}
@@ -1704,7 +1704,7 @@ export default function InventarioPage() {
       {/* ── Dashboard ── */}
       {tab === "dashboard" && (
         items.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
             <EmptyState icon={Package} title="Sin productos aún" description="Agrega tu primer producto para ver el dashboard con estadísticas de stock, valor de inventario y alertas automáticas." action={canEditInv ? { label: "Agregar primer producto", onClick: () => setTab("add") } : undefined} />
           </div>
         ) : (
@@ -1718,8 +1718,8 @@ export default function InventarioPage() {
         <div>
           {activeFilter !== "all" && (
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs text-slate-500">Filtrando por:</span>
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-brand-100 text-brand-700 text-xs font-medium rounded-full">
+              <span className="text-xs text-slate-500 dark:text-slate-400">Filtrando por:</span>
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300 text-xs font-medium rounded-full">
                 {activeFilter === "critical" ? "🔴 Stock crítico" :
                  activeFilter === "low"      ? "🟡 Stock bajo" :
                  activeFilter === "ok"       ? "🟢 Óptimo" : `📦 ${activeFilter}`}
@@ -1728,25 +1728,25 @@ export default function InventarioPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
             {/* Filters row */}
-            <div className="flex flex-wrap gap-3 p-4 border-b border-slate-100">
+            <div className="flex flex-wrap gap-3 p-4 border-b border-slate-100 dark:border-slate-700">
               <div className="relative flex-1 min-w-48 max-w-sm">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" />
                 <input value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por nombre, SKU o categoría…"
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               {supplierFilterOptions.length > 1 && (
                 <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}
-                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  className="px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                   <option value="all">Todos los proveedores</option>
                   {supplierFilterOptions.filter(s => s !== "all").map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               )}
-              <span className="flex items-center gap-1 text-xs text-slate-400 ml-auto">
+              <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-400 ml-auto">
                 <SlidersHorizontal size={12} /> {filtered.length} resultados
               </span>
             </div>
@@ -1758,37 +1758,37 @@ export default function InventarioPage() {
             ) : (
               <>
                 {/* Mobile cards */}
-                <div className="block sm:hidden divide-y divide-slate-50">
+                <div className="block sm:hidden divide-y divide-slate-50 dark:divide-slate-700/50">
                   {paginated.map((item) => {
                     const status = getStockStatus(item);
                     const pct = item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0;
                     return (
-                      <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+                      <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <button onClick={() => setDetailItem(item)} className="flex-shrink-0">
                           <ProductThumb url={item.imageUrl} name={item.name} />
                         </button>
                         <div className="flex-1 min-w-0">
-                          <button onClick={() => setDetailItem(item)} className="text-sm font-semibold text-slate-900 truncate w-full text-left">
+                          <button onClick={() => setDetailItem(item)} className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate w-full text-left">
                             {item.name}
                           </button>
-                          <p className="text-xs text-slate-400 font-mono">{item.sku} · {item.category}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-400 font-mono">{item.sku} · {item.category}</p>
                           <div className="flex items-center gap-2 mt-1.5">
                             {canEditInv && (
                               <button onClick={() => setAdjustItem(item)}
-                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition text-slate-400">
+                                className="w-6 h-6 rounded border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15 transition text-slate-400 dark:text-slate-400">
                                 <Minus size={10} />
                               </button>
                             )}
                             <div>
-                              <span className="text-sm font-bold">{item.currentStock}</span>
-                              <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                              <span className="text-sm font-bold dark:text-slate-100">{item.currentStock}</span>
+                              <div className="w-12 h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mt-0.5">
                                 <div className={status === "critical" ? "bg-red-500" : status === "low" ? "bg-amber-400" : "bg-emerald-500"}
                                   style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
                               </div>
                             </div>
                             {canEditInv && (
                               <button onClick={() => setAdjustItem(item)}
-                                className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 transition text-slate-400">
+                                className="w-6 h-6 rounded border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/15 transition text-slate-400 dark:text-slate-400">
                                 <Plus size={10} />
                               </button>
                             )}
@@ -1796,21 +1796,21 @@ export default function InventarioPage() {
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold text-emerald-600">{fmtCurrency(item.salePrice)}</p>
-                          {canEditInv && <p className="text-xs text-slate-400">costo {fmtCurrency(item.unitCost)}</p>}
+                          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(item.salePrice)}</p>
+                          {canEditInv && <p className="text-xs text-slate-400 dark:text-slate-400">costo {fmtCurrency(item.unitCost)}</p>}
                           <div className="flex gap-1 mt-1.5 justify-end">
                             <button onClick={() => setQrItem(item)}
-                              className="p-1.5 text-slate-400 hover:text-purple-600 rounded-lg transition">
+                              className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-lg transition">
                               <QrCode size={13} />
                             </button>
                             {canEditInv && (
                               <>
                                 <button onClick={() => startEdit(item)}
-                                  className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
+                                  className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg transition">
                                   <Edit2 size={13} />
                                 </button>
                                 <AdminButton onClick={() => handleDelete(item)}
-                                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
+                                  className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition">
                                   <Trash2 size={13} />
                                 </AdminButton>
                               </>
@@ -1825,12 +1825,12 @@ export default function InventarioPage() {
                 <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                      <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
                         <th className="text-left py-3 px-4 font-medium">📷</th>
                         <th className="text-left py-3 px-4 font-medium">SKU</th>
                         {sortableCols.map(({ key, label }) => (
                           <th key={key}
-                            className="text-left py-3 px-4 font-medium cursor-pointer hover:text-slate-800 whitespace-nowrap select-none"
+                            className="text-left py-3 px-4 font-medium cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 whitespace-nowrap select-none"
                             onClick={() => toggleSort(key)}>
                             <span className="flex items-center gap-1">{label} <SortIcon k={key} /></span>
                           </th>
@@ -1845,63 +1845,63 @@ export default function InventarioPage() {
                         const status = getStockStatus(item);
                         const pct = item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0;
                         return (
-                          <tr key={item.id} className="border-t border-slate-50 hover:bg-slate-50">
+                          <tr key={item.id} className="border-t border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                             <td className="py-3 px-4">
                               <button onClick={() => setDetailItem(item)} className="hover:opacity-80 transition">
                                 <ProductThumb url={item.imageUrl} name={item.name} />
                               </button>
                             </td>
-                            <td className="py-3 px-4 font-mono text-xs text-slate-500">{item.sku}</td>
+                            <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{item.sku}</td>
                             <td className="py-3 px-4">
                               <button onClick={() => setDetailItem(item)}
-                                className="font-medium text-slate-900 hover:text-brand-600 transition text-left flex items-center gap-1 group">
+                                className="font-medium text-slate-900 dark:text-slate-100 hover:text-brand-600 dark:hover:text-brand-400 transition text-left flex items-center gap-1 group">
                                 {item.name}
                                 <Eye size={12} className="opacity-0 group-hover:opacity-100 transition text-brand-400" />
                               </button>
                             </td>
-                            <td className="py-3 px-4 text-slate-600">{item.category}</td>
-                            <td className="py-3 px-4 text-slate-500">{item.supplier || "—"}</td>
+                            <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{item.category}</td>
+                            <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{item.supplier || "—"}</td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
                                 {canEditInv && (
                                   <button onClick={() => setAdjustItem(item)}
-                                    className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition text-slate-400">
+                                    className="w-6 h-6 rounded border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-red-50 hover:border-red-300 hover:text-red-600 dark:hover:bg-red-500/15 dark:hover:border-red-500/40 transition text-slate-400 dark:text-slate-400">
                                     <Minus size={11} />
                                   </button>
                                 )}
                                 <div>
-                                  <span className="font-semibold">{item.currentStock}</span>
-                                  <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                                  <span className="font-semibold dark:text-slate-100">{item.currentStock}</span>
+                                  <div className="w-14 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mt-0.5">
                                     <div className={status === "critical" ? "bg-red-500" : status === "low" ? "bg-amber-400" : "bg-emerald-500"}
                                       style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }} />
                                   </div>
                                 </div>
                                 {canEditInv && (
                                   <button onClick={() => setAdjustItem(item)}
-                                    className="w-6 h-6 rounded border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition text-slate-400">
+                                    className="w-6 h-6 rounded border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/40 transition text-slate-400 dark:text-slate-400">
                                     <Plus size={11} />
                                   </button>
                                 )}
                               </div>
                             </td>
-                            {canEditInv && <td className="py-3 px-4 text-slate-600">{fmtCurrency(item.unitCost)}</td>}
-                            <td className="py-3 px-4 text-emerald-600 font-medium">{fmtCurrency(item.salePrice)}</td>
-                            <td className="py-3 px-4 text-slate-500">{item.minStock} / {item.maxStock}</td>
+                            {canEditInv && <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{fmtCurrency(item.unitCost)}</td>}
+                            <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-medium">{fmtCurrency(item.salePrice)}</td>
+                            <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{item.minStock} / {item.maxStock}</td>
                             <td className="py-3 px-4"><StockBadge status={status} /></td>
                             <td className="py-3 px-4">
                               <div className="flex gap-1">
                                 <button onClick={() => setQrItem(item)}
-                                  className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="Ver QR">
+                                  className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-500/15 rounded-lg transition" title="Ver QR">
                                   <QrCode size={14} />
                                 </button>
                                 {canEditInv && (
                                   <>
                                     <button onClick={() => startEdit(item)}
-                                      className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
+                                      className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:text-brand-400 dark:hover:bg-brand-500/15 rounded-lg transition" title="Editar">
                                       <Edit2 size={14} />
                                     </button>
                                     <AdminButton onClick={() => handleDelete(item)}
-                                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                                      className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/15 rounded-lg transition" title="Eliminar">
                                       <Trash2 size={14} />
                                     </AdminButton>
                                   </>
@@ -1919,13 +1919,13 @@ export default function InventarioPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-                <span className="text-xs text-slate-400">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700">
+                <span className="text-xs text-slate-400 dark:text-slate-400">
                   Página {page} de {totalPages} · {filtered.length} productos
                 </span>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 transition">
+                    className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition">
                     ← Anterior
                   </button>
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -1933,13 +1933,13 @@ export default function InventarioPage() {
                     if (p < 1 || p > totalPages) return null;
                     return (
                       <button key={p} onClick={() => setPage(p)}
-                        className={`w-8 h-8 text-xs rounded-lg border transition ${p === page ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 hover:bg-slate-50"}`}>
+                        className={`w-8 h-8 text-xs rounded-lg border transition ${p === page ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}>
                         {p}
                       </button>
                     );
                   })}
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 transition">
+                    className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition">
                     Siguiente →
                   </button>
                 </div>
@@ -1951,8 +1951,8 @@ export default function InventarioPage() {
 
       {/* ── Agregar / Editar ── */}
       {tab === "add" && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm max-w-2xl">
-          <h2 className="text-lg font-semibold mb-5">{editing ? "Editar producto" : "Registrar nuevo producto"}</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm max-w-2xl">
+          <h2 className="text-lg font-semibold mb-5 dark:text-slate-100">{editing ? "Editar producto" : "Registrar nuevo producto"}</h2>
           <form onSubmit={editing ? handleUpdate : handleAdd} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               {[
@@ -1961,17 +1961,17 @@ export default function InventarioPage() {
                 { label: "Color", key: "color" as const, placeholder: "ej. Rojo, Azul" },
               ].map(({ label, key, placeholder }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
                   <input value={String(form[key])} onChange={setF(key)} placeholder={placeholder}
-                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors[key] ? "border-red-400" : "border-slate-200"}`} />
-                  {formErrors[key] && <p className="text-xs text-red-500 mt-1">{formErrors[key]}</p>}
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 ${formErrors[key] ? "border-red-400" : "border-slate-200 dark:border-slate-700"}`} />
+                  {formErrors[key] && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{formErrors[key]}</p>}
                 </div>
               ))}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Proveedor</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Proveedor</label>
                 {suppliers.length > 0 ? (
                   <select value={form.supplier} onChange={(e) => setForm((p) => ({ ...p, supplier: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="">— Sin proveedor —</option>
                     {suppliers.filter(s => s.active).map((s) => (
                       <option key={s.id} value={s.name}>{s.name}</option>
@@ -1979,7 +1979,7 @@ export default function InventarioPage() {
                   </select>
                 ) : (
                   <input value={form.supplier} onChange={setF("supplier")} placeholder="Nombre del proveedor"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 )}
               </div>
               {[
@@ -1991,10 +1991,10 @@ export default function InventarioPage() {
                 { label: "Precio de venta ($)", key: "salePrice" as const,    min: 0, step: "0.01" },
               ].map(({ label, key, min, step }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
                   <input type="number" value={Number(form[key])} onChange={setF(key)} min={min} step={step}
-                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors[key] ? "border-red-400" : "border-slate-200"}`} />
-                  {formErrors[key] && <p className="text-xs text-red-500 mt-1">{formErrors[key]}</p>}
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 ${formErrors[key] ? "border-red-400" : "border-slate-200 dark:border-slate-700"}`} />
+                  {formErrors[key] && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{formErrors[key]}</p>}
                 </div>
               ))}
             </div>
@@ -2004,19 +2004,19 @@ export default function InventarioPage() {
 
             {/* Price history (only in edit mode) */}
             {editing && editing.priceHistory && editing.priceHistory.length > 0 && (
-              <details className="rounded-xl border border-slate-100 overflow-hidden">
-                <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 transition list-none">
-                  <History size={14} className="text-slate-400" />
+              <details className="rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-700 transition list-none">
+                  <History size={14} className="text-slate-400 dark:text-slate-400" />
                   Historial de precios ({editing.priceHistory.length})
-                  <ChevronDown size={14} className="ml-auto text-slate-400" />
+                  <ChevronDown size={14} className="ml-auto text-slate-400 dark:text-slate-400" />
                 </summary>
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
                   {[...editing.priceHistory].reverse().map((entry, i) => (
                     <div key={i} className="px-4 py-2.5 flex items-center justify-between text-xs">
-                      <span className="text-slate-500">{entry.date.toDate().toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                      <span className="text-slate-500 dark:text-slate-400">{entry.date.toDate().toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" })}</span>
                       <div className="flex gap-4">
-                        <span className="text-slate-600">Costo: <strong className="text-slate-800">${entry.unitCost.toFixed(2)}</strong></span>
-                        <span className="text-slate-600">Precio: <strong className="text-emerald-700">${entry.salePrice.toFixed(2)}</strong></span>
+                        <span className="text-slate-600 dark:text-slate-400">Costo: <strong className="text-slate-800 dark:text-slate-200">${entry.unitCost.toFixed(2)}</strong></span>
+                        <span className="text-slate-600 dark:text-slate-400">Precio: <strong className="text-emerald-700 dark:text-emerald-400">${entry.salePrice.toFixed(2)}</strong></span>
                       </div>
                     </div>
                   ))}
@@ -2030,7 +2030,7 @@ export default function InventarioPage() {
                 {imageUploading ? "Subiendo foto…" : saving ? "Guardando…" : (editing ? "Guardar cambios" : "Agregar al inventario")}
               </button>
               <button type="button" onClick={() => { setEditing(null); setForm(EMPTY); setTab("list"); }}
-                className="px-5 py-2.5 border border-slate-200 rounded-lg text-sm hover:bg-slate-50 transition">
+                className="px-5 py-2.5 border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 Cancelar
               </button>
             </div>

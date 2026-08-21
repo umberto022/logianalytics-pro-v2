@@ -140,7 +140,7 @@ export default function ProveedoresPage() {
   const total  = suppliers.length;
   const active = suppliers.filter((s) => s.active).length;
 
-  const inp = "w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
+  const inp = "w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400";
 
   if (loading) return <div className="space-y-5"><TableSkeleton rows={5} cols={5} /></div>;
 
@@ -149,10 +149,10 @@ export default function ProveedoresPage() {
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 dark:bg-slate-800">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-slate-800">{editing ? "Editar proveedor" : "Nuevo proveedor"}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition">
+              <h2 className="font-bold text-slate-800 dark:text-slate-100">{editing ? "Editar proveedor" : "Nuevo proveedor"}</h2>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition dark:hover:bg-slate-700">
                 <X size={18} />
               </button>
             </div>
@@ -165,35 +165,35 @@ export default function ProveedoresPage() {
                   { label: "Email",           key: "email" as const, placeholder: "compras@abc.com" },
                 ]).map(({ label, key, placeholder }) => (
                   <div key={key}>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">{label}</label>
                     <input value={form[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
                       placeholder={placeholder}
-                      className={`${inp} ${formErrors[key] ? "border-red-400" : "border-slate-200"}`} />
+                      className={`${inp} ${formErrors[key] ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"}`} />
                     {formErrors[key] && <p className="text-xs text-red-500 mt-0.5">{formErrors[key]}</p>}
                   </div>
                 ))}
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Dirección</label>
                 <input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
                   placeholder="Calle, ciudad, país"
-                  className={`${inp} border-slate-200`} />
+                  className={`${inp} border-slate-200 dark:border-slate-700`} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notas internas</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Notas internas</label>
                 <textarea value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                   placeholder="Condiciones de pago, contacto, observaciones…" rows={2}
-                  className={`${inp} border-slate-200 resize-none`} />
+                  className={`${inp} border-slate-200 resize-none dark:border-slate-700`} />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.active}
                   onChange={(e) => setForm((p) => ({ ...p, active: e.target.checked }))}
                   className="w-4 h-4 rounded accent-brand-600" />
-                <span className="text-sm font-medium text-slate-700">Proveedor activo</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Proveedor activo</span>
               </label>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition">
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
                   Cancelar
                 </button>
                 <button type="submit" disabled={saving}
@@ -210,13 +210,13 @@ export default function ProveedoresPage() {
       {perfSupplier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setPerfSupplier(null); }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg dark:bg-slate-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
               <div>
-                <h2 className="font-bold text-slate-900">{perfSupplier.name}</h2>
+                <h2 className="font-bold text-slate-900 dark:text-slate-100">{perfSupplier.name}</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Historial de performance</p>
               </div>
-              <button onClick={() => setPerfSupplier(null)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition">
+              <button onClick={() => setPerfSupplier(null)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition dark:hover:bg-slate-700">
                 <X size={18} />
               </button>
             </div>
@@ -227,16 +227,16 @@ export default function ProveedoresPage() {
                 <>
                   <div className="grid grid-cols-3 gap-3 mb-5">
                     {[
-                      { label: "Órdenes", value: perfData.orders.length, icon: ShoppingBag, color: "text-indigo-600 bg-indigo-50" },
-                      { label: "Total comprado", value: fmtCurrency(perfData.totalSpent), icon: DollarSign, color: "text-emerald-600 bg-emerald-50" },
-                      { label: "A tiempo", value: `${Math.round(perfData.onTimeRate)}%`, icon: Clock, color: perfData.onTimeRate >= 80 ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50" },
+                      { label: "Órdenes", value: perfData.orders.length, icon: ShoppingBag, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-500/15 dark:text-indigo-300" },
+                      { label: "Total comprado", value: fmtCurrency(perfData.totalSpent), icon: DollarSign, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300" },
+                      { label: "A tiempo", value: `${Math.round(perfData.onTimeRate)}%`, icon: Clock, color: perfData.onTimeRate >= 80 ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300" : "text-amber-600 bg-amber-50 dark:bg-amber-500/15 dark:text-amber-300" },
                     ].map(({ label, value, icon: Icon, color }) => (
-                      <div key={label} className="bg-slate-50 rounded-xl p-3 text-center">
+                      <div key={label} className="bg-slate-50 rounded-xl p-3 text-center dark:bg-slate-700/40">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1 ${color}`}>
                           <Icon size={15} />
                         </div>
-                        <p className="text-xs text-slate-500 mb-0.5">{label}</p>
-                        <p className="text-sm font-bold text-slate-900">{value}</p>
+                        <p className="text-xs text-slate-500 mb-0.5 dark:text-slate-400">{label}</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -244,10 +244,10 @@ export default function ProveedoresPage() {
                   {perfData.orders.length === 0 ? (
                     <p className="text-center text-sm text-slate-400 py-4">Sin órdenes de compra registradas para este proveedor.</p>
                   ) : (
-                    <div className="rounded-xl border border-slate-100 overflow-hidden">
+                    <div className="rounded-xl border border-slate-100 overflow-hidden dark:border-slate-700">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-slate-50 text-slate-500">
+                          <tr className="bg-slate-50 text-slate-500 dark:bg-slate-700/40 dark:text-slate-400">
                             <th className="text-left px-3 py-2 font-medium">N° Orden</th>
                             <th className="text-left px-3 py-2 font-medium">Fecha</th>
                             <th className="text-right px-3 py-2 font-medium">Total</th>
@@ -256,18 +256,18 @@ export default function ProveedoresPage() {
                         </thead>
                         <tbody>
                           {perfData.orders.slice(0, 10).map((o) => (
-                            <tr key={o.id} className="border-t border-slate-50">
-                              <td className="px-3 py-2 font-mono text-brand-600">{o.orderNumber}</td>
-                              <td className="px-3 py-2 text-slate-500">
+                            <tr key={o.id} className="border-t border-slate-50 dark:border-slate-700/50">
+                              <td className="px-3 py-2 font-mono text-brand-600 dark:text-brand-400">{o.orderNumber}</td>
+                              <td className="px-3 py-2 text-slate-500 dark:text-slate-400">
                                 {o.createdAt?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "2-digit" }) ?? "—"}
                               </td>
-                              <td className="px-3 py-2 text-right font-semibold text-slate-900">{fmtCurrency(o.total)}</td>
+                              <td className="px-3 py-2 text-right font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(o.total)}</td>
                               <td className="px-3 py-2 text-center">
                                 <span className={`inline-block px-2 py-0.5 rounded-full font-medium ${
-                                  o.status === "recibida" ? "bg-emerald-50 text-emerald-700" :
-                                  o.status === "parcial"  ? "bg-blue-50 text-blue-700" :
-                                  o.status === "cancelada" ? "bg-red-50 text-red-700" :
-                                  "bg-amber-50 text-amber-700"
+                                  o.status === "recibida" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" :
+                                  o.status === "parcial"  ? "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" :
+                                  o.status === "cancelada" ? "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300" :
+                                  "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
                                 }`}>
                                   {o.status.charAt(0).toUpperCase() + o.status.slice(1)}
                                 </span>
@@ -277,7 +277,7 @@ export default function ProveedoresPage() {
                         </tbody>
                       </table>
                       {perfData.orders.length > 10 && (
-                        <p className="px-3 py-2 text-xs text-slate-400 bg-slate-50 border-t border-slate-100">
+                        <p className="px-3 py-2 text-xs text-slate-400 bg-slate-50 border-t border-slate-100 dark:bg-slate-700/40 dark:border-slate-700">
                           Mostrando 10 de {perfData.orders.length} órdenes
                         </p>
                       )}
@@ -306,7 +306,7 @@ export default function ProveedoresPage() {
         action={
           <div className="flex gap-2">
             <button onClick={exportCSV}
-              className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition">
+              className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
               <Download size={14} /> CSV
             </button>
             <button onClick={openAdd}
@@ -320,13 +320,13 @@ export default function ProveedoresPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total",     value: total,             color: "text-slate-800",   bg: "bg-white" },
-          { label: "Activos",   value: active,            color: "text-emerald-700", bg: "bg-emerald-50" },
-          { label: "Inactivos", value: total - active,    color: "text-slate-500",   bg: "bg-white" },
-          { label: "Con email", value: suppliers.filter(s => s.email).length, color: "text-indigo-700", bg: "bg-indigo-50" },
+          { label: "Total",     value: total,             color: "text-slate-800 dark:text-slate-100",   bg: "bg-white dark:bg-slate-800" },
+          { label: "Activos",   value: active,            color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+          { label: "Inactivos", value: total - active,    color: "text-slate-500 dark:text-slate-400",   bg: "bg-white dark:bg-slate-800" },
+          { label: "Con email", value: suppliers.filter(s => s.email).length, color: "text-indigo-700 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-500/10" },
         ].map(({ label, value, color, bg }) => (
-          <div key={label} className={`${bg} rounded-2xl border border-slate-100 p-5 shadow-sm`}>
-            <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
+          <div key={label} className={`${bg} rounded-2xl border border-slate-100 p-5 shadow-sm dark:border-slate-700`}>
+            <p className="text-xs text-slate-500 font-medium mb-1 dark:text-slate-400">{label}</p>
             <p className={`text-2xl font-extrabold ${color}`}>{value}</p>
           </div>
         ))}
@@ -337,14 +337,14 @@ export default function ProveedoresPage() {
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre, RNC o email…"
-          className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white" />
+          className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
       </div>
 
       {/* Table / Empty */}
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-          <Store size={40} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-slate-500 font-medium">{search ? "Sin resultados" : "No tienes proveedores registrados"}</p>
+        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <Store size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+          <p className="text-slate-500 font-medium dark:text-slate-400">{search ? "Sin resultados" : "No tienes proveedores registrados"}</p>
           {!search && (
             <button onClick={openAdd} className="mt-4 px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition">
               Registrar primer proveedor
@@ -352,16 +352,16 @@ export default function ProveedoresPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+              <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
                 {["Proveedor", "Contacto", "Dirección", "Notas", "Estado", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
               {filtered.length === 0 && (
                 <tr><td colSpan={6}>
                   {search
@@ -370,46 +370,46 @@ export default function ProveedoresPage() {
                 </td></tr>
               )}
               {filtered.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={s.id} className="hover:bg-slate-50 transition-colors dark:hover:bg-slate-700/50">
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                    <p className="font-semibold text-slate-800 flex items-center gap-1.5 dark:text-slate-100">
                       <Store size={13} className="text-brand-500 flex-shrink-0" />
                       {s.name}
                     </p>
                     {s.rnc && <p className="text-xs text-slate-400 mt-0.5 font-mono">RNC: {s.rnc}</p>}
                   </td>
-                  <td className="px-4 py-3 text-slate-600 text-xs space-y-0.5">
+                  <td className="px-4 py-3 text-slate-600 text-xs space-y-0.5 dark:text-slate-300">
                     {s.phone && <p className="flex items-center gap-1"><Phone size={10} className="text-slate-400" />{s.phone}</p>}
                     {s.email && <p className="flex items-center gap-1"><Mail size={10} className="text-slate-400" />{s.email}</p>}
-                    {!s.phone && !s.email && <span className="text-slate-300">—</span>}
+                    {!s.phone && !s.email && <span className="text-slate-300 dark:text-slate-600">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 max-w-[180px] truncate">
+                  <td className="px-4 py-3 text-xs text-slate-500 max-w-[180px] truncate dark:text-slate-400">
                     {s.address
                       ? <span className="flex items-center gap-1"><MapPin size={10} className="text-slate-400 flex-shrink-0" />{s.address}</span>
-                      : <span className="text-slate-300">—</span>}
+                      : <span className="text-slate-300 dark:text-slate-600">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 max-w-[160px] truncate">
+                  <td className="px-4 py-3 text-xs text-slate-500 max-w-[160px] truncate dark:text-slate-400">
                     {s.notes
                       ? <span className="flex items-center gap-1"><FileText size={10} className="text-slate-400 flex-shrink-0" />{s.notes}</span>
-                      : <span className="text-slate-300">—</span>}
+                      : <span className="text-slate-300 dark:text-slate-600">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     {s.active
-                      ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">
+                      ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full dark:bg-emerald-500/15 dark:text-emerald-300">
                           <CheckCircle2 size={10} /> Activo
                         </span>
-                      : <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-full">Inactivo</span>}
+                      : <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-full dark:bg-slate-700 dark:text-slate-400">Inactivo</span>}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">
                       <button onClick={() => openPerf(s)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition" title="Ver historial">
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition dark:hover:bg-indigo-500/15" title="Ver historial">
                         <BarChart2 size={14} />
                       </button>
-                      <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
+                      <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition dark:hover:bg-brand-500/15">
                         <Edit2 size={14} />
                       </button>
-                      <AdminButton onClick={() => handleDelete(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
+                      <AdminButton onClick={() => handleDelete(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition dark:hover:bg-red-500/15">
                         <Trash2 size={14} />
                       </AdminButton>
                     </div>

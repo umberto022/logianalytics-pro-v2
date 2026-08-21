@@ -32,11 +32,11 @@ interface KPIDetailModalProps {
 }
 
 const HEADER: Record<KPIDetailModalProps["type"], { title: string; color: string; bg: string }> = {
-  revenue:   { title: "Desglose de Ingresos",        color: "text-indigo-700",  bg: "bg-indigo-50 border-indigo-200"  },
-  profit:    { title: "Desglose de Ganancia",         color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
-  sales:     { title: "Desglose de Ventas",           color: "text-blue-700",    bg: "bg-blue-50 border-blue-200"    },
-  inventory: { title: "Desglose de Valor Inventario", color: "text-amber-700",   bg: "bg-amber-50 border-amber-200"   },
-  alerts:    { title: "Alertas de Stock",             color: "text-red-700",     bg: "bg-red-50 border-red-200"      },
+  revenue:   { title: "Desglose de Ingresos",        color: "text-indigo-700 dark:text-indigo-300",  bg: "bg-indigo-50 border-indigo-200 dark:bg-indigo-500/15 dark:border-indigo-500/30"  },
+  profit:    { title: "Desglose de Ganancia",         color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/15 dark:border-emerald-500/30" },
+  sales:     { title: "Desglose de Ventas",           color: "text-blue-700 dark:text-blue-300",    bg: "bg-blue-50 border-blue-200 dark:bg-blue-500/15 dark:border-blue-500/30"    },
+  inventory: { title: "Desglose de Valor Inventario", color: "text-amber-700 dark:text-amber-300",   bg: "bg-amber-50 border-amber-200 dark:bg-amber-500/15 dark:border-amber-500/30"   },
+  alerts:    { title: "Alertas de Stock",             color: "text-red-700 dark:text-red-300",     bg: "bg-red-50 border-red-200 dark:bg-red-500/15 dark:border-red-500/30"      },
 };
 
 export function KPIDetailModal({
@@ -53,13 +53,13 @@ export function KPIDetailModal({
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto z-10">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto z-10 dark:bg-slate-800">
         {/* Header */}
         <div className={`flex items-center justify-between px-6 py-4 border-b ${h.bg} rounded-t-2xl`}>
           <h2 className={`font-bold text-base ${h.color}`}>{h.title}</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 transition text-slate-500"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 transition text-slate-500 dark:text-slate-300 dark:hover:bg-white/10"
           >
             <X size={18} />
           </button>
@@ -117,11 +117,11 @@ export function KPIDetailModal({
               {products.length > 0 && (
                 <Section title="Top productos por ganancia">
                   {products.slice(0, 8).map((p) => (
-                    <div key={p.productName} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 last:border-0">
-                      <span className="text-slate-700 truncate max-w-[180px]">{p.productName}</span>
+                    <div key={p.productName} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-700/50 last:border-0">
+                      <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px]">{p.productName}</span>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <span className="text-xs text-slate-400">{fmt(p.marginPct, 1)}% margen</span>
-                        <span className="font-semibold text-emerald-700 w-20 text-right">{fmtCurrency(p.profit)}</span>
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 w-20 text-right">{fmtCurrency(p.profit)}</span>
                       </div>
                     </div>
                   ))}
@@ -146,11 +146,11 @@ export function KPIDetailModal({
               {byClient.length > 0 && (
                 <Section title="Top clientes">
                   {byClient.map((c) => (
-                    <div key={c.client} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 last:border-0">
-                      <span className="text-slate-700 truncate max-w-[180px]">{c.client || "Sin cliente"}</span>
+                    <div key={c.client} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50 dark:border-slate-700/50 last:border-0">
+                      <span className="text-slate-700 dark:text-slate-300 truncate max-w-[180px]">{c.client || "Sin cliente"}</span>
                       <div className="flex items-center gap-4 flex-shrink-0">
                         <span className="text-xs text-slate-400">{c.numSales} ventas</span>
-                        <span className="font-semibold text-slate-900 w-20 text-right">{fmtCurrency(c.revenue)}</span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 w-20 text-right">{fmtCurrency(c.revenue)}</span>
                       </div>
                     </div>
                   ))}
@@ -211,13 +211,13 @@ export function KPIDetailModal({
                   {[...criticalItems, ...lowItems].map((i) => {
                     const s = getStockStatus(i);
                     return (
-                      <div key={i.id} className="flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0">
+                      <div key={i.id} className="flex items-center justify-between py-2.5 border-b border-slate-50 dark:border-slate-700/50 last:border-0">
                         <div>
-                          <p className="text-sm font-medium text-slate-800">{i.name}</p>
+                          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{i.name}</p>
                           <p className="text-xs text-slate-400">{i.category || "Sin categoría"} · SKU: {i.sku}</p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
                             {i.currentStock} / mín {i.minStock}
                           </span>
                           <StockBadge status={s} />
@@ -240,13 +240,13 @@ export function KPIDetailModal({
 
 function Stat({ label, value, highlight = "none" }: { label: string; value: string; highlight?: "green" | "red" | "orange" | "none" }) {
   const valueColor =
-    highlight === "green"  ? "text-emerald-700" :
-    highlight === "red"    ? "text-red-600"     :
-    highlight === "orange" ? "text-amber-600"   :
-    "text-slate-900";
+    highlight === "green"  ? "text-emerald-700 dark:text-emerald-400" :
+    highlight === "red"    ? "text-red-600 dark:text-red-400"     :
+    highlight === "orange" ? "text-amber-600 dark:text-amber-400"   :
+    "text-slate-900 dark:text-slate-100";
   return (
-    <div className="bg-slate-50 rounded-xl p-3">
-      <p className="text-xs text-slate-500 mb-1">{label}</p>
+    <div className="bg-slate-50 rounded-xl p-3 dark:bg-slate-700/40">
+      <p className="text-xs text-slate-500 mb-1 dark:text-slate-400">{label}</p>
       <p className={`font-bold text-base ${valueColor}`}>{value}</p>
     </div>
   );
@@ -255,8 +255,8 @@ function Stat({ label, value, highlight = "none" }: { label: string; value: stri
 function BigStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-sm text-slate-600">{label}</span>
-      <span className="font-bold text-slate-900">{value}</span>
+      <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
+      <span className="font-bold text-slate-900 dark:text-slate-100">{value}</span>
     </div>
   );
 }
@@ -265,19 +265,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div>
       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{title}</p>
-      <div className="bg-slate-50 rounded-xl px-4 py-2">{children}</div>
+      <div className="bg-slate-50 rounded-xl px-4 py-2 dark:bg-slate-700/40">{children}</div>
     </div>
   );
 }
 
 function Bar({ label, value, pct, color }: { label: string; value: string; pct: number; color: string }) {
   return (
-    <div className="py-1.5 border-b border-white last:border-0">
+    <div className="py-1.5 border-b border-white dark:border-slate-800 last:border-0">
       <div className="flex items-center justify-between text-sm mb-1">
-        <span className="text-slate-700 truncate max-w-[200px]">{label}</span>
-        <span className="font-semibold text-slate-900 ml-2 flex-shrink-0">{value}</span>
+        <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{label}</span>
+        <span className="font-semibold text-slate-900 dark:text-slate-100 ml-2 flex-shrink-0">{value}</span>
       </div>
-      <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(pct, 2)}%` }} />
       </div>
     </div>

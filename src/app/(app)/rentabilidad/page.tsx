@@ -51,9 +51,9 @@ export default function RentabilidadPage() {
     return (
       <div>
         <PageHeader title="Rentabilidad" subtitle="Analiza rutas, productos y márgenes" action={<PeriodSelect value={period} onChange={(p) => { setPeriod(p); setDateMode("preset"); }} />} />
-        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
-          <TrendingUp size={48} className="text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">No hay ventas en este período.</p>
+        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center dark:bg-slate-800 dark:border-slate-700">
+          <TrendingUp size={48} className="text-slate-300 mx-auto mb-4 dark:text-slate-600" />
+          <p className="text-slate-500 dark:text-slate-400">No hay ventas en este período.</p>
           <p className="text-sm text-slate-400 mt-1">Ve a <strong>Ventas</strong> para registrar transacciones.</p>
         </div>
       </div>
@@ -67,16 +67,16 @@ export default function RentabilidadPage() {
         subtitle="Analiza qué rutas, productos y zonas generan más ganancia"
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+            <div className="flex items-center bg-slate-100 rounded-lg p-0.5 dark:bg-slate-800">
               <button
                 onClick={() => setDateMode("preset")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${dateMode === "preset" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${dateMode === "preset" ? "bg-white shadow-sm text-slate-900 dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 dark:text-slate-400"}`}
               >
                 Período
               </button>
               <button
                 onClick={() => setDateMode("custom")}
-                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition ${dateMode === "custom" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition ${dateMode === "custom" ? "bg-white shadow-sm text-slate-900 dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 dark:text-slate-400"}`}
               >
                 <CalendarRange size={12} /> Personalizado
               </button>
@@ -89,7 +89,7 @@ export default function RentabilidadPage() {
                   type="date" value={fromDate}
                   max={toDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 />
                 <span className="text-xs text-slate-400">—</span>
                 <input
@@ -97,7 +97,7 @@ export default function RentabilidadPage() {
                   min={fromDate}
                   max={todayStr()}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 />
               </div>
             )}
@@ -119,14 +119,14 @@ export default function RentabilidadPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit dark:bg-slate-800">
         {([
           { key: "routes",    label: "🗺️ Por ruta"     },
           { key: "products",  label: "📦 Por producto" },
           { key: "movements", label: "🔄 Movimientos"  },
         ] as { key: Tab; label: string }[]).map(({ key, label }) => (
           <button key={key} onClick={() => setTab(key)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${tab === key ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}>
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${tab === key ? "bg-white shadow-sm text-brand-600 dark:bg-slate-700 dark:text-brand-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
             {label}
           </button>
         ))}
@@ -139,13 +139,13 @@ export default function RentabilidadPage() {
             <p className="text-slate-400 text-sm">Sin datos de rutas para este período.</p>
           ) : (
             <>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300">
                 Mejor ruta: <strong>{routes[0].route}</strong> — Ganancia <strong>{fmtCurrency(routes[0].profit)}</strong> | Margen <strong>{routes[0].marginPct}%</strong>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h3 className="font-semibold text-slate-700 mb-4">Ingresos, costo y ganancia por ruta</h3>
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Ingresos, costo y ganancia por ruta</h3>
                   <ResponsiveContainer width="100%" height={240}>
                     <BarChart data={routes.slice(0, 8)} margin={{ top: 4, right: 8, bottom: 25, left: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -160,8 +160,8 @@ export default function RentabilidadPage() {
                   </ResponsiveContainer>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h3 className="font-semibold text-slate-700 mb-4">Distribución de unidades por ruta</h3>
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Distribución de unidades por ruta</h3>
                   <ResponsiveContainer width="100%" height={240}>
                     <PieChart>
                       <Pie data={routes} dataKey="totalUnits" nameKey="route" cx="50%" cy="50%" outerRadius={90} label={(e) => `${e.route} (${e.totalUnits})`} labelLine={false}>
@@ -173,11 +173,11 @@ export default function RentabilidadPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-xs text-slate-500 bg-slate-50">
+                      <tr className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-700/40 dark:text-slate-400">
                         {["Ruta", "Ventas", "Unidades", "Ingresos", "Costo", "Ganancia", "Margen %"].map((h) => (
                           <th key={h} className="text-left py-3 px-4 font-medium">{h}</th>
                         ))}
@@ -185,15 +185,15 @@ export default function RentabilidadPage() {
                     </thead>
                     <tbody>
                       {routes.map((r) => (
-                        <tr key={r.route} className="border-t border-slate-50 hover:bg-slate-50">
-                          <td className="py-2.5 px-4 font-medium">{r.route}</td>
-                          <td className="py-2.5 px-4">{r.numSales}</td>
-                          <td className="py-2.5 px-4">{fmt(r.totalUnits, 0)}</td>
-                          <td className="py-2.5 px-4 text-indigo-600">{fmtCurrency(r.revenue)}</td>
-                          <td className="py-2.5 px-4 text-red-500">{fmtCurrency(r.cost)}</td>
-                          <td className="py-2.5 px-4 text-emerald-600 font-medium">{fmtCurrency(r.profit)}</td>
+                        <tr key={r.route} className="border-t border-slate-50 hover:bg-slate-50 dark:border-slate-700/50 dark:hover:bg-slate-700/50">
+                          <td className="py-2.5 px-4 font-medium dark:text-slate-100">{r.route}</td>
+                          <td className="py-2.5 px-4 dark:text-slate-300">{r.numSales}</td>
+                          <td className="py-2.5 px-4 dark:text-slate-300">{fmt(r.totalUnits, 0)}</td>
+                          <td className="py-2.5 px-4 text-indigo-600 dark:text-indigo-400">{fmtCurrency(r.revenue)}</td>
+                          <td className="py-2.5 px-4 text-red-500 dark:text-red-400">{fmtCurrency(r.cost)}</td>
+                          <td className="py-2.5 px-4 text-emerald-600 font-medium dark:text-emerald-400">{fmtCurrency(r.profit)}</td>
                           <td className="py-2.5 px-4">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.marginPct >= 20 ? "bg-emerald-100 text-emerald-700" : r.marginPct >= 10 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.marginPct >= 20 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" : r.marginPct >= 10 ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300"}`}>
                               {r.marginPct}%
                             </span>
                           </td>
@@ -216,19 +216,19 @@ export default function RentabilidadPage() {
           ) : (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300">
                   Mejor producto: <strong>{products[0].productName}</strong> — Ganancia <strong>{fmtCurrency(products[0].profit)}</strong> | Margen <strong>{products[0].marginPct}%</strong>
                 </div>
                 {products.length > 1 && products[products.length - 1].marginPct < 10 && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-300">
                     Menor margen: <strong>{products[products.length - 1].productName}</strong> — {products[products.length - 1].marginPct}%
                   </div>
                 )}
               </div>
 
               {/* Treemap */}
-              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                <h3 className="font-semibold text-slate-700 mb-4">Mapa de ingresos por categoría y producto</h3>
+              <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Mapa de ingresos por categoría y producto</h3>
                 <ResponsiveContainer width="100%" height={260}>
                   <Treemap
                     data={products.map((p) => ({ name: p.productName, size: p.revenue, margin: p.marginPct }))}
@@ -254,8 +254,8 @@ export default function RentabilidadPage() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h3 className="font-semibold text-slate-700 mb-4">Top 10 por ganancia</h3>
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Top 10 por ganancia</h3>
                   <ResponsiveContainer width="100%" height={240}>
                     <BarChart data={products.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 70 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -269,8 +269,8 @@ export default function RentabilidadPage() {
                   </ResponsiveContainer>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h3 className="font-semibold text-slate-700 mb-4">Unidades vs Ganancia</h3>
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Unidades vs Ganancia</h3>
                   <ResponsiveContainer width="100%" height={240}>
                     <ScatterChart margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -285,11 +285,11 @@ export default function RentabilidadPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-xs text-slate-500 bg-slate-50">
+                      <tr className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-700/40 dark:text-slate-400">
                         {["SKU", "Producto", "Categoría", "Ventas", "Unidades", "Ingresos", "Costo", "Ganancia", "Margen %"].map((h) => (
                           <th key={h} className="text-left py-3 px-4 font-medium">{h}</th>
                         ))}
@@ -297,17 +297,17 @@ export default function RentabilidadPage() {
                     </thead>
                     <tbody>
                       {products.map((p) => (
-                        <tr key={p.sku} className="border-t border-slate-50 hover:bg-slate-50">
-                          <td className="py-2.5 px-4 font-mono text-xs text-slate-500">{p.sku}</td>
-                          <td className="py-2.5 px-4 font-medium">{p.productName}</td>
-                          <td className="py-2.5 px-4 text-slate-500">{p.category}</td>
-                          <td className="py-2.5 px-4">{p.numSales}</td>
-                          <td className="py-2.5 px-4">{fmt(p.totalUnits, 0)}</td>
-                          <td className="py-2.5 px-4 text-indigo-600">{fmtCurrency(p.revenue)}</td>
-                          <td className="py-2.5 px-4 text-red-500">{fmtCurrency(p.cost)}</td>
-                          <td className="py-2.5 px-4 text-emerald-600 font-medium">{fmtCurrency(p.profit)}</td>
+                        <tr key={p.sku} className="border-t border-slate-50 hover:bg-slate-50 dark:border-slate-700/50 dark:hover:bg-slate-700/50">
+                          <td className="py-2.5 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{p.sku}</td>
+                          <td className="py-2.5 px-4 font-medium dark:text-slate-100">{p.productName}</td>
+                          <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400">{p.category}</td>
+                          <td className="py-2.5 px-4 dark:text-slate-300">{p.numSales}</td>
+                          <td className="py-2.5 px-4 dark:text-slate-300">{fmt(p.totalUnits, 0)}</td>
+                          <td className="py-2.5 px-4 text-indigo-600 dark:text-indigo-400">{fmtCurrency(p.revenue)}</td>
+                          <td className="py-2.5 px-4 text-red-500 dark:text-red-400">{fmtCurrency(p.cost)}</td>
+                          <td className="py-2.5 px-4 text-emerald-600 font-medium dark:text-emerald-400">{fmtCurrency(p.profit)}</td>
                           <td className="py-2.5 px-4">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.marginPct >= 20 ? "bg-emerald-100 text-emerald-700" : p.marginPct >= 10 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.marginPct >= 20 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" : p.marginPct >= 10 ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300"}`}>
                               {p.marginPct}%
                             </span>
                           </td>
@@ -324,7 +324,7 @@ export default function RentabilidadPage() {
 
       {/* Movements tab */}
       {tab === "movements" && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
           {movements.length === 0 ? (
             <div className="text-center py-16 text-slate-400">Sin movimientos en este período.</div>
           ) : (
@@ -332,7 +332,7 @@ export default function RentabilidadPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-slate-500 bg-slate-50">
+                  <tr className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-700/40 dark:text-slate-400">
                     {["Fecha", "Tipo", "SKU", "Producto", "Cantidad", "Referencia", "Nota"].map((h) => (
                       <th key={h} className="text-left py-3 px-4 font-medium">{h}</th>
                     ))}
@@ -340,23 +340,23 @@ export default function RentabilidadPage() {
                 </thead>
                 <tbody>
                   {movPagination.paged.map((m) => (
-                    <tr key={m.id} className="border-t border-slate-50 hover:bg-slate-50">
-                      <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">{fmtDatetime(m.createdAt)}</td>
+                    <tr key={m.id} className="border-t border-slate-50 hover:bg-slate-50 dark:border-slate-700/50 dark:hover:bg-slate-700/50">
+                      <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap dark:text-slate-400">{fmtDatetime(m.createdAt)}</td>
                       <td className="py-2.5 px-4">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          m.movementType === "sale"     ? "bg-red-100 text-red-700" :
-                          m.movementType === "purchase" ? "bg-emerald-100 text-emerald-700" :
-                          "bg-amber-100 text-amber-700"}`}>
+                          m.movementType === "sale"     ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" :
+                          m.movementType === "purchase" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" :
+                          "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"}`}>
                           {m.movementType === "sale" ? "🔴 Venta" : m.movementType === "purchase" ? "🟢 Compra" : "🟡 Ajuste"}
                         </span>
                       </td>
-                      <td className="py-2.5 px-4 font-mono text-xs text-slate-500">{m.sku}</td>
-                      <td className="py-2.5 px-4 font-medium">{m.productName}</td>
-                      <td className={`py-2.5 px-4 font-semibold ${m.quantity < 0 ? "text-red-500" : "text-emerald-600"}`}>
+                      <td className="py-2.5 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{m.sku}</td>
+                      <td className="py-2.5 px-4 font-medium dark:text-slate-100">{m.productName}</td>
+                      <td className={`py-2.5 px-4 font-semibold ${m.quantity < 0 ? "text-red-500 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                         {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
                       </td>
-                      <td className="py-2.5 px-4 text-slate-500">{m.reference || "—"}</td>
-                      <td className="py-2.5 px-4 text-slate-500 text-xs">{m.note || "—"}</td>
+                      <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400">{m.reference || "—"}</td>
+                      <td className="py-2.5 px-4 text-slate-500 text-xs dark:text-slate-400">{m.note || "—"}</td>
                     </tr>
                   ))}
                 </tbody>

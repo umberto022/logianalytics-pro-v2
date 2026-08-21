@@ -79,8 +79,16 @@ export default function RegisterPage() {
   const labelCls = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-6">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+    <div className="min-h-screen relative flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-6 overflow-hidden">
+      {/* Aurora decorativa — mismo tratamiento que /login, sutil y no interactiva */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-32 -left-20 w-96 h-96 bg-brand-400/25 dark:bg-brand-500/15 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -right-20 w-96 h-96 bg-fuchsia-300/25 dark:bg-fuchsia-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-200/15 dark:bg-emerald-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-lg rounded-2xl p-[1.5px] bg-gradient-to-br from-brand-300/70 via-fuchsia-200/40 to-emerald-200/50 dark:from-brand-500/50 dark:via-fuchsia-500/20 dark:to-emerald-500/20 shadow-lg shadow-brand-900/10 dark:shadow-black/40 relative animate-fade-in">
+        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-2xl p-8">
         <div className="flex items-center gap-2 mb-8">
           <Truck size={28} className="text-brand-600" />
           <span className="text-xl font-bold text-brand-600">LogiAnalytics Pro</span>
@@ -93,7 +101,7 @@ export default function RegisterPage() {
           type="button"
           onClick={handleGoogle}
           disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition font-medium disabled:opacity-50 dark:text-slate-200"
+          className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-4 hover:bg-slate-50 dark:hover:bg-slate-700 hover:shadow-md hover:shadow-brand-900/5 hover:border-brand-200 dark:hover:border-brand-500/30 active:scale-[0.99] transition font-medium disabled:opacity-50 dark:text-slate-200"
         >
           <GoogleIcon />
           {googleLoading ? "Conectando…" : "Continuar con Google"}
@@ -194,7 +202,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 mt-2"
+            className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-brand-500/30 active:scale-[0.99] transition disabled:opacity-50 mt-2"
           >
             {loading ? "Creando cuenta…" : "Crear cuenta gratis"}
           </button>
@@ -206,6 +214,7 @@ export default function RegisterPage() {
             Iniciar sesión
           </Link>
         </p>
+        </div>
       </div>
     </div>
   );

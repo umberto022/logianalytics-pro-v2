@@ -114,7 +114,7 @@ function InlinePhotoUpload({ value, onChange }: {
     return (
       <div className="relative w-20 h-20">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={value} alt="recepción" className="w-20 h-20 object-cover rounded-lg border border-slate-200"
+        <img src={value} alt="recepción" className="w-20 h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
           onError={() => setImgErr(true)} />
         <button type="button" onClick={() => onChange("")}
           className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition">
@@ -127,11 +127,11 @@ function InlinePhotoUpload({ value, onChange }: {
   return (
     <div className="flex gap-1.5">
       <button type="button" onClick={() => fileRef.current?.click()}
-        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 transition text-slate-600">
+        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 transition text-slate-600 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
         <ImageIcon size={12} /> Subir foto
       </button>
       <button type="button" onClick={startCamera}
-        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 transition text-slate-600">
+        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 transition text-slate-600 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
         <Camera size={12} /> Cámara
       </button>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -181,7 +181,7 @@ function QrScannerButton({ onScan }: { onScan: (code: string) => void }) {
       <div className="space-y-2">
         <div id={divId.current} className="rounded-lg overflow-hidden" />
         <button type="button" onClick={stopScan}
-          className="w-full py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition">
+          className="w-full py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition dark:text-red-300 dark:border-red-500/30 dark:hover:bg-red-500/15">
           Cancelar escáner
         </button>
       </div>
@@ -191,11 +191,11 @@ function QrScannerButton({ onScan }: { onScan: (code: string) => void }) {
   return (
     <div className="flex gap-1.5">
       <button type="button" onClick={startScan}
-        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition">
+        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/15">
         <QrCode size={12} /> Escanear QR
       </button>
       <button type="button" onClick={startScan}
-        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition">
+        className="flex items-center gap-1 px-2.5 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
         <Barcode size={12} /> Código de barras
       </button>
     </div>
@@ -232,48 +232,48 @@ function ItemCard({
   const done   = item.qtyToReceive >= maxQty && maxQty > 0;
 
   return (
-    <div className={`rounded-xl border transition-all ${done ? "border-emerald-200 bg-emerald-50/30" : "border-slate-200 bg-white"}`}>
+    <div className={`rounded-xl border transition-all ${done ? "border-emerald-200 bg-emerald-50/30 dark:border-emerald-500/30 dark:bg-emerald-500/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`}>
       {/* Card header */}
       <button type="button" onClick={() => setExpanded(e => !e)}
         className="w-full flex items-center gap-3 p-4 text-left">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"}`}>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300" : "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500"}`}>
           {done ? <CheckCircle2 size={16} /> : <Package size={16} />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900 truncate">{item.productName}</p>
-          <p className="text-xs text-slate-400 font-mono">{item.sku} · Pedido: {item.qtyOrdered} · Recibido prev: {item.qtyAlreadyReceived}</p>
+          <p className="text-sm font-semibold text-slate-900 truncate dark:text-slate-100">{item.productName}</p>
+          <p className="text-xs text-slate-400 font-mono dark:text-slate-400">{item.sku} · Pedido: {item.qtyOrdered} · Recibido prev: {item.qtyAlreadyReceived}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className={`text-sm font-bold ${done ? "text-emerald-600" : "text-slate-700"}`}>
+          <p className={`text-sm font-bold ${done ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200"}`}>
             {item.qtyToReceive} / {maxQty}
           </p>
-          <p className="text-xs text-slate-400">a recibir</p>
+          <p className="text-xs text-slate-400 dark:text-slate-400">a recibir</p>
         </div>
-        {expanded ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />}
+        {expanded ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0 dark:text-slate-500" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0 dark:text-slate-500" />}
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-slate-100 pt-4">
+        <div className="px-4 pb-4 space-y-4 border-t border-slate-100 pt-4 dark:border-slate-700">
           {/* Quantity */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1.5">Cantidad a recibir</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5 dark:text-slate-400">Cantidad a recibir</label>
             <div className="flex items-center gap-2">
               <button type="button"
                 onClick={() => onChange(idx, { qtyToReceive: Math.max(0, item.qtyToReceive - 1) })}
-                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-700/50">
                 <Minus size={13} />
               </button>
               <input type="number" value={item.qtyToReceive} min={0} max={maxQty}
                 onChange={(e) => onChange(idx, { qtyToReceive: Math.min(maxQty, Math.max(0, Number(e.target.value))) })}
-                className="w-20 text-center border border-slate-200 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                className="w-20 text-center border border-slate-200 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               <button type="button"
                 onClick={() => onChange(idx, { qtyToReceive: Math.min(maxQty, item.qtyToReceive + 1) })}
-                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition dark:border-slate-700 dark:hover:bg-slate-700/50">
                 <Plus size={13} />
               </button>
               <button type="button"
                 onClick={() => onChange(idx, { qtyToReceive: maxQty })}
-                className="ml-1 px-2.5 py-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition">
+                className="ml-1 px-2.5 py-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 dark:hover:bg-emerald-500/25">
                 Recibir todo
               </button>
             </div>
@@ -282,28 +282,28 @@ function ItemCard({
           {/* Serial / Batch */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1">
+              <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1 dark:text-slate-400">
                 <Hash size={11} /> N° de serie
               </label>
               <input value={item.serialNumber}
                 onChange={(e) => onChange(idx, { serialNumber: e.target.value })}
                 placeholder="SN-XXXXXXXX"
-                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1">
+              <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1 dark:text-slate-400">
                 <ScanLine size={11} /> Código / Lote
               </label>
               <input value={item.batchCode}
                 onChange={(e) => onChange(idx, { batchCode: e.target.value })}
                 placeholder="LOTE-2026-001"
-                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
             </div>
           </div>
 
           {/* QR / Barcode scanner */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1.5">Escanear código</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5 dark:text-slate-400">Escanear código</label>
             <QrScannerButton onScan={(code) => {
               // If scanned code matches SKU → auto-fill serial
               if (code === item.sku || code.includes(item.sku)) {
@@ -315,7 +315,7 @@ function ItemCard({
 
           {/* Photo */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1 dark:text-slate-400">
               <Camera size={11} /> Foto de recepción
             </label>
             <InlinePhotoUpload
@@ -325,9 +325,9 @@ function ItemCard({
           </div>
 
           {/* Cost summary */}
-          <div className="flex justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
+          <div className="flex justify-between text-xs text-slate-500 pt-1 border-t border-slate-100 dark:text-slate-400 dark:border-slate-700">
             <span>Costo unitario: {fmtCurrency(item.unitCost)}</span>
-            <span className="font-semibold text-slate-700">
+            <span className="font-semibold text-slate-700 dark:text-slate-200">
               Total recibido: {fmtCurrency(item.qtyToReceive * item.unitCost)}
             </span>
           </div>
@@ -401,19 +401,19 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col dark:bg-slate-800">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0 dark:border-slate-700">
           <div>
-            <h2 className="font-bold text-slate-900">Registrar recepción</h2>
-            <p className="text-xs text-slate-400">{order.orderNumber} · {order.supplierName}</p>
+            <h2 className="font-bold text-slate-900 dark:text-slate-100">Registrar recepción</h2>
+            <p className="text-xs text-slate-400 dark:text-slate-400">{order.orderNumber} · {order.supplierName}</p>
           </div>
           <div className="flex items-center gap-2">
             <button type="button" onClick={receiveAll}
-              className="px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition font-medium">
+              className="px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition font-medium dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30 dark:hover:bg-emerald-500/25">
               Recibir todo
             </button>
-            <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition">
+            <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition dark:hover:bg-slate-700">
               <X size={16} />
             </button>
           </div>
@@ -421,7 +421,7 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
 
         {/* Items */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-3">
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="text-xs text-slate-500 mb-4 dark:text-slate-400">
             Completa los detalles de cada producto recibido. El stock se actualizará automáticamente al confirmar.
           </p>
 
@@ -436,17 +436,17 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
           ))}
 
           {/* Summary */}
-          <div className="bg-slate-50 rounded-xl p-4 space-y-2 mt-4">
-            <div className="flex justify-between text-sm text-slate-600">
+          <div className="bg-slate-50 rounded-xl p-4 space-y-2 mt-4 dark:bg-slate-700/40">
+            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
               <span>Total unidades a recibir</span>
               <span className="font-semibold">{totalToReceive}</span>
             </div>
-            <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-slate-200 pt-2 mt-1">
+            <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-slate-200 pt-2 mt-1 dark:text-slate-100 dark:border-slate-600">
               <span>Valor total recibido</span>
-              <span className="text-emerald-600">{fmtCurrency(totalCost)}</span>
+              <span className="text-emerald-600 dark:text-emerald-400">{fmtCurrency(totalCost)}</span>
             </div>
             {allDone && (
-              <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1">
+              <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1 dark:text-emerald-400">
                 <CheckCircle2 size={12} /> Todos los productos serán marcados como recibidos
               </p>
             )}
@@ -459,7 +459,7 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
               {saving ? "Guardando…" : `Confirmar recepción (${totalToReceive} unidades)`}
             </button>
             <button type="button" onClick={onClose}
-              className="px-5 py-3 border border-slate-200 rounded-xl text-sm hover:bg-slate-50 transition">
+              className="px-5 py-3 border border-slate-200 rounded-xl text-sm hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
               Cancelar
             </button>
           </div>

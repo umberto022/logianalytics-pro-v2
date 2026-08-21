@@ -36,7 +36,7 @@ export function UpgradeModal({ reason, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-br from-brand-700 to-brand-500 p-6 text-white relative">
           <button onClick={onClose}
@@ -52,8 +52,8 @@ export function UpgradeModal({ reason, onClose }: Props) {
         </div>
 
         {/* Price */}
-        <div className="px-6 pt-5 pb-3 text-center border-b border-slate-100">
-          <span className="text-4xl font-bold text-slate-900">$19</span>
+        <div className="px-6 pt-5 pb-3 text-center border-b border-slate-100 dark:border-slate-700">
+          <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">$19</span>
           <span className="text-slate-400 text-sm ml-1">/ mes</span>
           <p className="text-xs text-slate-400 mt-1">Cancela cuando quieras · Sin contratos</p>
         </div>
@@ -61,9 +61,9 @@ export function UpgradeModal({ reason, onClose }: Props) {
         {/* Features */}
         <ul className="px-6 py-4 space-y-2.5">
           {features.map((f) => (
-            <li key={f} className="flex items-center gap-3 text-sm text-slate-700">
-              <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                <Check size={12} className="text-emerald-600" />
+            <li key={f} className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
+              <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                <Check size={12} className="text-emerald-600 dark:text-emerald-300" />
               </span>
               {f}
             </li>
@@ -77,7 +77,7 @@ export function UpgradeModal({ reason, onClose }: Props) {
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />}
             {loading ? "Redirigiendo…" : "Activar Pro ahora — $19/mes"}
           </button>
-          <button onClick={onClose} className="w-full text-center text-sm text-slate-400 hover:text-slate-600 mt-3 transition">
+          <button onClick={onClose} className="w-full text-center text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 mt-3 transition">
             Continuar con Free
           </button>
         </div>

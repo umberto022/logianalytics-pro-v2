@@ -134,8 +134,8 @@ export default function ClientesPage() {
     });
   }
 
-  const inp = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
-  const lbl = "block text-sm font-medium text-slate-700 mb-1";
+  const inp = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400";
+  const lbl = "block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300";
 
   if (loading) return <div className="space-y-5"><TableSkeleton rows={6} cols={6} /></div>;
 
@@ -148,7 +148,7 @@ export default function ClientesPage() {
           <div className="flex items-center gap-2">
             <PeriodSelect value={salesPeriod} onChange={setSalesPeriod} />
             <button onClick={() => window.print()}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition print:hidden">
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition print:hidden dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
               <Printer size={13} /> PDF
             </button>
           </div>
@@ -158,35 +158,35 @@ export default function ClientesPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total clientes",   value: customers.length,                                          icon: Users,       color: "text-brand-600 bg-brand-50" },
-          { label: `Con compras (${salesPeriod}d)`, value: clientStats.size,                                         icon: ShoppingCart, color: "text-emerald-600 bg-emerald-50" },
-          { label: `Ingresos (${salesPeriod}d)`,    value: fmtCurrency(sales.reduce((s, v) => s + v.totalRevenue, 0)), icon: DollarSign,  color: "text-amber-600 bg-amber-50" },
-          { label: `Ganancia (${salesPeriod}d)`,    value: fmtCurrency(sales.reduce((s, v) => s + v.profit, 0)),       icon: TrendingUp,  color: "text-purple-600 bg-purple-50" },
+          { label: "Total clientes",   value: customers.length,                                          icon: Users,       color: "text-brand-600 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-300" },
+          { label: `Con compras (${salesPeriod}d)`, value: clientStats.size,                                         icon: ShoppingCart, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300" },
+          { label: `Ingresos (${salesPeriod}d)`,    value: fmtCurrency(sales.reduce((s, v) => s + v.totalRevenue, 0)), icon: DollarSign,  color: "text-amber-600 bg-amber-50 dark:bg-amber-500/15 dark:text-amber-300" },
+          { label: `Ganancia (${salesPeriod}d)`,    value: fmtCurrency(sales.reduce((s, v) => s + v.profit, 0)),       icon: TrendingUp,  color: "text-purple-600 bg-purple-50 dark:bg-purple-500/15 dark:text-purple-300" },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center gap-3">
+          <div key={label} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center gap-3 dark:bg-slate-800 dark:border-slate-700">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
               <Icon size={18} />
             </div>
             <div>
-              <p className="text-xs text-slate-500">{label}</p>
-              <p className="text-sm font-bold text-slate-800">{value}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{value}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-4 flex flex-col sm:flex-row gap-3">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-4 flex flex-col sm:flex-row gap-3 dark:bg-slate-800 dark:border-slate-700">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre, RNC, teléfono o email…"
-            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400"
           />
         </div>
         <button onClick={exportCSV}
-          className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition">
+          className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
           <Download size={16} /> Exportar CSV
         </button>
         <button onClick={openAdd}
@@ -196,7 +196,7 @@ export default function ClientesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
         {filtered.length === 0 ? (
           search
             ? <EmptyState icon={Users} title="Sin resultados" description={`No encontramos clientes que coincidan con "${search}".`} />
@@ -205,47 +205,47 @@ export default function ClientesPage() {
           <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-100">
+              <thead className="bg-slate-50 border-b border-slate-100 dark:bg-slate-700/40 dark:border-slate-700">
                 <tr>
                   {["Cliente", "RNC", "Teléfono", "Email", "Ventas (90d)", "Ingresos (90d)", ""].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap dark:text-slate-400">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                 {pagination.paged.map((c) => {
                   const stats = clientStats.get(c.name.toLowerCase());
                   return (
-                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={c.id} className="hover:bg-slate-50 transition-colors dark:hover:bg-slate-700/50">
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-800">{c.name}</p>
+                        <p className="font-semibold text-slate-800 dark:text-slate-100">{c.name}</p>
                         {c.address && <p className="text-xs text-slate-400 truncate max-w-[180px]">{c.address}</p>}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{c.rnc || "—"}</td>
-                      <td className="px-4 py-3 text-slate-600">{c.phone || "—"}</td>
-                      <td className="px-4 py-3 text-slate-600 truncate max-w-[160px]">{c.email || "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.rnc || "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{c.phone || "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 truncate max-w-[160px] dark:text-slate-300">{c.email || "—"}</td>
                       <td className="px-4 py-3">
                         {stats ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full dark:bg-emerald-500/15 dark:text-emerald-300">
                             <ShoppingCart size={10} /> {stats.numSales}
                           </span>
                         ) : <span className="text-slate-400">—</span>}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-700">
+                      <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
                         {stats ? fmtCurrency(stats.revenue) : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
                           <button onClick={() => setDetail(c)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition dark:hover:bg-brand-500/15">
                             <ChevronRight size={15} />
                           </button>
                           <button onClick={() => openEdit(c)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition">
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition dark:hover:bg-brand-500/15">
                             <Edit2 size={15} />
                           </button>
                           <AdminButton onClick={() => handleDelete(c)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition dark:hover:bg-red-500/15">
                             <Trash2 size={15} />
                           </AdminButton>
                         </div>
@@ -271,12 +271,12 @@ export default function ClientesPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={tryCloseModal} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 z-10 max-h-[90vh] overflow-y-auto dark:bg-slate-800">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-slate-800">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                 {editing ? "Editar cliente" : "Nuevo cliente"}
               </h2>
-              <button onClick={tryCloseModal} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition">
+              <button onClick={tryCloseModal} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition dark:hover:bg-slate-700">
                 <X size={18} />
               </button>
             </div>
@@ -285,7 +285,7 @@ export default function ClientesPage() {
               <div>
                 <label className={lbl}>Nombre *</label>
                 <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                  className={`${inp} ${formErrors.name ? "border-red-400" : ""}`} placeholder="Nombre del cliente o empresa" />
+                  className={`${inp} ${formErrors.name ? "border-red-400 dark:border-red-500" : ""}`} placeholder="Nombre del cliente o empresa" />
                 {formErrors.name && <p className="text-xs text-red-500 mt-0.5">{formErrors.name}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -301,7 +301,7 @@ export default function ClientesPage() {
               <div>
                 <label className={lbl}>Email</label>
                 <input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  className={`${inp} ${formErrors.email ? "border-red-400" : ""}`} placeholder="cliente@empresa.com" />
+                  className={`${inp} ${formErrors.email ? "border-red-400 dark:border-red-500" : ""}`} placeholder="cliente@empresa.com" />
                 {formErrors.email && <p className="text-xs text-red-500 mt-0.5">{formErrors.email}</p>}
               </div>
               <div>
@@ -316,7 +316,7 @@ export default function ClientesPage() {
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={tryCloseModal} className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition">
+              <button onClick={tryCloseModal} className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving}
@@ -332,39 +332,39 @@ export default function ClientesPage() {
       {detail && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDetail(null)} />
-          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md p-6 z-10">
+          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md p-6 z-10 dark:bg-slate-800">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-slate-800 truncate">{detail.name}</h2>
-              <button onClick={() => setDetail(null)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition"><X size={18} /></button>
+              <h2 className="text-lg font-semibold text-slate-800 truncate dark:text-slate-100">{detail.name}</h2>
+              <button onClick={() => setDetail(null)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition dark:hover:bg-slate-700"><X size={18} /></button>
             </div>
 
             <div className="space-y-3 text-sm">
               {detail.rnc && (
-                <div className="flex items-center gap-2 text-slate-600">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                   <FileText size={14} className="text-slate-400 flex-shrink-0" />
                   <span>RNC: <span className="font-medium">{detail.rnc}</span></span>
                 </div>
               )}
               {detail.phone && (
-                <div className="flex items-center gap-2 text-slate-600">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                   <Phone size={14} className="text-slate-400 flex-shrink-0" />
                   <span>{detail.phone}</span>
                 </div>
               )}
               {detail.email && (
-                <div className="flex items-center gap-2 text-slate-600">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                   <Mail size={14} className="text-slate-400 flex-shrink-0" />
                   <span>{detail.email}</span>
                 </div>
               )}
               {detail.address && (
-                <div className="flex items-center gap-2 text-slate-600">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                   <MapPin size={14} className="text-slate-400 flex-shrink-0" />
                   <span>{detail.address}</span>
                 </div>
               )}
               {detail.notes && (
-                <div className="bg-slate-50 rounded-xl p-3 text-slate-600 text-sm">{detail.notes}</div>
+                <div className="bg-slate-50 rounded-xl p-3 text-slate-600 text-sm dark:bg-slate-700/40 dark:text-slate-300">{detail.notes}</div>
               )}
             </div>
 
@@ -375,15 +375,15 @@ export default function ClientesPage() {
                 <p className="text-xs text-slate-400 mt-4 text-center">Sin ventas registradas en los últimos 90 días</p>
               );
               return (
-                <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100">
+                <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
                   {[
                     { label: "Ventas",    value: stats.numSales },
                     { label: "Ingresos",  value: fmtCurrency(stats.revenue) },
                     { label: "Ganancia",  value: fmtCurrency(stats.profit) },
                   ].map(({ label, value }) => (
                     <div key={label} className="text-center">
-                      <p className="text-xs text-slate-500">{label}</p>
-                      <p className="font-bold text-slate-800 text-sm">{value}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+                      <p className="font-bold text-slate-800 text-sm dark:text-slate-100">{value}</p>
                     </div>
                   ))}
                 </div>
@@ -392,11 +392,11 @@ export default function ClientesPage() {
 
             <div className="flex gap-2 mt-5">
               <button onClick={() => { setDetail(null); openEdit(detail); }}
-                className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition flex items-center justify-center gap-2 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
                 <Edit2 size={14} /> Editar
               </button>
               <AdminButton onClick={() => { handleDelete(detail!); setDetail(null); }}
-                className="flex-1 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2 dark:bg-red-500/15 dark:text-red-300 dark:hover:bg-red-500/25">
                 <Trash2 size={14} /> Eliminar
               </AdminButton>
             </div>

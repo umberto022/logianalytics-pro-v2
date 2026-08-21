@@ -62,20 +62,20 @@ export function BottomNav() {
           />
 
           {/* Drawer panel */}
-          <div className="fixed inset-x-0 bottom-14 z-[100] lg:hidden bg-white rounded-t-2xl shadow-2xl border-t border-slate-100">
+          <div className="fixed inset-x-0 bottom-14 z-[100] lg:hidden bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t border-slate-100 dark:border-slate-700">
             {/* Handle bar */}
             <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-slate-300 rounded-full" />
+              <div className="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
             </div>
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-2">
-              <span className="font-bold text-slate-800">Más opciones</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100">Más opciones</span>
               <button
                 onClick={() => setMoreOpen(false)}
-                className="p-1.5 rounded-xl bg-slate-100 active:bg-slate-200"
+                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600"
               >
-                <X size={16} className="text-slate-500" />
+                <X size={16} className="text-slate-500 dark:text-slate-400" />
               </button>
             </div>
 
@@ -91,8 +91,8 @@ export function BottomNav() {
                     className={cn(
                       "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium",
                       active
-                        ? "bg-brand-50 text-brand-600"
-                        : "text-slate-700 active:bg-slate-100"
+                        ? "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"
+                        : "text-slate-700 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700"
                     )}
                   >
                     <Icon size={20} />
@@ -104,7 +104,7 @@ export function BottomNav() {
               {canInstall && (
                 <button
                   onClick={() => { install(); setMoreOpen(false); }}
-                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-brand-600 active:bg-brand-50"
+                  className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-brand-600 active:bg-brand-50 dark:active:bg-brand-500/15"
                 >
                   <Download size={20} />
                   Instalar app en este dispositivo
@@ -113,10 +113,10 @@ export function BottomNav() {
 
               {isAdmin && (
                 <>
-                  <div className="h-px bg-slate-100 my-1" />
+                  <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
                   <Link href="/equipo" onClick={() => setMoreOpen(false)}
                     className={cn("flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold",
-                      pathname.startsWith("/equipo") ? "bg-brand-50 text-brand-600" : "text-brand-600 active:bg-brand-50")}>
+                      pathname.startsWith("/equipo") ? "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300" : "text-brand-600 active:bg-brand-50 dark:active:bg-brand-500/15")}>
                     <UsersRound size={20} /> Mi Equipo
                   </Link>
                 </>
@@ -125,16 +125,16 @@ export function BottomNav() {
               {isPlatformAdmin && (
                 <Link href="/admin" onClick={() => setMoreOpen(false)}
                   className={cn("flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold",
-                    pathname.startsWith("/admin") ? "bg-amber-50 text-amber-600" : "text-amber-600 active:bg-amber-50")}>
+                    pathname.startsWith("/admin") ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300" : "text-amber-600 active:bg-amber-50 dark:active:bg-amber-500/15")}>
                   <ShieldAlert size={20} /> Panel Admin
                 </Link>
               )}
 
-              <div className="h-px bg-slate-100 my-1" />
+              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
 
               <button
                 onClick={() => { setMoreOpen(false); requestLogout(); }}
-                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-semibold text-red-500 active:bg-red-50"
+                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-semibold text-red-500 active:bg-red-50 dark:active:bg-red-500/15"
               >
                 <LogOut size={20} />
                 Cerrar sesión

@@ -113,7 +113,7 @@ export default function FacturacionElectronicaPage() {
         subtitle="e-CF vía Alanube — comprobantes fiscales electrónicos ante DGII"
       />
 
-      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 text-sm text-amber-700">
+      <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded-xl px-4 py-3 mb-6 text-sm text-amber-700 dark:text-amber-300">
         <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
         <span>
           Módulo en construcción: requiere que la empresa esté inscrita ante DGII como emisor
@@ -123,9 +123,9 @@ export default function FacturacionElectronicaPage() {
       </div>
 
       {/* Ventas pendientes de facturar */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm mb-6">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-700 text-sm">Ventas sin e-CF (últimos 30 días)</h2>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm mb-6">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Ventas sin e-CF (últimos 30 días)</h2>
         </div>
         {pending.length === 0 ? (
           <EmptyState
@@ -134,18 +134,18 @@ export default function FacturacionElectronicaPage() {
             description="No hay ventas de los últimos 30 días pendientes de emitir su e-CF."
           />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {pending.map((g) => (
               <div key={g.key} className="px-5 py-3.5 flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{g.client || "Consumidor final"}</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{g.client || "Consumidor final"}</p>
                   <p className="text-xs text-slate-400">
                     {fmtDate(g.date)} · {g.sales.length} línea{g.sales.length !== 1 ? "s" : ""}
                     {g.clientRnc ? ` · RNC ${g.clientRnc} → Crédito Fiscal (31)` : " · Sin RNC → Consumo (32)"}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-sm font-bold text-slate-700">{fmtCurrency(g.total)}</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{fmtCurrency(g.total)}</span>
                   <button
                     onClick={() => emit(g)}
                     disabled={emitting === g.key}
@@ -162,9 +162,9 @@ export default function FacturacionElectronicaPage() {
       </div>
 
       {/* Historial de e-CF emitidos */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-700 text-sm">Comprobantes emitidos</h2>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Comprobantes emitidos</h2>
         </div>
         {invoices.length === 0 ? (
           <EmptyState
@@ -173,20 +173,20 @@ export default function FacturacionElectronicaPage() {
             description="Cuando emitas el primer e-CF, va a aparecer acá con su estado ante DGII."
           />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {invoices.map((inv) => (
               <div key={inv.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                     {inv.buyerName} · {ECF_TYPE_LABELS[inv.eCfType]}
                   </p>
                   <p className="text-xs text-slate-400 font-mono">{inv.eNcf ?? "—"}</p>
                   {inv.errorMessage && (
-                    <p className="text-xs text-red-500 mt-0.5">{inv.errorMessage}</p>
+                    <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">{inv.errorMessage}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-slate-700">{fmtCurrency(inv.totalAmount)}</span>
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{fmtCurrency(inv.totalAmount)}</span>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${ECF_STATUS_COLOR[inv.status]}`}>
                     {ECF_STATUS_LABELS[inv.status]}
                   </span>

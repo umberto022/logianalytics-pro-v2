@@ -53,7 +53,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-slate-400">Cargando…</p>
@@ -71,7 +71,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <Sidebar />
 
-      <main className="flex-1 min-h-screen bg-slate-50 lg:ml-[var(--sidebar-width)]">
+      <main className="flex-1 min-h-screen bg-slate-50 dark:bg-slate-900 lg:ml-[var(--sidebar-width)]">
         {/* Mobile top bar */}
         <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-sidebar border-b border-white/10 sticky top-0 z-20">
           <div className="flex items-center gap-2">

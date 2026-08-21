@@ -40,9 +40,9 @@ import type { InventoryItem, Sale, Period, PaymentStatus } from "@/types";
 type Tab = "register" | "analytics" | "history" | "cierre";
 
 const PAYMENT_STATUS: Record<PaymentStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  pagado:    { label: "Pagado",    color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle2 size={11} /> },
-  pendiente: { label: "Pendiente", color: "bg-amber-50 text-amber-700 border-amber-200",       icon: <Clock size={11} /> },
-  credito:   { label: "Crédito",   color: "bg-blue-50 text-blue-700 border-blue-200",           icon: <CreditCard size={11} /> },
+  pagado:    { label: "Pagado",    color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30", icon: <CheckCircle2 size={11} /> },
+  pendiente: { label: "Pendiente", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",       icon: <Clock size={11} /> },
+  credito:   { label: "Crédito",   color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",           icon: <CreditCard size={11} /> },
 };
 
 const CHART_COLORS = ["#6366f1","#10b981","#f59e0b","#ef4444","#3b82f6","#8b5cf6","#ec4899"];
@@ -99,33 +99,33 @@ function ProductPickerModal({ items, cart, onConfirm, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Catálogo de productos</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Catálogo de productos</h2>
             <p className="text-xs text-slate-400 mt-0.5">{picked.size} seleccionado{picked.size !== 1 ? "s" : ""}</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
+          <button type="button" onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
             <X size={18} />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="px-6 py-3 border-b border-slate-50 flex flex-col sm:flex-row gap-3">
+        <div className="px-6 py-3 border-b border-slate-50 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nombre, SKU o categoría…"
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <div className="flex gap-1.5 flex-wrap">
             {categories.map((c) => (
               <button key={c} type="button" onClick={() => setCatFilter(c)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition
-                  ${catFilter === c ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                  ${catFilter === c ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"}`}>
                 {c}
               </button>
             ))}
@@ -150,12 +150,12 @@ function ProductPickerModal({ items, cart, onConfirm, onClose }: {
                     disabled={noStock}
                     onClick={() => !noStock && toggle(item.id)}
                     className={`relative flex flex-col rounded-2xl border-2 text-left transition overflow-hidden
-                      ${noStock ? "opacity-40 cursor-not-allowed border-slate-100" :
-                        isSelected ? "border-brand-500 shadow-md shadow-brand-100" : "border-slate-100 hover:border-brand-300 hover:shadow-sm"}`}
+                      ${noStock ? "opacity-40 cursor-not-allowed border-slate-100 dark:border-slate-700" :
+                        isSelected ? "border-brand-500 shadow-md shadow-brand-100 dark:shadow-none" : "border-slate-100 dark:border-slate-700 hover:border-brand-300 hover:shadow-sm"}`}
                   >
                     {/* Checkbox badge */}
                     <div className={`absolute top-2 right-2 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center transition
-                      ${isSelected ? "bg-brand-600 border-brand-600" : "bg-white border-slate-300"}`}>
+                      ${isSelected ? "bg-brand-600 border-brand-600" : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"}`}>
                       {isSelected && (
                         <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
                           <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -164,26 +164,26 @@ function ProductPickerModal({ items, cart, onConfirm, onClose }: {
                     </div>
 
                     {/* Image */}
-                    <div className="w-full aspect-square bg-slate-50 flex items-center justify-center overflow-hidden">
+                    <div className="w-full aspect-square bg-slate-50 dark:bg-slate-700/40 flex items-center justify-center overflow-hidden">
                       {item.imageUrl ? (
                         <img src={item.imageUrl} alt={item.name}
                           className="w-full h-full object-cover" />
                       ) : (
-                        <ImageOff size={28} className="text-slate-200" />
+                        <ImageOff size={28} className="text-slate-200 dark:text-slate-600" />
                       )}
                     </div>
 
                     {/* Info */}
                     <div className="p-3 flex flex-col gap-1">
-                      <p className="text-xs font-semibold text-slate-900 leading-tight line-clamp-2">{item.name}
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-tight line-clamp-2">{item.name}
                         {item.color ? <span className="text-slate-400 font-normal"> · {item.color}</span> : ""}
                       </p>
                       <p className="text-xs text-slate-400 font-mono">{item.sku}</p>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-sm font-bold text-brand-700">{fmtCurrency(item.salePrice)}</span>
+                        <span className="text-sm font-bold text-brand-700 dark:text-brand-400">{fmtCurrency(item.salePrice)}</span>
                         <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium
-                          ${item.currentStock === 0 ? "bg-red-50 text-red-600" :
-                            item.currentStock <= item.minStock ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}>
+                          ${item.currentStock === 0 ? "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-300" :
+                            item.currentStock <= item.minStock ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"}`}>
                           {item.currentStock} uds
                         </span>
                       </div>
@@ -197,15 +197,15 @@ function ProductPickerModal({ items, cart, onConfirm, onClose }: {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 rounded-b-2xl">
-          <p className="text-sm text-slate-500">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-700/40 rounded-b-2xl">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {picked.size > 0
               ? `${picked.size} producto${picked.size !== 1 ? "s" : ""} seleccionado${picked.size !== 1 ? "s" : ""}`
               : "Selecciona productos para agregar al carrito"}
           </p>
           <div className="flex gap-2">
             <button type="button" onClick={onClose}
-              className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-white transition">
+              className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition">
               Cancelar
             </button>
             <button type="button" onClick={confirm} disabled={picked.size === 0}
@@ -257,39 +257,39 @@ function ProductSearch({ items, cart, onAdd, onOpenPicker }: {
             onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
             placeholder="Buscar por nombre, SKU o categoría…"
-            className="w-full pl-9 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full pl-9 pr-9 py-2.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           {search && (
             <button type="button" onClick={() => { setSearch(""); setOpen(false); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
               <X size={14} />
             </button>
           )}
 
           {open && results.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+            <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden">
               {results.map((item) => {
                 const inCart  = cart.find((c) => c.inventoryId === item.id);
                 const noStock = item.currentStock === 0;
                 return (
                   <button key={item.id} type="button" disabled={noStock}
                     onClick={() => { onAdd(item); setSearch(""); setOpen(false); }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-brand-50 transition border-b border-slate-50 last:border-0
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-brand-50 dark:hover:bg-slate-700/50 transition border-b border-slate-50 dark:border-slate-700 last:border-0
                       ${noStock ? "opacity-40 cursor-not-allowed" : ""}`}>
                     {/* Thumbnail */}
-                    <div className="w-9 h-9 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 flex-shrink-0 overflow-hidden flex items-center justify-center">
                       {item.imageUrl
                         ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                        : <ImageOff size={14} className="text-slate-300" />}
+                        : <ImageOff size={14} className="text-slate-300 dark:text-slate-500" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 truncate">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                         {item.name}{item.color ? <span className="text-slate-400 font-normal"> · {item.color}</span> : ""}
                       </p>
                       <p className="text-xs text-slate-400">{item.sku} · {item.category}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold text-brand-700">{fmtCurrency(item.salePrice)}</p>
+                      <p className="text-sm font-bold text-brand-700 dark:text-brand-400">{fmtCurrency(item.salePrice)}</p>
                       <p className={`text-xs ${item.currentStock <= item.minStock ? "text-red-500" : "text-slate-400"}`}>
                         {item.currentStock} en stock
                       </p>
@@ -305,7 +305,7 @@ function ProductSearch({ items, cart, onAdd, onOpenPicker }: {
             </div>
           )}
           {open && search.trim().length >= 1 && results.length === 0 && (
-            <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-4 text-center text-sm text-slate-400">
+            <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-4 text-center text-sm text-slate-400">
               No se encontraron productos
             </div>
           )}
@@ -313,7 +313,7 @@ function ProductSearch({ items, cart, onAdd, onOpenPicker }: {
 
         {/* Catalog button */}
         <button type="button" onClick={onOpenPicker}
-          className="flex items-center gap-1.5 px-3 py-2.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-xl text-sm font-medium hover:bg-brand-100 transition flex-shrink-0">
+          className="flex items-center gap-1.5 px-3 py-2.5 bg-brand-50 text-brand-700 border border-brand-200 dark:bg-brand-500/15 dark:text-brand-300 dark:border-brand-500/30 rounded-xl text-sm font-medium hover:bg-brand-100 dark:hover:bg-brand-500/25 transition flex-shrink-0">
           <LayoutGrid size={15} />
           <span className="hidden sm:inline">Catálogo</span>
         </button>
@@ -333,9 +333,9 @@ function CartRow({ item, onChange, onRemove }: {
   const subtotal = item.quantity * item.unitPrice;
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 hover:border-slate-200 transition group">
+    <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition group">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-900 truncate">{item.name}</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{item.name}</p>
         <p className="text-xs text-slate-400 font-mono">{item.sku}</p>
       </div>
 
@@ -344,34 +344,34 @@ function CartRow({ item, onChange, onRemove }: {
         <span className="text-xs text-slate-400">$</span>
         <input type="number" min={0} step="0.01" value={item.unitPrice}
           onChange={(e) => onChange({ unitPrice: Number(e.target.value) })}
-          className="w-20 text-right text-sm font-semibold border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          className="w-20 text-right text-sm font-semibold border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-500" />
       </div>
 
       {/* Quantity */}
       <div className="flex items-center gap-1">
         <button type="button"
           onClick={() => item.quantity > 1 ? onChange({ quantity: item.quantity - 1 }) : onRemove()}
-          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition text-slate-400">
+          className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-500/15 hover:border-red-200 dark:hover:border-red-500/30 hover:text-red-600 dark:hover:text-red-400 transition text-slate-400">
           <Minus size={12} />
         </button>
         <input type="number" min={1} max={item.maxStock} value={item.quantity}
           onChange={(e) => onChange({ quantity: Math.min(item.maxStock, Math.max(1, Number(e.target.value))) })}
-          className="w-12 text-center text-sm font-bold border border-slate-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          className="w-12 text-center text-sm font-bold border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-brand-500" />
         <button type="button"
           onClick={() => onChange({ quantity: Math.min(item.maxStock, item.quantity + 1) })}
-          className="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 transition text-slate-400">
+          className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-500/15 hover:border-emerald-200 dark:hover:border-emerald-500/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition text-slate-400">
           <Plus size={12} />
         </button>
       </div>
 
       {/* Subtotal */}
       <div className="text-right w-24 flex-shrink-0">
-        <p className="text-sm font-bold text-slate-900">{fmtCurrency(subtotal)}</p>
+        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{fmtCurrency(subtotal)}</p>
         <p className="text-xs text-slate-400">{item.quantity} × {fmtCurrency(item.unitPrice)}</p>
       </div>
 
       <button type="button" onClick={onRemove}
-        className="opacity-0 group-hover:opacity-100 transition p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg">
+        className="opacity-0 group-hover:opacity-100 transition p-1.5 text-slate-300 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 rounded-lg">
         <Trash2 size={14} />
       </button>
     </div>
@@ -398,14 +398,14 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
           { label: "Ticket promedio",   value: summary.numSales > 0 ? fmtCurrency(summary.revenue / summary.numSales) : "$0",
             sub: "por transacción", icon: Receipt, color: "blue" },
         ].map(({ label, value, sub, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div key={label} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
             <div className="flex items-start justify-between mb-3">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-${color}-50 text-${color}-600`}>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-${color}-50 text-${color}-600 dark:bg-${color}-500/15 dark:text-${color}-300`}>
                 <Icon size={15} />
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
             <p className="text-xs text-slate-400 mt-1">{sub}</p>
           </div>
         ))}
@@ -414,10 +414,10 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top products */}
         {byProd.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <Award size={16} className="text-indigo-500" />
-              <h3 className="text-sm font-semibold text-slate-700">Top productos por ganancia</h3>
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Top productos por ganancia</h3>
             </div>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={byProd} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
@@ -436,13 +436,13 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
         )}
 
         {/* Top clients */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Users size={16} className="text-emerald-500" />
-            <h3 className="text-sm font-semibold text-slate-700">Top clientes por ingresos</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Top clientes por ingresos</h3>
           </div>
           {byClient.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-slate-300">
+            <div className="flex flex-col items-center justify-center h-40 text-slate-300 dark:text-slate-600">
               <Users size={32} className="mb-2" />
               <p className="text-sm">Sin datos de clientes aún</p>
               <p className="text-xs mt-1">Completa el campo Cliente al registrar ventas</p>
@@ -455,16 +455,16 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
                 return (
                   <div key={c.client}>
                     <div className="flex items-center justify-between mb-1 text-sm">
-                      <span className="font-medium text-slate-800 flex items-center gap-2">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                           style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}>
                           {i + 1}
                         </span>
                         {c.client}
                       </span>
-                      <span className="font-semibold text-slate-900">{fmtCurrency(c.revenue)}</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(c.revenue)}</span>
                     </div>
-                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all"
                         style={{ width: `${pct}%`, background: CHART_COLORS[i % CHART_COLORS.length] }} />
                     </div>
@@ -481,10 +481,10 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
 
       {/* Daily trend */}
       {daily.length > 1 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <BarChart2 size={16} className="text-blue-500" />
-            <h3 className="text-sm font-semibold text-slate-700">Tendencia diaria</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tendencia diaria</h3>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={daily} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
@@ -566,9 +566,9 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
 
   if (!session) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-100 p-14 text-center shadow-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-14 text-center shadow-sm">
         <CheckCircle2 size={40} className="mx-auto mb-3 text-emerald-400" />
-        <p className="text-slate-700 font-semibold">Caja ya cerrada</p>
+        <p className="text-slate-700 dark:text-slate-200 font-semibold">Caja ya cerrada</p>
         <p className="text-slate-400 text-sm mt-1">El cierre de hoy ya fue registrado</p>
       </div>
     );
@@ -579,14 +579,14 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
   return (
     <div className="space-y-5">
       {/* Session info */}
-      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center justify-between">
+      <div className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-500/15 dark:border-emerald-500/30 rounded-2xl px-5 py-4 flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-emerald-800">Caja abierta desde las {openTime}</p>
-          <p className="text-xs text-emerald-600 mt-0.5">Fondo inicial: {fmtCurrency(session.initialCash)}</p>
+          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Caja abierta desde las {openTime}</p>
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Fondo inicial: {fmtCurrency(session.initialCash)}</p>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-xs font-bold text-emerald-700">EN OPERACIÓN</span>
+          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">EN OPERACIÓN</span>
         </div>
       </div>
 
@@ -599,17 +599,17 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
           { label: "Pendiente/crédito",value: fmtCurrency(totalPendiente + totalCredito),
             sub: `${pendientes.length + credito.length} trans.`, color: "amber" },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className={`bg-white rounded-2xl border border-slate-100 p-4 shadow-sm`}>
-            <p className="text-xs text-slate-500 mb-1">{label}</p>
-            <p className={`text-xl font-bold text-${color}-600`}>{value}</p>
+          <div key={label} className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm`}>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+            <p className={`text-xl font-bold text-${color}-600 dark:text-${color}-400`}>{value}</p>
             <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
 
       {/* Cuadre de caja */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-5">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
           <Banknote size={16} className="text-emerald-500" /> Cuadre de caja — desglose cobrado
         </h3>
 
@@ -620,7 +620,7 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
             { label: "Transferencia / SINPE",icon: Building2,  val: transferencia,set: setTransferencia},
           ].map(({ label, icon: Icon, val, set }) => (
             <div key={label}>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1.5">
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
                 <Icon size={13} className="text-slate-400" /> {label}
               </label>
               <div className="relative">
@@ -630,7 +630,7 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
                   value={val}
                   onChange={(e) => set(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="0.00"
-                  className="w-full pl-7 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full pl-7 pr-3 py-2.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -638,21 +638,21 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
         </div>
 
         {/* Comparison */}
-        <div className="bg-slate-50 rounded-xl p-4 mb-4 space-y-2 text-sm">
+        <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 mb-4 space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-slate-500">Total facturado pagado</span>
-            <span className="font-semibold text-slate-800">{fmtCurrency(totalPagado)}</span>
+            <span className="text-slate-500 dark:text-slate-400">Total facturado pagado</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{fmtCurrency(totalPagado)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">Total declarado</span>
-            <span className="font-semibold text-slate-800">{fmtCurrency(totalDeclarado)}</span>
+            <span className="text-slate-500 dark:text-slate-400">Total declarado</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{fmtCurrency(totalDeclarado)}</span>
           </div>
-          <div className="h-px bg-slate-200" />
+          <div className="h-px bg-slate-200 dark:bg-slate-600" />
           <div className="flex justify-between">
-            <span className={`font-bold ${diferencia === 0 ? "text-emerald-600" : diferencia > 0 ? "text-blue-600" : "text-red-600"}`}>
+            <span className={`font-bold ${diferencia === 0 ? "text-emerald-600 dark:text-emerald-400" : diferencia > 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
               {diferencia === 0 ? "✓ Caja cuadrada" : diferencia > 0 ? `Sobrante` : `Faltante`}
             </span>
-            <span className={`font-bold text-lg ${diferencia === 0 ? "text-emerald-600" : diferencia > 0 ? "text-blue-600" : "text-red-600"}`}>
+            <span className={`font-bold text-lg ${diferencia === 0 ? "text-emerald-600 dark:text-emerald-400" : diferencia > 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
               {diferencia === 0 ? "—" : `${diferencia > 0 ? "+" : ""}${fmtCurrency(Math.abs(diferencia))}`}
             </span>
           </div>
@@ -660,7 +660,7 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
 
         {/* Credits pending */}
         {(totalPendiente + totalCredito) > 0 && (
-          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4 text-xs text-amber-700">
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 dark:bg-amber-500/15 dark:border-amber-500/30 rounded-xl px-3 py-2 mb-4 text-xs text-amber-700 dark:text-amber-300">
             <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
             <span>
               Hay {fmtCurrency(totalPendiente + totalCredito)} en ventas pendientes/crédito que <strong>no se incluyen</strong> en el cuadre de caja.
@@ -670,13 +670,13 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
 
         {/* Notes */}
         <div className="mb-5">
-          <label className="block text-xs font-medium text-slate-600 mb-1">Observaciones del cierre</label>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Observaciones del cierre</label>
           <textarea
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
             placeholder="Ej: Sin novedad · Hubo descuadre por billete falso…"
-            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>
 
@@ -967,11 +967,11 @@ export default function VentasPage() {
           tab === "history" && sales.length > 0 ? (
             <div className="flex items-center gap-2">
               <button onClick={exportCSV}
-                className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 <Download size={15} /> Exportar CSV
               </button>
               <button onClick={() => window.print()}
-                className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition print:hidden">
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition print:hidden">
                 <Receipt size={15} /> PDF
               </button>
             </div>
@@ -980,11 +980,11 @@ export default function VentasPage() {
       />
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 mb-6 w-fit">
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap
-              ${tab === t.key ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700"}`}>
+              ${tab === t.key ? "bg-white dark:bg-slate-700 shadow-sm text-brand-600 dark:text-brand-400" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
             {t.label}
           </button>
         ))}
@@ -992,18 +992,18 @@ export default function VentasPage() {
 
       {/* ── Nueva venta ── */}
       {tab === "register" && !cajaOpen && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-          <Lock size={40} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-slate-700 font-semibold text-lg mb-1">Caja cerrada</p>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-16 text-center shadow-sm">
+          <Lock size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+          <p className="text-slate-700 dark:text-slate-200 font-semibold text-lg mb-1">Caja cerrada</p>
           <p className="text-sm text-slate-400 mb-5">Debes abrir la caja antes de registrar ventas</p>
           <p className="text-xs text-slate-400">Ve a la parte superior y haz clic en <strong>Abrir caja</strong></p>
         </div>
       )}
 
       {tab === "register" && cajaOpen && (items.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-            <ShoppingCart size={40} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-500 mb-1">No tienes productos en inventario</p>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-16 text-center shadow-sm">
+            <ShoppingCart size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+            <p className="text-slate-500 dark:text-slate-400 mb-1">No tienes productos en inventario</p>
             <p className="text-sm text-slate-400">Ve a <strong>Inventario</strong> para agregar productos primero.</p>
           </div>
         ) : (
@@ -1012,21 +1012,21 @@ export default function VentasPage() {
 
               {/* ── Left: buscador + carrito ── */}
               <div className="lg:col-span-3 space-y-4">
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h2 className="text-base font-semibold text-slate-800 mb-3">Agregar productos</h2>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
+                  <h2 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-3">Agregar productos</h2>
                   <ProductSearch items={items} cart={cart} onAdd={addToCart} onOpenPicker={() => setShowPicker(true)} />
                 </div>
 
                 {cart.length === 0 ? (
-                  <div className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-14 text-center">
-                    <ShoppingCart size={32} className="mx-auto mb-2 text-slate-300" />
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-14 text-center">
+                    <ShoppingCart size={32} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
                     <p className="text-slate-400 text-sm font-medium">Carrito vacío</p>
                     <p className="text-slate-400 text-xs mt-1">Busca y selecciona productos arriba</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between px-1">
-                      <p className="text-sm font-medium text-slate-600">
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
                         {cart.length} producto{cart.length !== 1 ? "s" : ""} · {cartUnits} unidades
                       </p>
                       <button type="button" onClick={() => setCart([])}
@@ -1050,8 +1050,8 @@ export default function VentasPage() {
               <div className="lg:col-span-2 space-y-4">
 
                 {/* Payment status */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Estado de pago</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Estado de pago</h3>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {(["pagado", "pendiente", "credito"] as PaymentStatus[]).map((s) => {
                       const meta   = PAYMENT_STATUS[s];
@@ -1059,7 +1059,7 @@ export default function VentasPage() {
                       return (
                         <button key={s} type="button" onClick={() => setPaymentStatus(s)}
                           className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-medium transition
-                            ${active ? `${meta.color} shadow-sm` : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
+                            ${active ? `${meta.color} shadow-sm` : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"}`}>
                           {meta.icon}
                           {meta.label}
                         </button>
@@ -1068,20 +1068,20 @@ export default function VentasPage() {
                   </div>
                   {paymentStatus === "credito" && (
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Fecha de vencimiento</label>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Fecha de vencimiento</label>
                       <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                     </div>
                   )}
                 </div>
 
                 {/* Order details */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-3">
-                  <h3 className="text-sm font-semibold text-slate-700">Datos del cliente</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm space-y-3">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Datos del cliente</h3>
 
                   {/* Client name — autocomplete from saved customers */}
                   <div className="relative">
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Nombre / Razón social *</label>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Nombre / Razón social *</label>
                     {customers.length > 0 && !client && (
                       <div className="mb-1.5">
                         <select
@@ -1096,7 +1096,7 @@ export default function VentasPage() {
                               setClientAddress(c.address);
                             }
                           }}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                          className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100"
                         >
                           <option value="">— Seleccionar cliente guardado —</option>
                           {customers.map((c) => (
@@ -1106,11 +1106,11 @@ export default function VentasPage() {
                       </div>
                     )}
                     <input value={client} onChange={(e) => { setClient(e.target.value); setFormErrors((p) => ({ ...p, client: "" })); }} placeholder="Nombre o empresa"
-                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors.client ? "border-red-400" : "border-slate-200"}`} />
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 ${formErrors.client ? "border-red-400" : "border-slate-200 dark:border-slate-700"}`} />
                     {formErrors.client && <p className="text-xs text-red-500 mt-0.5">{formErrors.client}</p>}
                     {client && (
                       <button type="button" onClick={() => { setClient(""); setClientRnc(""); setClientPhone(""); setClientEmail(""); setClientAddress(""); }}
-                        className="absolute right-2 bottom-2 text-slate-400 hover:text-slate-600">
+                        className="absolute right-2 bottom-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                         <X size={14} />
                       </button>
                     )}
@@ -1119,91 +1119,91 @@ export default function VentasPage() {
                   {/* RNC + Phone */}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">RNC / Cédula</label>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">RNC / Cédula</label>
                       <input value={clientRnc} onChange={(e) => setClientRnc(e.target.value)} placeholder="000-0000000-0"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Teléfono</label>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Teléfono</label>
                       <input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="809-000-0000"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                     </div>
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email</label>
                     <input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} placeholder="cliente@empresa.com"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                   </div>
 
                   {/* Address */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Dirección</label>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Dirección</label>
                     <input value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} placeholder="Calle, ciudad"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                   </div>
 
                   {/* Route + Zone */}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Ruta *</label>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Ruta *</label>
                       <input value={route} onChange={(e) => { setRoute(e.target.value); setFormErrors((p) => ({ ...p, route: "" })); }} placeholder="ej. Norte, Sur"
-                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${formErrors.route ? "border-red-400" : "border-slate-200"}`} />
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 ${formErrors.route ? "border-red-400" : "border-slate-200 dark:border-slate-700"}`} />
                       {formErrors.route && <p className="text-xs text-red-500 mt-0.5">{formErrors.route}</p>}
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Zona / Ciudad</label>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Zona / Ciudad</label>
                       <input value={zone} onChange={(e) => setZone(e.target.value)} placeholder="ej. Santo Domingo"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                     </div>
                   </div>
 
                   {/* Date + NCF */}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Fecha de venta</label>
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Fecha de venta</label>
                       <input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                         NCF <span className="text-slate-400 font-normal">(auto si vacío)</span>
                       </label>
                       <input value={ncf} onChange={(e) => setNcf(e.target.value)} placeholder="B02XXXXXXXX"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500" />
                     </div>
                   </div>
 
                   {/* Notes */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Notas / Observaciones</label>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Notas / Observaciones</label>
                     <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales para la factura…"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
                   </div>
                 </div>
 
                 {/* Summary */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Resumen del pedido</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Resumen del pedido</h3>
                   <div className="space-y-2 mb-4">
                     {[
-                      { label: "Subtotal",  value: fmtCurrency(cartTotal),  color: "text-slate-800" },
+                      { label: "Subtotal",  value: fmtCurrency(cartTotal),  color: "text-slate-800 dark:text-slate-100" },
                       { label: "Costo",     value: fmtCurrency(cartCost),   color: "text-red-500" },
                       { label: "Ganancia",  value: fmtCurrency(cartProfit), color: cartProfit >= 0 ? "text-emerald-600" : "text-red-500" },
                       { label: "Margen",    value: `${cartMargin.toFixed(1)}%`,
                         color: cartMargin >= 20 ? "text-emerald-600" : cartMargin >= 10 ? "text-amber-500" : "text-red-500" },
                     ].map(({ label, value, color }) => (
                       <div key={label} className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">{label}</span>
+                        <span className="text-slate-500 dark:text-slate-400">{label}</span>
                         <span className={`font-semibold ${color}`}>{value}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="border-t border-slate-100 pt-3 mb-4">
+                  <div className="border-t border-slate-100 dark:border-slate-700 pt-3 mb-4">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-slate-800">TOTAL</span>
-                      <span className="text-xl font-bold text-indigo-600">{fmtCurrency(cartTotal)}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100">TOTAL</span>
+                      <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{fmtCurrency(cartTotal)}</span>
                     </div>
                   </div>
                   <button type="submit" disabled={saving || cart.length === 0}
@@ -1225,8 +1225,8 @@ export default function VentasPage() {
             <PeriodSelect value={period} onChange={setPeriod} />
           </div>
           {sales.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
-              <BarChart2 size={40} className="mx-auto mb-3 text-slate-300" />
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-16 text-center shadow-sm">
+              <BarChart2 size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
               <p className="text-slate-400">No hay datos de ventas en este período</p>
             </div>
           ) : (
@@ -1246,14 +1246,14 @@ export default function VentasPage() {
                 value={histSearch}
                 onChange={(e) => { setHistSearch(e.target.value); histPagination.reset(); }}
                 placeholder="Buscar producto, cliente, ruta…"
-                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
             <div className="flex gap-1">
               {(["all", "pagado", "pendiente", "credito"] as const).map((f) => (
                 <button key={f} type="button" onClick={() => { setHistPayFilter(f); histPagination.reset(); }}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition
-                    ${histPayFilter === f ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 text-slate-500 hover:bg-slate-50"}`}>
+                    ${histPayFilter === f ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"}`}>
                   {f === "all" ? "Todos" : PAYMENT_STATUS[f].label}
                 </button>
               ))}
@@ -1261,20 +1261,20 @@ export default function VentasPage() {
           </div>
 
           {filteredSales.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
               <EmptyState icon={ShoppingCart} title="Sin ventas en este período" description="Registra tu primera venta usando el tab de Registrar o la tecla rápida V desde cualquier pantalla." action={{ label: "Registrar venta", onClick: () => setTab("register") }} />
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
               {/* Mobile cards */}
-              <div className="block sm:hidden divide-y divide-slate-50">
+              <div className="block sm:hidden divide-y divide-slate-50 dark:divide-slate-700/50">
                 {histPagination.paged.map((s) => {
                   const psMeta = PAYMENT_STATUS[s.paymentStatus ?? "pagado"];
                   return (
                     <button key={s.id} type="button" onClick={() => openSaleInvoice(s)}
-                      className="w-full text-left px-4 py-3 hover:bg-brand-50 transition-colors">
+                      className="w-full text-left px-4 py-3 hover:bg-brand-50 dark:hover:bg-slate-700/50 transition-colors">
                       <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <p className="text-sm font-semibold text-slate-900 truncate flex-1">{s.productName}</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate flex-1">{s.productName}</p>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${psMeta.color}`}>
                           {psMeta.icon} {psMeta.label}
                         </span>
@@ -1286,12 +1286,12 @@ export default function VentasPage() {
                         {s.route  && <span>{s.route}</span>}
                       </div>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-slate-500">{s.quantity} u × {fmtCurrency(s.unitPrice)}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{s.quantity} u × {fmtCurrency(s.unitPrice)}</span>
                         <div className="flex items-center gap-3">
                           <span className={`text-sm font-semibold ${s.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                             {fmtCurrency(s.profit)}
                           </span>
-                          <span className="text-sm font-bold text-indigo-600">{fmtCurrency(s.totalRevenue)}</span>
+                          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{fmtCurrency(s.totalRevenue)}</span>
                         </div>
                       </div>
                     </button>
@@ -1302,7 +1302,7 @@ export default function VentasPage() {
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                    <tr className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700">
                       {["Fecha","Producto","SKU","Cant.","Precio u.","Ruta","Cliente","Pago","Ingreso","Ganancia","FC"].map((h) => (
                         <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                       ))}
@@ -1314,25 +1314,25 @@ export default function VentasPage() {
                       return (
                         <tr key={s.id}
                           onClick={() => openSaleInvoice(s)}
-                          className="border-t border-slate-50 hover:bg-brand-50 cursor-pointer transition-colors">
-                          <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">{fmtDate(s.saleDate)}</td>
-                          <td className="py-2.5 px-4 font-medium max-w-[140px] truncate">{s.productName}</td>
-                          <td className="py-2.5 px-4 font-mono text-xs text-slate-500">{s.sku}</td>
-                          <td className="py-2.5 px-4">{s.quantity}</td>
-                          <td className="py-2.5 px-4">{fmtCurrency(s.unitPrice)}</td>
-                          <td className="py-2.5 px-4 text-slate-500">{s.route || "—"}</td>
-                          <td className="py-2.5 px-4 text-slate-500">{s.client || "—"}</td>
+                          className="border-t border-slate-50 dark:border-slate-700/50 hover:bg-brand-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors">
+                          <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">{fmtDate(s.saleDate)}</td>
+                          <td className="py-2.5 px-4 font-medium max-w-[140px] truncate dark:text-slate-200">{s.productName}</td>
+                          <td className="py-2.5 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{s.sku}</td>
+                          <td className="py-2.5 px-4 dark:text-slate-200">{s.quantity}</td>
+                          <td className="py-2.5 px-4 dark:text-slate-200">{fmtCurrency(s.unitPrice)}</td>
+                          <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400">{s.route || "—"}</td>
+                          <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400">{s.client || "—"}</td>
                           <td className="py-2.5 px-4">
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${psMeta.color}`}>
                               {psMeta.icon} {psMeta.label}
                             </span>
                           </td>
-                          <td className="py-2.5 px-4 text-indigo-600 font-medium whitespace-nowrap">{fmtCurrency(s.totalRevenue)}</td>
+                          <td className="py-2.5 px-4 text-indigo-600 dark:text-indigo-400 font-medium whitespace-nowrap">{fmtCurrency(s.totalRevenue)}</td>
                           <td className={`py-2.5 px-4 font-medium whitespace-nowrap ${s.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                             {fmtCurrency(s.profit)}
                           </td>
                           <td className="py-2.5 px-4">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-brand-600 bg-brand-50 rounded-lg border border-brand-100 hover:bg-brand-100 transition">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-500/15 rounded-lg border border-brand-100 dark:border-brand-500/30 hover:bg-brand-100 dark:hover:bg-brand-500/25 transition">
                               <Receipt size={11} /> Ver
                             </span>
                           </td>

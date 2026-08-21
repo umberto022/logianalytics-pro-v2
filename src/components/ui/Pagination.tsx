@@ -14,7 +14,7 @@ export function Pagination({ page, totalPages, total, pageSize, onPage }: Props)
   const to   = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
+    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/40 rounded-b-2xl">
       <span className="text-xs text-slate-400">
         {from}–{to} de {total}
       </span>
@@ -22,7 +22,7 @@ export function Pagination({ page, totalPages, total, pageSize, onPage }: Props)
         <button
           onClick={() => onPage(page - 1)}
           disabled={page === 1}
-          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
           aria-label="Anterior"
         >
           <ChevronLeft size={14} />
@@ -44,7 +44,7 @@ export function Pagination({ page, totalPages, total, pageSize, onPage }: Props)
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition ${
                   p === page
                     ? "bg-brand-600 text-white"
-                    : "border border-slate-200 text-slate-500 hover:bg-white"
+                    : "border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800"
                 }`}
               >
                 {p}
@@ -54,7 +54,7 @@ export function Pagination({ page, totalPages, total, pageSize, onPage }: Props)
         <button
           onClick={() => onPage(page + 1)}
           disabled={page === totalPages}
-          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition"
           aria-label="Siguiente"
         >
           <ChevronRight size={14} />

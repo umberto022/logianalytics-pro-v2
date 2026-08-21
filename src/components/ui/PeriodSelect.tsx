@@ -13,7 +13,7 @@ export function PeriodSelect({ value, onChange }: PeriodSelectProps) {
     <select
       value={value}
       onChange={(e) => onChange(Number(e.target.value) as Period)}
-      className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+      className="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
     >
       {PERIOD_OPTIONS.map((d) => (
         <option key={d} value={d}>Últimos {d} días</option>

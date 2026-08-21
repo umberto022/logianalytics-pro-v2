@@ -33,10 +33,10 @@ import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, InventoryIt
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
 const STATUS_META: Record<PurchaseOrderStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  pendiente:  { label: "Pendiente",  color: "bg-amber-50 text-amber-700 border-amber-200",   icon: <Clock size={12} /> },
-  recibida:   { label: "Recibida",   color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle2 size={12} /> },
-  parcial:    { label: "Parcial",    color: "bg-blue-50 text-blue-700 border-blue-200",      icon: <PackageCheck size={12} /> },
-  cancelada:  { label: "Cancelada",  color: "bg-red-50 text-red-700 border-red-200",         icon: <XCircle size={12} /> },
+  pendiente:  { label: "Pendiente",  color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",   icon: <Clock size={12} /> },
+  recibida:   { label: "Recibida",   color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30", icon: <CheckCircle2 size={12} /> },
+  parcial:    { label: "Parcial",    color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",      icon: <PackageCheck size={12} /> },
+  cancelada:  { label: "Cancelada",  color: "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30",         icon: <XCircle size={12} /> },
 };
 
 function StatusBadge({ status }: { status: PurchaseOrderStatus }) {
@@ -144,16 +144,16 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white rounded-t-3xl border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white dark:bg-slate-800 rounded-t-3xl border-b border-slate-100 dark:border-slate-700 px-6 py-4 flex items-center justify-between z-10">
           <div>
-            <p className="text-xs text-slate-400 font-mono">{order.orderNumber}</p>
-            <h2 className="text-lg font-bold text-slate-900">{order.supplierName}</h2>
+            <p className="text-xs text-slate-400 dark:text-slate-400 font-mono">{order.orderNumber}</p>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{order.supplierName}</h2>
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={order.status} />
-            <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
+            <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"><X size={16} /></button>
           </div>
         </div>
 
@@ -168,9 +168,9 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
               { label: "Fecha creación", value: order.createdAt?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) ?? "—" },
               { label: "Fecha recepción", value: order.receivedDate?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) ?? "Pendiente" },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-slate-50 rounded-xl p-3">
-                <p className="text-xs text-slate-400 mb-0.5">{label}</p>
-                <p className="text-sm font-semibold text-slate-800">{value}</p>
+              <div key={label} className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-3">
+                <p className="text-xs text-slate-400 dark:text-slate-400 mb-0.5">{label}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{value}</p>
               </div>
             ))}
           </div>
@@ -178,15 +178,15 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
           {/* Items */}
           <div>
             <button onClick={() => setExpanded(e => !e)}
-              className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3 w-full text-left">
+              className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-100 mb-3 w-full text-left">
               <Package size={15} /> Productos ({order.items.length})
               {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {expanded && (
-              <div className="rounded-xl border border-slate-100 overflow-hidden">
+              <div className="rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 text-xs text-slate-500">
+                    <tr className="bg-slate-50 dark:bg-slate-700/40 text-xs text-slate-500 dark:text-slate-400">
                       <th className="text-left py-2.5 px-3 font-medium">Producto</th>
                       <th className="text-left py-2.5 px-3 font-medium">SKU</th>
                       <th className="text-center py-2.5 px-3 font-medium">Pedido</th>
@@ -197,16 +197,16 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
                   </thead>
                   <tbody>
                     {order.items.map((item, i) => (
-                      <tr key={i} className="border-t border-slate-50">
+                      <tr key={i} className="border-t border-slate-50 dark:border-slate-700/50">
                         <td className="py-2.5 px-3 font-medium">{item.productName}</td>
-                        <td className="py-2.5 px-3 font-mono text-xs text-slate-400">{item.sku}</td>
+                        <td className="py-2.5 px-3 font-mono text-xs text-slate-400 dark:text-slate-400">{item.sku}</td>
                         <td className="py-2.5 px-3 text-center">{item.qtyOrdered}</td>
                         <td className="py-2.5 px-3 text-center">
-                          <span className={`font-semibold ${item.qtyReceived >= item.qtyOrdered ? "text-emerald-600" : item.qtyReceived > 0 ? "text-amber-600" : "text-slate-400"}`}>
+                          <span className={`font-semibold ${item.qtyReceived >= item.qtyOrdered ? "text-emerald-600 dark:text-emerald-400" : item.qtyReceived > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-slate-500"}`}>
                             {item.qtyReceived}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-right text-slate-600">{fmtCurrency(item.unitCost)}</td>
+                        <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-400">{fmtCurrency(item.unitCost)}</td>
                         <td className="py-2.5 px-3 text-right font-semibold">{fmtCurrency(item.total)}</td>
                       </tr>
                     ))}
@@ -217,14 +217,14 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
           </div>
 
           {/* Totals */}
-          <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-            <div className="flex justify-between text-sm text-slate-600"><span>Subtotal</span><span>{fmtCurrency(order.subtotal)}</span></div>
-            <div className="flex justify-between text-sm text-slate-600"><span>ITBIS (18%)</span><span>{fmtCurrency(order.tax)}</span></div>
-            <div className="flex justify-between font-bold text-base border-t border-slate-200 pt-2 mt-2"><span>Total</span><span className="text-brand-600">{fmtCurrency(order.total)}</span></div>
+          <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 space-y-2">
+            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400"><span>Subtotal</span><span>{fmtCurrency(order.subtotal)}</span></div>
+            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400"><span>ITBIS (18%)</span><span>{fmtCurrency(order.tax)}</span></div>
+            <div className="flex justify-between font-bold text-base border-t border-slate-200 dark:border-slate-600 pt-2 mt-2"><span>Total</span><span className="text-brand-600">{fmtCurrency(order.total)}</span></div>
           </div>
 
           {order.note && (
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-sm text-amber-800">
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-sm text-amber-800 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-300">
               <b>Nota:</b> {order.note}
             </div>
           )}
@@ -232,7 +232,7 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-1">
             <button onClick={() => printOrder(order)}
-              className="flex items-center gap-1.5 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition">
+              className="flex items-center gap-1.5 px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-300 transition">
               <Printer size={14} /> Imprimir
             </button>
             {canReceive && (
@@ -249,7 +249,7 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
             )}
             {order.status !== "recibida" && (
               <AdminButton onClick={() => { onDelete(order.id); onClose(); }}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50 transition ml-auto">
+                className="flex items-center gap-1.5 px-4 py-2.5 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50 dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-500/10 transition ml-auto">
                 <Trash2 size={14} /> Eliminar
               </AdminButton>
             )}
@@ -373,28 +373,28 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
-          <h2 className="font-bold text-slate-900">{editOrder ? "Editar orden" : "Nueva orden de compra"}</h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg transition"><X size={16} /></button>
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
+          <h2 className="font-bold text-slate-900 dark:text-slate-100">{editOrder ? "Editar orden" : "Nueva orden de compra"}</h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"><X size={16} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Supplier */}
           <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100 mb-3 flex items-center gap-2">
               <TruckIcon size={14} /> Datos del proveedor
             </h3>
             {suppliers.filter(s => s.active).length > 0 && (
               <div className="mb-3">
-                <label className="block text-xs font-medium text-slate-600 mb-1">Seleccionar de mis proveedores</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Seleccionar de mis proveedores</label>
                 <select
                   defaultValue=""
                   onChange={(e) => {
                     const s = suppliers.find(s => s.id === e.target.value);
                     if (s) setFields(p => ({ ...p, supplierId: s.id, supplierName: s.name, supplierRnc: s.rnc, supplierPhone: s.phone, supplierEmail: s.email }));
                   }}
-                  className="w-full px-3 py-2 border border-brand-200 bg-brand-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  className="w-full px-3 py-2 border border-brand-200 bg-brand-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-slate-100">
                   <option value="">— Elegir proveedor guardado —</option>
                   {suppliers.filter(s => s.active).map((s) => (
                     <option key={s.id} value={s.id}>{s.name}{s.rnc ? ` · ${s.rnc}` : ""}</option>
@@ -410,23 +410,23 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
                 { label: "Email",                  key: "supplierEmail" as const, placeholder: "compras@proveedor.com" },
               ].map(({ label, key, placeholder }) => (
                 <div key={key}>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{label}</label>
                   <input value={fields[key]} onChange={setF(key)} placeholder={placeholder}
-                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${fieldErrors[key] ? "border-red-400" : "border-slate-200"}`} />
-                  {fieldErrors[key] && <p className="text-xs text-red-500 mt-0.5">{fieldErrors[key]}</p>}
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 ${fieldErrors[key] ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"}`} />
+                  {fieldErrors[key] && <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">{fieldErrors[key]}</p>}
                 </div>
               ))}
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Fecha esperada de entrega *</label>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Fecha esperada de entrega *</label>
                 <input type="date" value={fields.expectedDate} onChange={setF("expectedDate")}
-                  className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ${fieldErrors.expectedDate ? "border-red-400" : "border-slate-200"}`} />
-                {fieldErrors.expectedDate && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.expectedDate}</p>}
+                  className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400 ${fieldErrors.expectedDate ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"}`} />
+                {fieldErrors.expectedDate && <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">{fieldErrors.expectedDate}</p>}
               </div>
               {editOrder && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Estado</label>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Estado</label>
                   <select value={fields.status} onChange={setF("status")}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100">
                     {(["pendiente","parcial","recibida","cancelada"] as PurchaseOrderStatus[]).map((s) => (
                       <option key={s} value={s}>{STATUS_META[s].label}</option>
                     ))}
@@ -438,30 +438,30 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
 
           {/* Products */}
           <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100 mb-3 flex items-center gap-2">
               <Package size={14} /> Productos a comprar
             </h3>
 
             {/* Product search */}
             <div className="mb-3">
               <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
                   placeholder="Buscar producto del inventario…"
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               </div>
               {productSearch && (
-                <div className="mt-1 border border-slate-200 rounded-xl overflow-hidden">
+                <div className="mt-1 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl overflow-hidden">
                   {filteredInv.length === 0 ? (
-                    <p className="px-4 py-3 text-sm text-slate-400">Sin resultados</p>
+                    <p className="px-4 py-3 text-sm text-slate-400 dark:text-slate-400">Sin resultados</p>
                   ) : (
                     filteredInv.slice(0, 8).map((p) => (
                       <button key={p.id} type="button" onClick={() => addProduct(p)}
-                        className="w-full text-left px-4 py-2.5 hover:bg-brand-50 text-sm flex items-center justify-between border-b border-slate-100 last:border-0 transition-colors">
-                        <span className="font-medium text-slate-800">{p.name}
-                          <span className="text-slate-400 font-mono text-xs ml-1.5">· {p.sku}</span>
+                        className="w-full text-left px-4 py-2.5 hover:bg-brand-50 dark:hover:bg-brand-500/10 text-sm flex items-center justify-between border-b border-slate-100 dark:border-slate-700 last:border-0 transition-colors">
+                        <span className="font-medium text-slate-800 dark:text-slate-100">{p.name}
+                          <span className="text-slate-400 dark:text-slate-400 font-mono text-xs ml-1.5">· {p.sku}</span>
                         </span>
-                        <span className="text-slate-500 text-xs ml-4 flex-shrink-0">{fmtCurrency(p.unitCost)}</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-xs ml-4 flex-shrink-0">{fmtCurrency(p.unitCost)}</span>
                       </button>
                     ))
                   )}
@@ -470,14 +470,14 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
             </div>
 
             {items.length === 0 ? (
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-slate-400 text-sm">
+              <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-slate-400 dark:text-slate-400 text-sm">
                 Busca y selecciona productos del inventario
               </div>
             ) : (
-              <div className="rounded-xl border border-slate-100 overflow-hidden">
+              <div className="rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 text-xs text-slate-500">
+                    <tr className="bg-slate-50 dark:bg-slate-700/40 text-xs text-slate-500 dark:text-slate-400">
                       <th className="text-left py-2.5 px-3 font-medium">Producto</th>
                       <th className="text-center py-2.5 px-3 font-medium">Cantidad</th>
                       <th className="text-right py-2.5 px-3 font-medium">Costo unit.</th>
@@ -487,25 +487,25 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
                   </thead>
                   <tbody>
                     {items.map((item, idx) => (
-                      <tr key={idx} className="border-t border-slate-50">
+                      <tr key={idx} className="border-t border-slate-50 dark:border-slate-700/50">
                         <td className="py-2.5 px-3">
                           <p className="font-medium">{item.productName}</p>
-                          <p className="text-xs text-slate-400 font-mono">{item.sku}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-400 font-mono">{item.sku}</p>
                         </td>
                         <td className="py-2.5 px-3">
                           <input type="number" min={1} value={item.qtyOrdered}
                             onChange={(e) => updateItem(idx, "qtyOrdered", Number(e.target.value))}
-                            className="w-20 text-center border border-slate-200 rounded-lg py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 mx-auto block" />
+                            className="w-20 text-center border border-slate-200 dark:border-slate-700 rounded-lg py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 mx-auto block bg-white dark:bg-slate-800 dark:text-slate-100" />
                         </td>
                         <td className="py-2.5 px-3">
                           <input type="number" min={0} step="0.01" value={item.unitCost}
                             onChange={(e) => updateItem(idx, "unitCost", Number(e.target.value))}
-                            className="w-24 text-right border border-slate-200 rounded-lg py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ml-auto block" />
+                            className="w-24 text-right border border-slate-200 dark:border-slate-700 rounded-lg py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 ml-auto block bg-white dark:bg-slate-800 dark:text-slate-100" />
                         </td>
                         <td className="py-2.5 px-3 text-right font-semibold">{fmtCurrency(item.total)}</td>
                         <td className="py-2.5 px-3">
                           <button type="button" onClick={() => setItems((p) => p.filter((_, i) => i !== idx))}
-                            className="p-1 hover:text-red-600 hover:bg-red-50 rounded transition text-slate-400">
+                            className="p-1 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded transition text-slate-400 dark:text-slate-500">
                             <X size={14} />
                           </button>
                         </td>
@@ -513,10 +513,10 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
                     ))}
                   </tbody>
                 </table>
-                <div className="bg-slate-50 px-3 py-2.5 border-t border-slate-100 space-y-1">
-                  <div className="flex justify-between text-xs text-slate-500"><span>Subtotal</span><span>{fmtCurrency(subtotal)}</span></div>
-                  <div className="flex justify-between text-xs text-slate-500"><span>ITBIS 18%</span><span>{fmtCurrency(tax)}</span></div>
-                  <div className="flex justify-between text-sm font-bold text-slate-900"><span>Total</span><span className="text-brand-600">{fmtCurrency(total)}</span></div>
+                <div className="bg-slate-50 dark:bg-slate-700/40 px-3 py-2.5 border-t border-slate-100 dark:border-slate-700 space-y-1">
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400"><span>Subtotal</span><span>{fmtCurrency(subtotal)}</span></div>
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400"><span>ITBIS 18%</span><span>{fmtCurrency(tax)}</span></div>
+                  <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-slate-100"><span>Total</span><span className="text-brand-600">{fmtCurrency(total)}</span></div>
                 </div>
               </div>
             )}
@@ -524,10 +524,10 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
 
           {/* Note */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Nota interna <span className="text-slate-400 font-normal">(opcional)</span></label>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Nota interna <span className="text-slate-400 dark:text-slate-400 font-normal">(opcional)</span></label>
             <textarea value={fields.note} onChange={setF("note")} rows={2}
               placeholder="Instrucciones de entrega, condiciones especiales…"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" />
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
           </div>
 
           <div className="flex gap-2 pt-1">
@@ -536,7 +536,7 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
               {saving ? "Guardando…" : editOrder ? "Guardar cambios" : "Crear orden de compra"}
             </button>
             <button type="button" onClick={onClose}
-              className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm hover:bg-slate-50 transition">
+              className="px-5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-300 transition">
               Cancelar
             </button>
           </div>
@@ -673,41 +673,41 @@ export default function ComprasPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Total órdenes",       value: fmt(orders.length, 0),  icon: FileText,    color: "text-indigo-600 bg-indigo-50" },
-          { label: "Pendientes",          value: fmt(pending, 0),         icon: Clock,       color: "text-amber-600 bg-amber-50" },
-          { label: "Este mes",            value: fmt(thisMonth, 0),       icon: ShoppingBag, color: "text-blue-600 bg-blue-50" },
-          { label: "Total comprado",      value: fmtCurrency(totalSpent), icon: DollarSign,  color: "text-emerald-600 bg-emerald-50" },
+          { label: "Total órdenes",       value: fmt(orders.length, 0),  icon: FileText,    color: "text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-500/15" },
+          { label: "Pendientes",          value: fmt(pending, 0),         icon: Clock,       color: "text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15" },
+          { label: "Este mes",            value: fmt(thisMonth, 0),       icon: ShoppingBag, color: "text-blue-600 bg-blue-50 dark:text-blue-300 dark:bg-blue-500/15" },
+          { label: "Total comprado",      value: fmtCurrency(totalSpent), icon: DollarSign,  color: "text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/15" },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+          <div key={label} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</p>
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wide">{label}</p>
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color}`}>
                 <Icon size={17} />
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="flex flex-wrap gap-3 p-4 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="flex flex-wrap gap-3 p-4 border-b border-slate-100 dark:border-slate-700">
           <div className="relative flex-1 min-w-48 max-w-sm">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por N° orden, proveedor o RNC…"
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
           </div>
-          <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
             {(["all","pendiente","parcial","recibida","cancelada"] as const).map((s) => (
               <button key={s} onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${statusFilter === s ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${statusFilter === s ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
                 {s === "all" ? "Todas" : STATUS_META[s].label}
               </button>
             ))}
           </div>
-          <span className="flex items-center text-xs text-slate-400 ml-auto">{filtered.length} órdenes</span>
+          <span className="flex items-center text-xs text-slate-400 dark:text-slate-400 ml-auto">{filtered.length} órdenes</span>
         </div>
 
         {filtered.length === 0 ? (
@@ -717,16 +717,16 @@ export default function ComprasPage() {
         ) : (
           <>
             {/* Mobile cards */}
-            <div className="block sm:hidden divide-y divide-slate-50">
+            <div className="block sm:hidden divide-y divide-slate-50 dark:divide-slate-700/50">
               {pagedOrders.map((order) => (
-                <div key={order.id} className="px-4 py-3 hover:bg-slate-50 cursor-pointer"
+                <div key={order.id} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer"
                   onClick={() => setDetailOrder(order)}>
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</span>
                     <StatusBadge status={order.status} />
                   </div>
-                  <p className="text-sm font-semibold text-slate-900">{order.supplierName}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 flex-wrap">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{order.supplierName}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 dark:text-slate-400 flex-wrap">
                     <span>{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</span>
                     {order.expectedDate?.toDate?.() && (
                       <span>{order.expectedDate.toDate().toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}</span>
@@ -736,28 +736,28 @@ export default function ComprasPage() {
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       {can("recepciones").canEdit && (order.status === "pendiente" || order.status === "parcial") && (
                         <button onClick={() => setReceiveOrder(order)}
-                          className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg transition">
+                          className="p-1.5 text-slate-400 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-400 rounded-lg transition">
                           <PackageCheck size={15} />
                         </button>
                       )}
                       {order.status === "pendiente" && (
                         <>
                           <button onClick={() => openEdit(order)}
-                            className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg transition">
+                            className="p-1.5 text-slate-400 hover:text-brand-600 dark:text-slate-500 dark:hover:text-brand-400 rounded-lg transition">
                             <Edit2 size={15} />
                           </button>
                           <AdminButton onClick={() => handleDelete(order.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition">
+                            className="p-1.5 text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 rounded-lg transition">
                             <Trash2 size={15} />
                           </AdminButton>
                         </>
                       )}
                       <button onClick={() => printOrder(order)}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition">
+                        className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 rounded-lg transition">
                         <Printer size={15} />
                       </button>
                     </div>
-                    <span className="text-base font-bold text-slate-900">{fmtCurrency(order.total)}</span>
+                    <span className="text-base font-bold text-slate-900 dark:text-slate-100">{fmtCurrency(order.total)}</span>
                   </div>
                 </div>
               ))}
@@ -766,7 +766,7 @@ export default function ComprasPage() {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100">
+                  <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100 dark:text-slate-400 dark:bg-slate-700/40 dark:border-slate-700">
                     {["N° Orden","Proveedor","RNC","Productos","Subtotal","ITBIS","Total","Fecha esperada","Estado",""].map((h) => (
                       <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                     ))}
@@ -774,16 +774,16 @@ export default function ComprasPage() {
                 </thead>
                 <tbody>
                   {pagedOrders.map((order) => (
-                    <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50 cursor-pointer"
+                    <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50 dark:border-slate-700/50 dark:hover:bg-slate-700/50 cursor-pointer"
                       onClick={() => setDetailOrder(order)}>
                       <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</td>
                       <td className="py-3 px-4 font-medium">{order.supplierName}</td>
-                      <td className="py-3 px-4 text-slate-500 font-mono text-xs">{order.supplierRnc || "—"}</td>
-                      <td className="py-3 px-4 text-slate-600">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
-                      <td className="py-3 px-4 text-slate-600">{fmtCurrency(order.subtotal)}</td>
-                      <td className="py-3 px-4 text-slate-500">{fmtCurrency(order.tax)}</td>
-                      <td className="py-3 px-4 font-semibold text-slate-900">{fmtCurrency(order.total)}</td>
-                      <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                      <td className="py-3 px-4 text-slate-500 font-mono text-xs dark:text-slate-400">{order.supplierRnc || "—"}</td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{fmtCurrency(order.subtotal)}</td>
+                      <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{fmtCurrency(order.tax)}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(order.total)}</td>
+                      <td className="py-3 px-4 text-slate-500 whitespace-nowrap dark:text-slate-400">
                         {order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) ?? "—"}
                       </td>
                       <td className="py-3 px-4"><StatusBadge status={order.status} /></td>
@@ -791,24 +791,24 @@ export default function ComprasPage() {
                         <div className="flex gap-1">
                           {can("recepciones").canEdit && (order.status === "pendiente" || order.status === "parcial") && (
                             <button onClick={() => setReceiveOrder(order)}
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Recibir">
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:text-slate-500 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 rounded-lg transition" title="Recibir">
                               <PackageCheck size={14} />
                             </button>
                           )}
                           {order.status === "pendiente" && (
                             <>
                               <button onClick={() => openEdit(order)}
-                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="Editar">
+                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:text-slate-500 dark:hover:text-brand-400 dark:hover:bg-brand-500/10 rounded-lg transition" title="Editar">
                                 <Edit2 size={14} />
                               </button>
                               <AdminButton onClick={() => handleDelete(order.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Eliminar">
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:text-slate-500 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition" title="Eliminar">
                                 <Trash2 size={14} />
                               </AdminButton>
                             </>
                           )}
                           <button onClick={() => printOrder(order)}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition" title="Imprimir">
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-slate-200 dark:hover:bg-slate-700 rounded-lg transition" title="Imprimir">
                             <Printer size={14} />
                           </button>
                         </div>
@@ -831,13 +831,13 @@ export default function ComprasPage() {
 
       {/* Low stock alert */}
       {inventory.filter(i => i.currentStock <= i.minStock).length > 0 && (
-        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 dark:bg-amber-500/15 dark:border-amber-500/30">
+          <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5 dark:text-amber-400" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-800">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
               {inventory.filter(i => i.currentStock <= i.minStock).length} productos necesitan reabastecimiento
             </p>
-            <p className="text-xs text-amber-600 mt-0.5">
+            <p className="text-xs text-amber-600 mt-0.5 dark:text-amber-400">
               {inventory.filter(i => i.currentStock <= i.minStock).map(i => i.name).slice(0, 3).join(", ")}
               {inventory.filter(i => i.currentStock <= i.minStock).length > 3 ? "…" : ""}
             </p>

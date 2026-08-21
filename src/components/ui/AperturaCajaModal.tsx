@@ -38,7 +38,7 @@ export function AperturaCajaModal({ onSkip }: Props) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden dark:bg-slate-800">
         {/* Header */}
         <div className="bg-gradient-to-br from-brand-600 to-brand-800 px-6 py-8 text-center">
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -50,21 +50,21 @@ export function AperturaCajaModal({ onSkip }: Props) {
 
         {/* Date/time */}
         <div className="px-6 pt-5 pb-2">
-          <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 mb-5">
-            <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 mb-5 dark:bg-slate-700/40">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
               <Clock size={15} className="text-brand-500" />
               <span className="text-sm font-medium capitalize">{fecha}</span>
             </div>
-            <span className="text-sm font-bold text-brand-600">{hora}</span>
+            <span className="text-sm font-bold text-brand-600 dark:text-brand-300">{hora}</span>
           </div>
 
           {/* Initial cash */}
           <div className="mb-5">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-slate-700">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Fondo de caja inicial
               </label>
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Opcional</span>
+              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full dark:bg-slate-700 dark:text-slate-400">Opcional</span>
             </div>
             <div className="relative">
               <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -75,7 +75,7 @@ export function AperturaCajaModal({ onSkip }: Props) {
                 value={initialCash}
                 onChange={(e) => setInitialCash(e.target.value === "" ? "" : Number(e.target.value))}
                 placeholder="Dejar vacío si no hay fondo"
-                className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-base font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-base font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400"
               />
             </div>
             <p className="text-xs text-slate-400 mt-1.5">
@@ -98,14 +98,14 @@ export function AperturaCajaModal({ onSkip }: Props) {
           {onSkip && (
             <button
               onClick={onSkip}
-              className="w-full text-sm text-slate-400 hover:text-slate-600 py-2 transition"
+              className="w-full text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 py-2 transition"
             >
               Ahora no (solo podrás consultar)
             </button>
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-300 pb-4">
+        <p className="text-center text-xs text-slate-300 dark:text-slate-500 pb-4">
           Sin apertura de caja no se pueden registrar ventas
         </p>
       </div>

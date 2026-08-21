@@ -75,12 +75,12 @@ export const ECF_STATUS_LABELS: Record<ECfStatus, string> = {
 };
 
 export const ECF_STATUS_COLOR: Record<ECfStatus, string> = {
-  borrador:  "text-slate-600 bg-slate-50 border-slate-200",
-  enviado:   "text-blue-700 bg-blue-50 border-blue-200",
-  aceptado:  "text-emerald-700 bg-emerald-50 border-emerald-200",
-  rechazado: "text-red-700 bg-red-50 border-red-200",
-  anulado:   "text-slate-500 bg-slate-100 border-slate-200",
-  error:     "text-red-700 bg-red-50 border-red-200",
+  borrador:  "text-slate-600 bg-slate-50 border-slate-200 dark:text-slate-300 dark:bg-slate-500/15 dark:border-slate-500/30",
+  enviado:   "text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-300 dark:bg-blue-500/15 dark:border-blue-500/30",
+  aceptado:  "text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-500/15 dark:border-emerald-500/30",
+  rechazado: "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-500/15 dark:border-red-500/30",
+  anulado:   "text-slate-500 bg-slate-100 border-slate-200 dark:text-slate-400 dark:bg-slate-500/15 dark:border-slate-500/30",
+  error:     "text-red-700 bg-red-50 border-red-200 dark:text-red-300 dark:bg-red-500/15 dark:border-red-500/30",
 };
 
 export function defaultECfType(buyerRnc?: string): ECfType {

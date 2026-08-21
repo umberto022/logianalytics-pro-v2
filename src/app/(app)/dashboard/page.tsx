@@ -142,12 +142,12 @@ export default function DashboardPage() {
 
   if (isVentasOnly) {
     const cajaStatus = cajaSession
-      ? { label: "Caja abierta", detail: `Abierta a las ${cajaSession.openedAt.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · inicial ${fmtCurrency(cajaSession.initialCash)}`, color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: Wallet }
+      ? { label: "Caja abierta", detail: `Abierta a las ${cajaSession.openedAt.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} · inicial ${fmtCurrency(cajaSession.initialCash)}`, color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30", icon: Wallet }
       : todayClosedCaja
         ? (todayClosedCaja.difference === 0
-            ? { label: "Caja cuadrada", detail: `Cerrada a las ${todayClosedCaja.closedAt?.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) ?? ""}`, color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 }
-            : { label: "Caja con descuadre", detail: `Diferencia: ${fmtCurrency(todayClosedCaja.difference ?? 0)}`, color: "text-red-700 bg-red-50 border-red-200", icon: XCircle })
-        : { label: "Caja sin abrir hoy", detail: "Todavía no se ha abierto la caja del día", color: "text-slate-500 bg-slate-50 border-slate-200", icon: Wallet };
+            ? { label: "Caja cuadrada", detail: `Cerrada a las ${todayClosedCaja.closedAt?.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) ?? ""}`, color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30", icon: CheckCircle2 }
+            : { label: "Caja con descuadre", detail: `Diferencia: ${fmtCurrency(todayClosedCaja.difference ?? 0)}`, color: "text-red-700 bg-red-50 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30", icon: XCircle })
+        : { label: "Caja sin abrir hoy", detail: "Todavía no se ha abierto la caja del día", color: "text-slate-500 bg-slate-50 border-slate-200 dark:bg-slate-700/40 dark:text-slate-400 dark:border-slate-700", icon: Wallet };
 
     return (
       <div>
@@ -168,17 +168,17 @@ export default function DashboardPage() {
         </div>
 
         {todaySales.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm">
-            <ShoppingCart size={40} className="text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-500 font-medium">Sin ventas registradas hoy</p>
+          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <ShoppingCart size={40} className="text-slate-200 mx-auto mb-3 dark:text-slate-600" />
+            <p className="text-slate-500 font-medium dark:text-slate-400">Sin ventas registradas hoy</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-slate-700 mb-4">Ventas de hoy</h3>
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Ventas de hoy</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-slate-500 border-b border-slate-100">
+                  <tr className="text-xs text-slate-500 border-b border-slate-100 dark:text-slate-400 dark:border-slate-700">
                     {["Hora", "Producto", "Cant.", "Cliente", "Ingreso"].map((h) => (
                       <th key={h} className="text-left py-2 px-3 font-medium">{h}</th>
                     ))}
@@ -186,12 +186,12 @@ export default function DashboardPage() {
                 </thead>
                 <tbody>
                   {todaySales.map((s) => (
-                    <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-2 px-3 text-slate-500">{s.saleDate.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</td>
+                    <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50 dark:border-slate-700/50 dark:hover:bg-slate-700/50">
+                      <td className="py-2 px-3 text-slate-500 dark:text-slate-400">{s.saleDate.toDate().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</td>
                       <td className="py-2 px-3 font-medium truncate max-w-[160px]">{s.productName}</td>
                       <td className="py-2 px-3">{s.quantity}</td>
-                      <td className="py-2 px-3 text-slate-500 truncate max-w-[140px]">{s.client || "—"}</td>
-                      <td className="py-2 px-3 text-indigo-600 font-medium">{fmtCurrency(s.totalRevenue)}</td>
+                      <td className="py-2 px-3 text-slate-500 truncate max-w-[140px] dark:text-slate-400">{s.client || "—"}</td>
+                      <td className="py-2 px-3 text-indigo-600 font-medium dark:text-indigo-400">{fmtCurrency(s.totalRevenue)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -216,29 +216,29 @@ export default function DashboardPage() {
         </div>
 
         {pendingOrders.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm">
-            <ClipboardList size={40} className="text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-500 font-medium">Sin órdenes pendientes</p>
+          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <ClipboardList size={40} className="text-slate-200 mx-auto mb-3 dark:text-slate-600" />
+            <p className="text-slate-500 font-medium dark:text-slate-400">Sin órdenes pendientes</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2 dark:text-slate-200">
               <Clock size={15} className="text-amber-500" /> Órdenes de compra pendientes
             </h3>
             <div className="space-y-2">
               {pendingOrders.map((o) => {
                 const overdue = o.expectedDate.seconds < Date.now() / 1000;
                 return (
-                  <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50" : "bg-slate-50"}`}>
+                  <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50 dark:bg-red-500/10" : "bg-slate-50 dark:bg-slate-700/40"}`}>
                     <div>
-                      <p className="font-medium text-slate-800">{o.orderNumber}</p>
-                      <p className="text-xs text-slate-400">{o.supplierName}</p>
+                      <p className="font-medium text-slate-800 dark:text-slate-100">{o.orderNumber}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-400">{o.supplierName}</p>
                     </div>
                     <div className="text-right">
-                      <p className={`text-xs font-semibold ${overdue ? "text-red-600" : "text-slate-500"}`}>
+                      <p className={`text-xs font-semibold ${overdue ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400"}`}>
                         {fmtDate(o.expectedDate)}{overdue ? " ⚠️" : ""}
                       </p>
-                      <p className="font-semibold text-slate-900">{fmtCurrency(o.total)}</p>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(o.total)}</p>
                     </div>
                   </div>
                 );
@@ -265,16 +265,16 @@ export default function DashboardPage() {
         </div>
 
         {(criticalItems.length > 0 || lowItems.length > 0) && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
-            <p className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 dark:bg-red-500/10 dark:border-red-500/30">
+            <p className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2 dark:text-red-300">
               <AlertTriangle size={16} /> {criticalItems.length + lowItems.length} alerta(s) de inventario
             </p>
             <div className="space-y-1.5">
               {[...criticalItems, ...lowItems].slice(0, 8).map((i) => (
-                <div key={i.id} className="flex items-center justify-between text-sm text-red-800 bg-white/60 rounded-lg px-3 py-1.5">
+                <div key={i.id} className="flex items-center justify-between text-sm text-red-800 bg-white/60 rounded-lg px-3 py-1.5 dark:text-red-300 dark:bg-slate-800/60">
                   <span className="font-medium">{i.name}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-500">stock {i.currentStock} / mín {i.minStock}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">stock {i.currentStock} / mín {i.minStock}</span>
                     <StockBadge status={getStockStatus(i)} />
                   </div>
                 </div>
@@ -284,25 +284,25 @@ export default function DashboardPage() {
         )}
 
         {pendingOrders.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm">
-            <PackageCheck size={40} className="text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-500 font-medium">Sin recepciones pendientes</p>
+          <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <PackageCheck size={40} className="text-slate-200 mx-auto mb-3 dark:text-slate-600" />
+            <p className="text-slate-500 font-medium dark:text-slate-400">Sin recepciones pendientes</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2 dark:text-slate-200">
               <Clock size={15} className="text-amber-500" /> Pendientes de recepción
             </h3>
             <div className="space-y-2">
               {pendingOrders.map((o) => {
                 const overdue = o.expectedDate.seconds < Date.now() / 1000;
                 return (
-                  <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50" : "bg-slate-50"}`}>
+                  <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50 dark:bg-red-500/10" : "bg-slate-50 dark:bg-slate-700/40"}`}>
                     <div>
-                      <p className="font-medium text-slate-800">{o.orderNumber}</p>
-                      <p className="text-xs text-slate-400">{o.supplierName}</p>
+                      <p className="font-medium text-slate-800 dark:text-slate-100">{o.orderNumber}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-400">{o.supplierName}</p>
                     </div>
-                    <p className={`text-xs font-semibold ${overdue ? "text-red-600" : "text-slate-500"}`}>
+                    <p className={`text-xs font-semibold ${overdue ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400"}`}>
                       {fmtDate(o.expectedDate)}{overdue ? " ⚠️" : ""}
                     </p>
                   </div>
@@ -319,11 +319,11 @@ export default function DashboardPage() {
     return (
       <div>
         <PageHeader title="Dashboard" subtitle="Resumen de tu negocio en tiempo real" />
-        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
-          <Package size={48} className="text-slate-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-slate-700 mb-2">¡Bienvenido a LogiAnalytics Pro!</h2>
-          <p className="text-slate-500 mb-6">Sigue estos pasos para empezar:</p>
-          <ol className="text-left inline-block text-sm text-slate-600 space-y-2">
+        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center dark:bg-slate-800 dark:border-slate-700">
+          <Package size={48} className="text-slate-300 mx-auto mb-4 dark:text-slate-600" />
+          <h2 className="text-xl font-semibold text-slate-700 mb-2 dark:text-slate-200">¡Bienvenido a LogiAnalytics Pro!</h2>
+          <p className="text-slate-500 mb-6 dark:text-slate-400">Sigue estos pasos para empezar:</p>
+          <ol className="text-left inline-block text-sm text-slate-600 space-y-2 dark:text-slate-400">
             <li>1. <strong>Inventario</strong> — agrega tus productos con stock</li>
             <li>2. <strong>Ventas</strong> — registra tus primeras transacciones</li>
             <li>3. Vuelve aquí para ver métricas en tiempo real</li>
@@ -345,23 +345,23 @@ export default function DashboardPage() {
             <>
               <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)}
                 max={format(new Date(), "yyyy-MM-dd")}
-                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              <span className="text-slate-400 text-sm">→</span>
+                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
+              <span className="text-slate-400 text-sm dark:text-slate-500">→</span>
               <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)}
                 max={format(new Date(), "yyyy-MM-dd")}
-                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
             </>
           )}
           <button
             onClick={() => setUseCustom((v) => !v)}
-            className={`text-xs font-semibold px-3 py-2 rounded-lg border transition ${useCustom ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+            className={`text-xs font-semibold px-3 py-2 rounded-lg border transition ${useCustom ? "bg-brand-600 text-white border-brand-600" : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"}`}
           >
             {useCustom ? "✕ Quitar rango" : "Personalizado"}
           </button>
           <button
             onClick={() => window.print()}
             title="Exportar PDF"
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition print:hidden"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition print:hidden dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <Printer size={13} /> PDF
           </button>
@@ -435,16 +435,16 @@ export default function DashboardPage() {
 
       {/* Stock alerts */}
       {canViewInv && (criticalItems.length > 0 || lowItems.length > 0) && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
-          <p className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 dark:bg-red-500/10 dark:border-red-500/30">
+          <p className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2 dark:text-red-300">
             <AlertTriangle size={16} /> {criticalItems.length + lowItems.length} alerta(s) de inventario
           </p>
           <div className="space-y-1.5">
             {[...criticalItems, ...lowItems].slice(0, 5).map((i) => (
-              <div key={i.id} className="flex items-center justify-between text-sm text-red-800 bg-white/60 rounded-lg px-3 py-1.5">
+              <div key={i.id} className="flex items-center justify-between text-sm text-red-800 bg-white/60 rounded-lg px-3 py-1.5 dark:text-red-300 dark:bg-slate-800/60">
                 <span className="font-medium">{i.name}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-500">stock {i.currentStock} / mín {i.minStock}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">stock {i.currentStock} / mín {i.minStock}</span>
                   <StockBadge status={getStockStatus(i)} />
                 </div>
               </div>
@@ -455,8 +455,8 @@ export default function DashboardPage() {
 
       {/* Revenue trend */}
       {canViewSales && daily.length > 1 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 mb-6 shadow-sm">
-          <h3 className="font-semibold text-slate-700 mb-4">Ingresos y ganancia — últimos {period} días</h3>
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 mb-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Ingresos y ganancia — últimos {period} días</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={daily} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -475,8 +475,8 @@ export default function DashboardPage() {
       {canViewSales && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {routes.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-slate-700 mb-4">Ganancia por ruta ($)</h3>
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Ganancia por ruta ($)</h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={routes.slice(0, 8)} margin={{ top: 4, right: 8, bottom: 20, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -494,8 +494,8 @@ export default function DashboardPage() {
         )}
 
         {products.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-            <h3 className="font-semibold text-slate-700 mb-4">Top 5 productos por ganancia</h3>
+          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+            <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Top 5 productos por ganancia</h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={products.slice(0, 5)} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -516,8 +516,8 @@ export default function DashboardPage() {
 
       {/* Inventory status */}
       {canViewInv && items.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6">
-          <h3 className="font-semibold text-slate-700 mb-4">Estado del inventario</h3>
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6 dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Estado del inventario</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               {(() => {
@@ -544,11 +544,11 @@ export default function DashboardPage() {
                 const pct = item.maxStock > 0 ? Math.min(100, (item.currentStock / item.maxStock) * 100) : 0;
                 return (
                   <div key={item.id}>
-                    <div className="flex justify-between text-xs text-slate-600 mb-0.5">
+                    <div className="flex justify-between text-xs text-slate-600 mb-0.5 dark:text-slate-400">
                       <span className="truncate max-w-[140px]">{item.name}</span>
                       <span>{item.currentStock} / {item.maxStock}</span>
                     </div>
-                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden dark:bg-slate-700">
                       <div
                         className={s === "critical" ? "bg-red-500" : s === "low" ? "bg-amber-400" : "bg-emerald-500"}
                         style={{ width: `${pct}%`, height: "100%", borderRadius: 9999 }}
@@ -564,15 +564,15 @@ export default function DashboardPage() {
 
       {/* Top 5 esta semana */}
       {canViewSales && topWeek.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6">
-          <h3 className="font-semibold text-slate-700 mb-3">🔥 Top 5 productos esta semana</h3>
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6 dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="font-semibold text-slate-700 mb-3 dark:text-slate-200">🔥 Top 5 productos esta semana</h3>
           <div className="space-y-2">
             {topWeek.map((p, i) => (
               <div key={p.productName} className="flex items-center gap-3 text-sm">
-                <span className="text-xs font-bold text-slate-300 w-4">#{i + 1}</span>
-                <span className="flex-1 text-slate-700 truncate">{p.productName}</span>
-                <span className="text-xs text-slate-400">{fmt(p.totalUnits, 0)} u.</span>
-                <span className="font-semibold text-emerald-700 w-20 text-right">{fmtCurrency(p.revenue)}</span>
+                <span className="text-xs font-bold text-slate-300 w-4 dark:text-slate-600">#{i + 1}</span>
+                <span className="flex-1 text-slate-700 truncate dark:text-slate-200">{p.productName}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-400">{fmt(p.totalUnits, 0)} u.</span>
+                <span className="font-semibold text-emerald-700 w-20 text-right dark:text-emerald-400">{fmtCurrency(p.revenue)}</span>
               </div>
             ))}
           </div>
@@ -581,12 +581,12 @@ export default function DashboardPage() {
 
       {/* OC pendientes */}
       {canViewPO && pendingOrders.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6">
-          <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6 dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2 dark:text-slate-200">
             <Clock size={15} className="text-amber-500" />
             Órdenes de compra pendientes
             {overdueOrders.length > 0 && (
-              <span className="ml-auto text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+              <span className="ml-auto text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full dark:bg-red-500/15 dark:text-red-300">
                 {overdueOrders.length} vencida{overdueOrders.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -595,16 +595,16 @@ export default function DashboardPage() {
             {pendingOrders.slice(0, 5).map((o) => {
               const overdue = o.expectedDate.seconds < Date.now() / 1000;
               return (
-                <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50" : "bg-slate-50"}`}>
+                <div key={o.id} className={`flex items-center justify-between text-sm rounded-xl px-3 py-2 ${overdue ? "bg-red-50 dark:bg-red-500/10" : "bg-slate-50 dark:bg-slate-700/40"}`}>
                   <div>
-                    <p className="font-medium text-slate-800">{o.orderNumber}</p>
-                    <p className="text-xs text-slate-400">{o.supplierName}</p>
+                    <p className="font-medium text-slate-800 dark:text-slate-100">{o.orderNumber}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-400">{o.supplierName}</p>
                   </div>
                   <div className="text-right">
-                    <p className={`text-xs font-semibold ${overdue ? "text-red-600" : "text-slate-500"}`}>
+                    <p className={`text-xs font-semibold ${overdue ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-400"}`}>
                       {fmtDate(o.expectedDate)}{overdue ? " ⚠️" : ""}
                     </p>
-                    <p className="font-semibold text-slate-900">{fmtCurrency(o.total)}</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(o.total)}</p>
                   </div>
                 </div>
               );
@@ -615,12 +615,12 @@ export default function DashboardPage() {
 
       {/* Recent sales */}
       {canViewSales && sales.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-          <h3 className="font-semibold text-slate-700 mb-4">Ventas recientes</h3>
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Ventas recientes</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-slate-500 border-b border-slate-100">
+                <tr className="text-xs text-slate-500 border-b border-slate-100 dark:text-slate-400 dark:border-slate-700">
                   {["Fecha", "Producto", "Cant.", "Ruta", "Ingreso", "Ganancia"].map((h) => (
                     <th key={h} className="text-left py-2 px-3 font-medium">{h}</th>
                   ))}
@@ -628,13 +628,13 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {sales.slice(0, 8).map((s) => (
-                  <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
-                    <td className="py-2 px-3 text-slate-500">{fmtDate(s.saleDate)}</td>
+                  <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50 dark:border-slate-700/50 dark:hover:bg-slate-700/50">
+                    <td className="py-2 px-3 text-slate-500 dark:text-slate-400">{fmtDate(s.saleDate)}</td>
                     <td className="py-2 px-3 font-medium truncate max-w-[140px]">{s.productName}</td>
                     <td className="py-2 px-3">{s.quantity}</td>
-                    <td className="py-2 px-3 text-slate-500">{s.route || "—"}</td>
-                    <td className="py-2 px-3 text-indigo-600 font-medium">{fmtCurrency(s.totalRevenue)}</td>
-                    <td className={`py-2 px-3 font-medium ${s.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    <td className="py-2 px-3 text-slate-500 dark:text-slate-400">{s.route || "—"}</td>
+                    <td className="py-2 px-3 text-indigo-600 font-medium dark:text-indigo-400">{fmtCurrency(s.totalRevenue)}</td>
+                    <td className={`py-2 px-3 font-medium ${s.profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                       {fmtCurrency(s.profit)}
                     </td>
                   </tr>

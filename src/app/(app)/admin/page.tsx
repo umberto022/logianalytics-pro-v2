@@ -36,9 +36,9 @@ interface UserItem {
 }
 
 const TYPE_META = {
-  bug:        { label: "Bug",        icon: Bug,         color: "bg-red-50 text-red-600 border-red-100"      },
-  sugerencia: { label: "Sugerencia", icon: Lightbulb,   color: "bg-amber-50 text-amber-600 border-amber-100"},
-  pregunta:   { label: "Pregunta",   icon: HelpCircle,  color: "bg-blue-50 text-blue-600 border-blue-100"   },
+  bug:        { label: "Bug",        icon: Bug,         color: "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30"          },
+  sugerencia: { label: "Sugerencia", icon: Lightbulb,   color: "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30"},
+  pregunta:   { label: "Pregunta",   icon: HelpCircle,  color: "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30"     },
 };
 
 function fmtDate(iso: string | null) {
@@ -156,10 +156,10 @@ export default function AdminPage() {
 
   // ── KPIs ────────────────────────────────────────────────────────────────────
   const kpis = [
-    { label: "Total feedback",  value: feedback.length,                                           icon: MessageSquare, color: "text-indigo-600 bg-indigo-50"  },
-    { label: "Bugs reportados", value: feedback.filter((f) => f.type === "bug").length,           icon: Bug,           color: "text-red-600 bg-red-50"        },
-    { label: "Sugerencias",     value: feedback.filter((f) => f.type === "sugerencia").length,    icon: Lightbulb,     color: "text-amber-600 bg-amber-50"    },
-    { label: "Usuarios beta",   value: users.length,                                              icon: Users,         color: "text-emerald-600 bg-emerald-50" },
+    { label: "Total feedback",  value: feedback.length,                                           icon: MessageSquare, color: "text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-500/15"  },
+    { label: "Bugs reportados", value: feedback.filter((f) => f.type === "bug").length,           icon: Bug,           color: "text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-500/15"        },
+    { label: "Sugerencias",     value: feedback.filter((f) => f.type === "sugerencia").length,    icon: Lightbulb,     color: "text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15"    },
+    { label: "Usuarios beta",   value: users.length,                                              icon: Users,         color: "text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/15" },
   ];
 
   if (loading) return <div className="space-y-5"><TableSkeleton rows={6} cols={5} /></div>;
@@ -172,11 +172,11 @@ export default function AdminPage() {
         action={
           <div className="flex items-center gap-2">
             {tab === "feedback" && filteredFeedback.length > 0 && (
-              <button onClick={exportFeedbackCSV} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+              <button onClick={exportFeedbackCSV} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition">
                 <Download size={13} /> Exportar CSV
               </button>
             )}
-            <button onClick={loadAll} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+            <button onClick={loadAll} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition">
               <RefreshCw size={13} /> Actualizar
             </button>
           </div>
@@ -186,23 +186,23 @@ export default function AdminPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {kpis.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center gap-3">
+          <div key={label} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center gap-3 dark:bg-slate-800 dark:border-slate-700">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
               <Icon size={18} />
             </div>
             <div>
-              <p className="text-xs text-slate-500">{label}</p>
-              <p className="text-xl font-bold text-slate-800">{value}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+              <p className="text-xl font-bold text-slate-800 dark:text-slate-100">{value}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-5 w-fit">
+      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-5 w-fit dark:bg-slate-800">
         {(["feedback", "users"] as const).map((t) => (
           <button key={t} onClick={() => { setTab(t); setSearch(""); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition capitalize ${tab === t ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition capitalize ${tab === t ? "bg-white shadow-sm text-slate-900 dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}>
             {t === "feedback" ? `Feedback (${feedback.length})` : `Usuarios (${users.length})`}
           </button>
         ))}
@@ -211,17 +211,17 @@ export default function AdminPage() {
       {/* Search + type filter */}
       <div className="flex flex-wrap gap-3 mb-5">
         <div className="relative flex-1 min-w-[220px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder={tab === "feedback" ? "Buscar mensaje, email, página…" : "Buscar usuario…"}
-            className="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white" />
+            className="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
         </div>
         {tab === "feedback" && (
           <div className="flex gap-1.5">
             {(["all", "bug", "sugerencia", "pregunta"] as const).map((t) => (
               <button key={t} onClick={() => setTypeFilter(t)}
                 className={`px-3 py-2 rounded-lg text-xs font-semibold border transition ${
-                  typeFilter === t ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  typeFilter === t ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:border-slate-600"
                 }`}>
                 {t === "all" ? "Todos" : TYPE_META[t].label}
               </button>
@@ -235,36 +235,36 @@ export default function AdminPage() {
         filteredFeedback.length === 0
           ? <EmptyState icon={MessageSquare} title="Sin feedback aún" description="Los beta testers aún no han enviado feedback. Comparte la app para empezar a recibir reportes." />
           : (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+                    <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
                       {["Tipo", "Mensaje", "Usuario", "Página", "Fecha", ""].map((h) => (
                         <th key={h} className="px-4 py-3 text-left font-medium whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                     {filteredFeedback.map((f) => {
                       const meta = TYPE_META[f.type] ?? TYPE_META.pregunta;
                       const Icon = meta.icon;
                       return (
-                        <tr key={f.id} className="hover:bg-slate-50 transition-colors">
+                        <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${meta.color}`}>
                               <Icon size={11} /> {meta.label}
                             </span>
                           </td>
                           <td className="px-4 py-3 max-w-xs">
-                            <p className="text-slate-800 text-sm leading-snug line-clamp-2">{f.message}</p>
+                            <p className="text-slate-800 text-sm leading-snug line-clamp-2 dark:text-slate-100">{f.message}</p>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="text-slate-800 text-xs font-medium">{f.userName || "—"}</p>
+                            <p className="text-slate-800 text-xs font-medium dark:text-slate-100">{f.userName || "—"}</p>
                             <p className="text-slate-400 text-xs mt-0.5">{f.userEmail}</p>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                            <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md dark:text-slate-400 dark:bg-slate-700/60">
                               {f.page || "/"}
                             </span>
                           </td>
@@ -275,7 +275,7 @@ export default function AdminPage() {
                             <button
                               onClick={() => deleteFeedback(f.uid, f.id)}
                               disabled={deleting === f.id}
-                              className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition disabled:opacity-50"
+                              className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:text-slate-500 dark:hover:text-red-400 dark:hover:bg-red-500/15 transition disabled:opacity-50"
                             >
                               {deleting === f.id
                                 ? <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-red-400 rounded-full animate-spin block" />
@@ -288,7 +288,7 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
+              <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400 dark:bg-slate-700/40 dark:border-slate-700">
                 {filteredFeedback.length} reporte{filteredFeedback.length !== 1 ? "s" : ""}
                 {typeFilter !== "all" && ` · filtrado por ${TYPE_META[typeFilter].label}`}
               </div>
@@ -301,33 +301,33 @@ export default function AdminPage() {
         filteredUsers.length === 0
           ? <EmptyState icon={Users} title="Sin usuarios" description="Aún no hay usuarios registrados en la plataforma." />
           : (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+                    <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
                       {["Usuario", "Empresa", "Rol", "Onboarding", "Último acceso", "Registro"].map((h) => (
                         <th key={h} className="px-4 py-3 text-left font-medium whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                     {filteredUsers.map((u) => (
-                      <tr key={u.uid} className="hover:bg-slate-50 transition-colors">
+                      <tr key={u.uid} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-slate-800 text-sm">{u.fullName || "—"}</p>
+                          <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{u.fullName || "—"}</p>
                           <p className="text-xs text-slate-400 mt-0.5">{u.email}</p>
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-600">{u.companyName || <span className="text-slate-300">—</span>}</td>
+                        <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">{u.companyName || <span className="text-slate-300 dark:text-slate-600">—</span>}</td>
                         <td className="px-4 py-3">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${u.role === "admin" ? "bg-brand-50 text-brand-600 border border-brand-200" : "bg-slate-100 text-slate-500"}`}>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${u.role === "admin" ? "bg-brand-50 text-brand-600 border border-brand-200 dark:bg-brand-500/15 dark:text-brand-300 dark:border-brand-500/30" : "bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400"}`}>
                             {u.role}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           {u.onboarding
-                            ? <span className="flex items-center gap-1 text-xs text-emerald-600"><CheckCircle2 size={13} /> Completado</span>
-                            : <span className="flex items-center gap-1 text-xs text-amber-500"><Clock size={13} /> Pendiente</span>}
+                            ? <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400"><CheckCircle2 size={13} /> Completado</span>
+                            : <span className="flex items-center gap-1 text-xs text-amber-500 dark:text-amber-400"><Clock size={13} /> Pendiente</span>}
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{fmtDate(u.lastLogin)}</td>
                         <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{fmtDate(u.createdAt)}</td>
@@ -336,7 +336,7 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
+              <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400 dark:bg-slate-700/40 dark:border-slate-700">
                 {filteredUsers.length} usuario{filteredUsers.length !== 1 ? "s" : ""} beta registrado{filteredUsers.length !== 1 ? "s" : ""}
               </div>
             </div>

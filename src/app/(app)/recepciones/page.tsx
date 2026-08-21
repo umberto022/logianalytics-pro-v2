@@ -11,8 +11,8 @@ import { fmtCurrency } from "@/lib/utils";
 import type { PurchaseOrder } from "@/types";
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  pendiente: { label: "Pendiente", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  parcial:   { label: "Parcial",   color: "bg-blue-50 text-blue-700 border-blue-200" },
+  pendiente: { label: "Pendiente", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30" },
+  parcial:   { label: "Parcial",   color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30" },
 };
 
 export default function RecepcionesPage() {
@@ -42,33 +42,33 @@ export default function RecepcionesPage() {
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar orden o proveedor…"
-          className="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white" />
+          className="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState icon={PackageCheck} title="Sin recepciones pendientes"
           description="Todas las órdenes de compra están al día. Aquí aparecerán las órdenes que Compras registre y que esperan ser recibidas en almacén." />
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+                <tr className="bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                   {["N° Orden", "Proveedor", "Productos", "Total", "Fecha esperada", "Estado", ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-left font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                 {filtered.map((order) => {
                   const meta = STATUS_META[order.status] ?? STATUS_META.pendiente;
                   return (
-                    <tr key={order.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                       <td className="px-4 py-3 font-mono text-xs font-semibold text-brand-600 whitespace-nowrap">{order.orderNumber}</td>
-                      <td className="px-4 py-3 font-medium text-slate-800">{order.supplierName}</td>
-                      <td className="px-4 py-3 text-slate-600">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-900">{fmtCurrency(order.total)}</td>
-                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                      <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{order.supplierName}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(order.total)}</td>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) ?? "—"}
                       </td>
                       <td className="px-4 py-3">
@@ -88,7 +88,7 @@ export default function RecepcionesPage() {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
+          <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/40 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-400">
             {filtered.length} orden{filtered.length !== 1 ? "es" : ""} pendiente{filtered.length !== 1 ? "s" : ""} de recepción
           </div>
         </div>

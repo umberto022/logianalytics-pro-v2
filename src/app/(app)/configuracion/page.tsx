@@ -38,21 +38,21 @@ const ACTION_LABELS: Record<AuditAction, string> = {
 };
 
 const ACTION_COLOR: Record<AuditAction, string> = {
-  inventory_add: "bg-emerald-50 text-emerald-700",
-  inventory_update: "bg-blue-50 text-blue-700",
-  inventory_delete: "bg-red-50 text-red-700",
-  stock_adjust: "bg-amber-50 text-amber-700",
-  purchase_create: "bg-indigo-50 text-indigo-700",
-  purchase_update: "bg-blue-50 text-blue-700",
-  purchase_receive: "bg-emerald-50 text-emerald-700",
-  purchase_delete: "bg-red-50 text-red-700",
-  sale_register: "bg-purple-50 text-purple-700",
-  customer_add: "bg-emerald-50 text-emerald-700",
-  customer_update: "bg-blue-50 text-blue-700",
-  customer_delete: "bg-red-50 text-red-700",
-  supplier_add: "bg-emerald-50 text-emerald-700",
-  supplier_update: "bg-blue-50 text-blue-700",
-  supplier_delete: "bg-red-50 text-red-700",
+  inventory_add: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  inventory_update: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  inventory_delete: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  stock_adjust: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  purchase_create: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
+  purchase_update: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  purchase_receive: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  purchase_delete: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  sale_register: "bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300",
+  customer_add: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  customer_update: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  customer_delete: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  supplier_add: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  supplier_update: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  supplier_delete: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
 };
 
 export default function ConfiguracionPage() {
@@ -288,8 +288,8 @@ export default function ConfiguracionPage() {
     setSavingPassword(false);
   }
 
-  const inputCls = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
-  const labelCls = "block text-sm font-medium text-slate-700 mb-1";
+  const inputCls = "w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400";
+  const labelCls = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1";
 
   return (
     <div>
@@ -298,17 +298,17 @@ export default function ConfiguracionPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Profile */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-5">Perfil de usuario</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-5">Perfil de usuario</h2>
 
           {/* Avatar */}
           <div className="flex items-center gap-4 mb-5">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-2 border-slate-200">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700 flex items-center justify-center border-2 border-slate-200 dark:border-slate-600">
                 {profile?.photoURL ? (
                   <img src={profile.photoURL} alt="Foto de perfil" className="w-full h-full object-cover" />
                 ) : (
-                  <UserIcon size={28} className="text-slate-400" />
+                  <UserIcon size={28} className="text-slate-400 dark:text-slate-500" />
                 )}
               </div>
               <label className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center cursor-pointer hover:bg-brand-700 transition shadow-sm ${uploadingPhoto ? "opacity-50 pointer-events-none" : ""}`}>
@@ -320,19 +320,19 @@ export default function ConfiguracionPage() {
               </label>
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-800">{profile?.fullName || "Sin nombre"}</p>
-              <p className="text-xs text-slate-400 mt-0.5">Haz clic en la cámara para cambiar tu foto</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{profile?.fullName || "Sin nombre"}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">Haz clic en la cámara para cambiar tu foto</p>
             </div>
           </div>
 
-          <div className="mb-4 p-3 bg-slate-50 rounded-xl text-sm space-y-2">
+          <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl text-sm space-y-2">
             <div className="flex justify-between">
-              <span className="text-slate-500">Email</span>
-              <span className="font-medium">{user?.email}</span>
+              <span className="text-slate-500 dark:text-slate-400">Email</span>
+              <span className="font-medium dark:text-slate-100">{user?.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Rol</span>
-              <span className="font-medium capitalize">{profile?.role ?? "—"}</span>
+              <span className="text-slate-500 dark:text-slate-400">Rol</span>
+              <span className="font-medium capitalize dark:text-slate-100">{profile?.role ?? "—"}</span>
             </div>
           </div>
 
@@ -353,8 +353,8 @@ export default function ConfiguracionPage() {
         </div>
 
         {/* Password */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-5">Cambiar contraseña</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-5">Cambiar contraseña</h2>
           <form onSubmit={savePassword} className="space-y-3">
             {[
               { label: "Nueva contraseña",    key: "next"    as const },
@@ -374,8 +374,8 @@ export default function ConfiguracionPage() {
 
         {/* Company — full width, admin only */}
         {isAdmin && (
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-5">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-5">
             {company ? "Datos de la empresa" : "Registrar empresa"}
           </h2>
           <form onSubmit={saveCompany}>
@@ -425,11 +425,11 @@ export default function ConfiguracionPage() {
 
         {/* Facturación electrónica (DGII / e-CF) — admin only, requiere empresa ya registrada */}
         {isAdmin && company && (
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-1 flex items-center gap-2">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-1 flex items-center gap-2">
             <Receipt size={16} className="text-brand-500" /> Facturación electrónica (DGII)
           </h2>
-          <p className="text-sm text-slate-500 mb-5">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
             El RNC se toma del campo &quot;RIF / NIT / RFC&quot; de arriba. LogiAnalytics es la cuenta
             principal en Alanube — esta empresa debe registrarse ahí como compañía asociada primero;
             pegá acá el ID que Alanube le asigne, más la categoría de contribuyente y el rango de
@@ -475,10 +475,10 @@ export default function ConfiguracionPage() {
 
             <div className="space-y-3 mb-5">
               {(["31", "32"] as const).map((type) => (
-                <div key={type} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end p-3 bg-slate-50 rounded-xl">
+                <div key={type} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end p-3 bg-slate-50 dark:bg-slate-700/40 rounded-xl">
                   <div className="sm:col-span-1">
-                    <p className="text-xs font-semibold text-slate-600">{ECF_TYPE_LABELS[type]}</p>
-                    <p className="text-[11px] text-slate-400">e-NCF tipo {type}</p>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">{ECF_TYPE_LABELS[type]}</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-400">e-NCF tipo {type}</p>
                   </div>
                   <div>
                     <label className={labelCls}>Próximo número</label>
@@ -517,23 +517,23 @@ export default function ConfiguracionPage() {
         )}
 
         {/* Push Notifications */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-1">Notificaciones de stock</h2>
-          <p className="text-sm text-slate-500 mb-5">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+          <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-1">Notificaciones de stock</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
             Recibe alertas del navegador cuando un producto caiga por debajo del stock mínimo.
           </p>
 
-          <div className="flex items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl">
+          <div className="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-700/40 rounded-xl">
             <div className="flex items-center gap-3">
               {pushEnabled
                 ? <Bell size={20} className="text-brand-600" />
-                : <BellOff size={20} className="text-slate-400" />}
+                : <BellOff size={20} className="text-slate-400 dark:text-slate-500" />}
               <div>
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-100">
                   {pushEnabled ? "Notificaciones activas" : "Notificaciones desactivadas"}
                 </p>
                 {pushPermission === "denied" && (
-                  <p className="text-xs text-red-500 mt-0.5">
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">
                     Bloqueadas en el navegador — actívalas desde la configuración del sitio.
                   </p>
                 )}
@@ -544,7 +544,7 @@ export default function ConfiguracionPage() {
               onClick={togglePush}
               disabled={pushPermission === "denied"}
               className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-40 ${
-                pushEnabled ? "bg-brand-600" : "bg-slate-300"
+                pushEnabled ? "bg-brand-600" : "bg-slate-300 dark:bg-slate-600"
               }`}
             >
               <span
@@ -557,16 +557,16 @@ export default function ConfiguracionPage() {
         </div>
 
         {/* Reportes por email */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Mail size={18} className="text-brand-600" />
-            <h2 className="font-semibold text-slate-700">Reportes por email</h2>
+            <h2 className="font-semibold text-slate-700 dark:text-slate-100">Reportes por email</h2>
           </div>
-          <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
             Recibe un resumen mensual con KPIs, top productos y alertas de stock directamente en tu correo. Se envía automáticamente el 1° de cada mes.
           </p>
-          <div className="bg-slate-50 rounded-xl p-3.5 mb-4 text-xs text-slate-500 space-y-1">
-            <p>✉️ Se enviará a: <span className="font-semibold text-slate-700">{profile?.email}</span></p>
+          <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-3.5 mb-4 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+            <p>✉️ Se enviará a: <span className="font-semibold text-slate-700 dark:text-slate-100">{profile?.email}</span></p>
             <p>🗓️ Frecuencia: primer día de cada mes a las 9:00 AM</p>
             <p>📊 Incluye: ingresos, ganancia, margen, top 5 productos y alertas</p>
           </div>
@@ -583,16 +583,16 @@ export default function ConfiguracionPage() {
 
         {/* Audit Log — admin only */}
         {isAdmin && (
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <ShieldCheck size={18} className="text-brand-600" />
-              <h2 className="font-semibold text-slate-700">Auditoría de actividad</h2>
+              <h2 className="font-semibold text-slate-700 dark:text-slate-100">Auditoría de actividad</h2>
             </div>
-            <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+            <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
               {([7, 30, 90] as const).map((d) => (
                 <button key={d} onClick={() => setAuditDays(d)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${auditDays === d ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${auditDays === d ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
                   {d}d
                 </button>
               ))}
@@ -600,17 +600,17 @@ export default function ConfiguracionPage() {
           </div>
 
           {auditLoading ? (
-            <div className="py-10 text-center text-sm text-slate-400">Cargando…</div>
+            <div className="py-10 text-center text-sm text-slate-400 dark:text-slate-400">Cargando…</div>
           ) : auditLog.length === 0 ? (
             <div className="py-10 text-center">
-              <History size={32} className="mx-auto mb-2 text-slate-300" />
-              <p className="text-sm text-slate-400">Sin actividad en los últimos {auditDays} días</p>
+              <History size={32} className="mx-auto mb-2 text-slate-300 dark:text-slate-500" />
+              <p className="text-sm text-slate-400 dark:text-slate-400">Sin actividad en los últimos {auditDays} días</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-slate-100 overflow-hidden">
+            <div className="rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-slate-50 text-xs text-slate-500">
+                  <tr className="bg-slate-50 dark:bg-slate-700/40 text-xs text-slate-500 dark:text-slate-400">
                     <th className="text-left px-4 py-2.5 font-medium">Acción</th>
                     <th className="text-left px-4 py-2.5 font-medium">Entidad</th>
                     <th className="text-left px-4 py-2.5 font-medium hidden sm:table-cell">Detalle</th>
@@ -619,15 +619,15 @@ export default function ConfiguracionPage() {
                 </thead>
                 <tbody>
                   {auditLog.slice(0, 50).map((e) => (
-                    <tr key={e.id} className="border-t border-slate-50 hover:bg-slate-50">
+                    <tr key={e.id} className="border-t border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                       <td className="px-4 py-2.5">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ACTION_COLOR[e.action] ?? "bg-slate-100 text-slate-600"}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ACTION_COLOR[e.action] ?? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
                           {ACTION_LABELS[e.action] ?? e.action}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 font-medium text-slate-800 max-w-[140px] truncate">{e.entityName}</td>
-                      <td className="px-4 py-2.5 text-slate-500 text-xs hidden sm:table-cell max-w-[200px] truncate">{e.detail}</td>
-                      <td className="px-4 py-2.5 text-right text-xs text-slate-400 whitespace-nowrap">
+                      <td className="px-4 py-2.5 font-medium text-slate-800 dark:text-slate-100 max-w-[140px] truncate">{e.entityName}</td>
+                      <td className="px-4 py-2.5 text-slate-500 dark:text-slate-400 text-xs hidden sm:table-cell max-w-[200px] truncate">{e.detail}</td>
+                      <td className="px-4 py-2.5 text-right text-xs text-slate-400 dark:text-slate-400 whitespace-nowrap">
                         {e.createdAt?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) ?? "—"}
                       </td>
                     </tr>
@@ -635,7 +635,7 @@ export default function ConfiguracionPage() {
                 </tbody>
               </table>
               {auditLog.length > 50 && (
-                <p className="px-4 py-2 text-xs text-slate-400 bg-slate-50 border-t border-slate-100">
+                <p className="px-4 py-2 text-xs text-slate-400 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/40 border-t border-slate-100 dark:border-slate-700">
                   Mostrando 50 de {auditLog.length} eventos
                 </p>
               )}

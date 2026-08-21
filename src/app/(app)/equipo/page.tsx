@@ -21,10 +21,10 @@ interface Employee {
 }
 
 const DEPT_META: Record<Department, { label: string; color: string }> = {
-  admin:     { label: "Admin",      color: "bg-brand-50 text-brand-600 border-brand-200" },
-  ventas:    { label: "Ventas",     color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  compras:   { label: "Compras",    color: "bg-amber-50 text-amber-700 border-amber-200" },
-  logistica: { label: "Logística",  color: "bg-blue-50 text-blue-700 border-blue-200" },
+  admin:     { label: "Admin",      color: "bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/15 dark:text-brand-300 dark:border-brand-500/30" },
+  ventas:    { label: "Ventas",     color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30" },
+  compras:   { label: "Compras",    color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30" },
+  logistica: { label: "Logística",  color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30" },
 };
 
 const EMPTY_FORM = { fullName: "", email: "", password: "", role: "ventas" as Department };
@@ -137,7 +137,7 @@ export default function EquipoPage() {
         subtitle="Empleados de tu empresa y el área a la que tienen acceso"
         action={
           <div className="flex items-center gap-2">
-            <button onClick={load} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+            <button onClick={load} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition">
               <RefreshCw size={13} /> Actualizar
             </button>
             <button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition">
@@ -148,31 +148,31 @@ export default function EquipoPage() {
       />
 
       <div className="relative mb-5 max-w-sm">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <input value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar empleado…"
-          className="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white" />
+          className="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState icon={UsersRound} title="Sin empleados todavía"
           description="Agrega usuarios y asígnales un área — Ventas, Compras o Logística — para que trabajen solo con su parte de la app." />
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
+                <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
                   {["Usuario", "Área", "Último acceso", "Registro"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                 {filtered.map((emp) => (
-                  <tr key={emp.uid} className="hover:bg-slate-50 transition-colors">
+                  <tr key={emp.uid} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-800 text-sm">{emp.fullName || "—"}</p>
+                      <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{emp.fullName || "—"}</p>
                       <p className="text-xs text-slate-400 mt-0.5">{emp.email}</p>
                     </td>
                     <td className="px-4 py-3">
@@ -194,7 +194,7 @@ export default function EquipoPage() {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
+          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400 dark:bg-slate-700/40 dark:border-slate-700">
             {filtered.length} empleado{filtered.length !== 1 ? "s" : ""}
           </div>
         </div>
@@ -203,36 +203,36 @@ export default function EquipoPage() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 dark:bg-slate-800">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-slate-800">Agregar usuario</h2>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition">
+              <h2 className="font-bold text-slate-800 dark:text-slate-100">Agregar usuario</h2>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 dark:hover:bg-slate-700 transition">
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleCreate} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre completo</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Nombre completo</label>
                 <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
                   placeholder="ej. Juan Pérez"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Email</label>
                 <input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                   placeholder="juan@empresa.com"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña temporal</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Contraseña temporal</label>
                 <input type="text" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Área</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Área</label>
                 <select value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as Department }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
                   <option value="ventas">Ventas</option>
                   <option value="compras">Compras</option>
                   <option value="logistica">Logística</option>
@@ -241,7 +241,7 @@ export default function EquipoPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition">
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition">
                   Cancelar
                 </button>
                 <button type="submit" disabled={saving}

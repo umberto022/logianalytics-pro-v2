@@ -45,9 +45,9 @@ const NCF_LABELS: Record<string, string> = {
 };
 
 const PAYMENT_META: Record<PaymentStatus, { label: string; color: string; printColor: string; icon: React.ReactNode }> = {
-  pagado:    { label: "Contado / Pagado",  color: "text-emerald-700 bg-emerald-50 border-emerald-200", printColor: "#065f46", icon: <CheckCircle2 size={12} /> },
-  pendiente: { label: "Pendiente de Pago", color: "text-amber-700 bg-amber-50 border-amber-200",       printColor: "#92400e", icon: <Clock size={12} /> },
-  credito:   { label: "Crédito",           color: "text-blue-700 bg-blue-50 border-blue-200",           printColor: "#1e40af", icon: <CreditCard size={12} /> },
+  pagado:    { label: "Contado / Pagado",  color: "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30", printColor: "#065f46", icon: <CheckCircle2 size={12} /> },
+  pendiente: { label: "Pendiente de Pago", color: "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",       printColor: "#92400e", icon: <Clock size={12} /> },
+  credito:   { label: "Crédito",           color: "text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",           printColor: "#1e40af", icon: <CreditCard size={12} /> },
 };
 
 function fmtDateLong(d: Date) {
@@ -230,21 +230,21 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[94vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[94vh] flex flex-col overflow-hidden dark:bg-slate-800">
 
         {/* ── Toolbar ── */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 flex-shrink-0 bg-slate-50 rounded-t-3xl">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 flex-shrink-0 bg-slate-50 rounded-t-3xl dark:border-slate-700 dark:bg-slate-700/40">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center">
               <FileText size={15} className="text-white" />
             </div>
             <div>
-              <p className="font-bold text-slate-900 text-sm">{data.invoiceNumber}</p>
-              {data.ncf && <p className="text-xs text-slate-400 font-mono">{data.ncf}</p>}
+              <p className="font-bold text-slate-900 text-sm dark:text-slate-100">{data.invoiceNumber}</p>
+              {data.ncf && <p className="text-xs text-slate-400 font-mono dark:text-slate-400">{data.ncf}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none px-2">
+            <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none px-2 dark:text-slate-400">
               <input type="checkbox" checked={withTax} onChange={(e) => setWithTax(e.target.checked)} className="rounded accent-indigo-600" />
               ITBIS 18%
             </label>
@@ -256,7 +256,7 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
               className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 transition">
               <Download size={13} /> PDF
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-xl transition text-slate-400 ml-1">
+            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-xl transition text-slate-400 ml-1 dark:hover:bg-slate-700 dark:text-slate-500">
               <X size={16} />
             </button>
           </div>
@@ -264,25 +264,25 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
 
         {/* ── Preview ── */}
         <div className="flex-1 overflow-y-auto p-5">
-          <div className="bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl p-7 shadow-sm dark:bg-slate-800 dark:border-slate-700">
 
             {/* Header */}
             <div className="flex justify-between items-start pb-5 border-b-4 border-indigo-600 mb-5">
               <div>
                 <h1 className="text-xl font-extrabold text-indigo-600">{data.companyName || "Mi Empresa"}</h1>
-                {data.companyRif     && <p className="text-xs text-slate-500 mt-0.5">RNC: {data.companyRif}</p>}
-                {data.companyAddress && <p className="text-xs text-slate-400">{data.companyAddress}</p>}
+                {data.companyRif     && <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">RNC: {data.companyRif}</p>}
+                {data.companyAddress && <p className="text-xs text-slate-400 dark:text-slate-400">{data.companyAddress}</p>}
                 {(data.companyPhone || data.companyEmail) && (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-400 dark:text-slate-400">
                     {data.companyPhone}{data.companyEmail ? ` · ${data.companyEmail}` : ""}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <p className="text-2xl font-black text-slate-900 tracking-widest">FACTURA</p>
+                <p className="text-2xl font-black text-slate-900 tracking-widest dark:text-slate-100">FACTURA</p>
                 <p className="text-sm font-bold text-indigo-600 mt-0.5">{data.invoiceNumber}</p>
-                <p className="text-xs text-slate-400 mt-1">{fmtDateLong(data.date)}</p>
-                {data.dueDate && <p className="text-xs text-slate-400">Vence: {fmtDateShort(data.dueDate)}</p>}
+                <p className="text-xs text-slate-400 mt-1 dark:text-slate-400">{fmtDateLong(data.date)}</p>
+                {data.dueDate && <p className="text-xs text-slate-400 dark:text-slate-400">Vence: {fmtDateShort(data.dueDate)}</p>}
                 <span className={`mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${psMeta.color}`}>
                   {psMeta.icon} {psMeta.label}
                 </span>
@@ -291,42 +291,42 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
 
             {/* NCF bar */}
             {data.ncf && (
-              <div className="flex items-center justify-between bg-indigo-50 border border-indigo-100 border-l-4 border-l-indigo-600 rounded-lg px-4 py-2.5 mb-5">
-                <span className="text-xs text-slate-500 font-medium">Comprobante Fiscal (NCF)</span>
-                <span className="font-mono text-sm font-bold text-indigo-700 tracking-wider">
+              <div className="flex items-center justify-between bg-indigo-50 border border-indigo-100 border-l-4 border-l-indigo-600 rounded-lg px-4 py-2.5 mb-5 dark:bg-indigo-500/15 dark:border-indigo-500/30">
+                <span className="text-xs text-slate-500 font-medium dark:text-slate-400">Comprobante Fiscal (NCF)</span>
+                <span className="font-mono text-sm font-bold text-indigo-700 tracking-wider dark:text-indigo-300">
                   {data.ncf}
-                  <span className="ml-2 text-xs font-normal text-indigo-400">· {ncfLabel}</span>
+                  <span className="ml-2 text-xs font-normal text-indigo-400 dark:text-indigo-300">· {ncfLabel}</span>
                 </span>
               </div>
             )}
 
             {/* Client + payment grid */}
             <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="bg-slate-50 rounded-xl border border-slate-100 p-3.5">
-                <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold mb-2">Datos del cliente</p>
-                <p className="text-sm font-bold text-slate-900">{data.client || "—"}</p>
-                {data.clientRnc     && <p className="text-xs text-slate-500 mt-0.5">RNC/Céd: {data.clientRnc}</p>}
-                {data.clientAddress && <p className="text-xs text-slate-500">{data.clientAddress}</p>}
-                {data.clientPhone   && <p className="text-xs text-slate-500">Tel: {data.clientPhone}</p>}
-                {data.clientEmail   && <p className="text-xs text-slate-500">{data.clientEmail}</p>}
+              <div className="bg-slate-50 rounded-xl border border-slate-100 p-3.5 dark:bg-slate-700/40 dark:border-slate-700">
+                <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold mb-2 dark:text-slate-400">Datos del cliente</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{data.client || "—"}</p>
+                {data.clientRnc     && <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">RNC/Céd: {data.clientRnc}</p>}
+                {data.clientAddress && <p className="text-xs text-slate-500 dark:text-slate-400">{data.clientAddress}</p>}
+                {data.clientPhone   && <p className="text-xs text-slate-500 dark:text-slate-400">Tel: {data.clientPhone}</p>}
+                {data.clientEmail   && <p className="text-xs text-slate-500 dark:text-slate-400">{data.clientEmail}</p>}
                 {(data.route || data.zone) && (
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-400 mt-1 dark:text-slate-400">
                     Ruta: {[data.route, data.zone].filter(Boolean).join(" · ")}
                   </p>
                 )}
               </div>
-              <div className="bg-slate-50 rounded-xl border border-slate-100 p-3.5">
-                <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold mb-2">Condición de pago</p>
+              <div className="bg-slate-50 rounded-xl border border-slate-100 p-3.5 dark:bg-slate-700/40 dark:border-slate-700">
+                <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold mb-2 dark:text-slate-400">Condición de pago</p>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${psMeta.color}`}>
                   {psMeta.icon} {psMeta.label}
                 </span>
-                {data.dueDate && <p className="text-xs text-slate-500 mt-2">Fecha límite: {fmtDateShort(data.dueDate)}</p>}
-                {data.notes && <p className="text-xs text-slate-400 mt-2 italic">"{data.notes}"</p>}
+                {data.dueDate && <p className="text-xs text-slate-500 mt-2 dark:text-slate-400">Fecha límite: {fmtDateShort(data.dueDate)}</p>}
+                {data.notes && <p className="text-xs text-slate-400 mt-2 italic dark:text-slate-400">"{data.notes}"</p>}
               </div>
             </div>
 
             {/* Items table */}
-            <div className="rounded-xl overflow-hidden border border-slate-100 mb-5">
+            <div className="rounded-xl overflow-hidden border border-slate-100 mb-5 dark:border-slate-700">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-indigo-600 text-white text-xs uppercase tracking-wide">
@@ -342,14 +342,14 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
                     const lineTotal = item.quantity * item.unitPrice;
                     const lineItbis = withTax ? +(lineTotal / 1.18 * 0.18).toFixed(2) : 0;
                     return (
-                      <tr key={i} className={i % 2 === 1 ? "bg-slate-50" : "bg-white"}>
+                      <tr key={i} className={i % 2 === 1 ? "bg-slate-50 dark:bg-slate-700/40" : "bg-white dark:bg-slate-800"}>
                         <td className="py-2.5 px-3">
-                          <p className="font-medium text-slate-900">{item.name}</p>
-                          <p className="text-xs text-slate-400 font-mono">{item.sku}</p>
+                          <p className="font-medium text-slate-900 dark:text-slate-100">{item.name}</p>
+                          <p className="text-xs text-slate-400 font-mono dark:text-slate-400">{item.sku}</p>
                         </td>
                         <td className="py-2.5 px-3 text-center">{item.quantity}</td>
                         <td className="py-2.5 px-3 text-right">{fmtCurrency(item.unitPrice)}</td>
-                        {withTax && <td className="py-2.5 px-3 text-right text-amber-600">{fmtCurrency(lineItbis)}</td>}
+                        {withTax && <td className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400">{fmtCurrency(lineItbis)}</td>}
                         <td className="py-2.5 px-3 text-right font-semibold">{fmtCurrency(lineTotal)}</td>
                       </tr>
                     );
@@ -362,29 +362,29 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
             <div className="flex flex-col items-end gap-1.5 mb-5">
               {withTax ? (
                 <>
-                  <div className="flex gap-12 text-sm text-slate-500 w-64 justify-between">
+                  <div className="flex gap-12 text-sm text-slate-500 w-64 justify-between dark:text-slate-400">
                     <span>Subtotal (excl. ITBIS)</span>
-                    <span className="font-semibold text-slate-800">{fmtCurrency(subtotalExcl)}</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">{fmtCurrency(subtotalExcl)}</span>
                   </div>
-                  <div className="flex gap-12 text-sm text-amber-600 w-64 justify-between">
+                  <div className="flex gap-12 text-sm text-amber-600 w-64 justify-between dark:text-amber-400">
                     <span>ITBIS 18%</span>
                     <span className="font-semibold">{fmtCurrency(itbis)}</span>
                   </div>
                 </>
               ) : (
-                <div className="flex gap-12 text-sm text-slate-500 w-64 justify-between">
+                <div className="flex gap-12 text-sm text-slate-500 w-64 justify-between dark:text-slate-400">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-slate-800">{fmtCurrency(subtotalBase)}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{fmtCurrency(subtotalBase)}</span>
                 </div>
               )}
-              <div className="flex gap-12 font-black text-base border-t-2 border-slate-200 pt-2 mt-1 w-64 justify-between text-indigo-600">
+              <div className="flex gap-12 font-black text-base border-t-2 border-slate-200 pt-2 mt-1 w-64 justify-between text-indigo-600 dark:border-slate-700">
                 <span>TOTAL</span>
                 <span>{fmtCurrency(total)}</span>
               </div>
             </div>
 
             {/* Internal margin note — screen only */}
-            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-emerald-700">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-emerald-700 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300">
               <span className="font-medium">Ganancia estimada (solo visible internamente)</span>
               <span className="font-bold">{fmtCurrency(totalProfit)} · {margin}% margen</span>
             </div>
