@@ -1483,9 +1483,19 @@ export default function InventarioPage() {
   }
 
   function exportCSV() {
-    const rows = items.map(({ sku, name, category, color, currentStock, minStock, maxStock, unitCost, salePrice, supplier }) =>
-      ({ sku, producto: name, tipo: category, color, stock: currentStock, stock_minimo: minStock, stock_maximo: maxStock, costo: unitCost, precio_venta: salePrice, proveedor: supplier })
-    );
+    // Costo se omite para roles de solo-lectura (Ventas) — mismo criterio que
+    // la tabla en pantalla (canEditInv), para no filtrar costos/márgenes por
+    // una puerta trasera del export que la UI sí protege.
+    const rows = items.map(({ sku, name, category, color, currentStock, minStock, maxStock, unitCost, salePrice, supplier }) => {
+      const row: Record<string, string | number> = {
+        sku, producto: name, tipo: category, color,
+        stock: currentStock, stock_minimo: minStock, stock_maximo: maxStock,
+      };
+      if (canEditInv) row.costo = unitCost;
+      row.precio_venta = salePrice;
+      row.proveedor = supplier;
+      return row;
+    });
     const csv = "﻿" + Papa.unparse(rows);
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a"); a.href = url;
@@ -1494,12 +1504,15 @@ export default function InventarioPage() {
   }
 
   function exportPDF() {
+    // Igual que exportCSV: el costo (y el valor de inventario a costo, más
+    // abajo) solo va si el rol puede editar Inventario — Ventas es read-only
+    // y no debe ver costos/márgenes ni siquiera vía el PDF.
     const rows = filtered.map((i) =>
       `<tr>
         <td>${esc(i.sku)}</td><td>${esc(i.name)}</td><td>${esc(i.category)}</td>
         <td style="text-align:center">${i.currentStock}</td>
         <td style="text-align:center">${i.minStock}</td>
-        <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
+        ${canEditInv ? `<td style="text-align:right">${fmtCurrency(i.unitCost)}</td>` : ""}
         <td style="text-align:right">${fmtCurrency(i.salePrice)}</td>
         <td style="text-align:center">${getStockStatus(i) === "critical" ? "🔴 Crítico" : getStockStatus(i) === "low" ? "🟡 Bajo" : "🟢 Óptimo"}</td>
       </tr>`
@@ -1523,11 +1536,11 @@ export default function InventarioPage() {
         <p>Generado el ${new Date().toLocaleDateString("es-ES",{day:"2-digit",month:"long",year:"numeric"})}</p>
         <div class="kpi">
           <div><p>Total productos</p><b>${items.length}</b></div>
-          <div><p>Valor inventario</p><b>${fmtCurrency(items.reduce((s,i)=>s+i.currentStock*i.unitCost,0))}</b></div>
+          ${canEditInv ? `<div><p>Valor inventario</p><b>${fmtCurrency(items.reduce((s,i)=>s+i.currentStock*i.unitCost,0))}</b></div>` : ""}
           <div><p>Stock crítico</p><b>${items.filter(i=>getStockStatus(i)==="critical").length}</b></div>
         </div>
         <table>
-          <thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mín.</th><th>Costo</th><th>P.Venta</th><th>Estado</th></tr></thead>
+          <thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mín.</th>${canEditInv ? "<th>Costo</th>" : ""}<th>P.Venta</th><th>Estado</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </body></html>`);
