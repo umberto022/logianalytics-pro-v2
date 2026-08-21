@@ -170,7 +170,7 @@ export default function LoginPage() {
           </p>
 
           {recentAccounts.length > 0 && !manualMode ? (
-            <div className="mb-2 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-800/40 backdrop-blur-sm shadow-sm shadow-slate-200/50 dark:shadow-none p-2">
+            <div className="mb-2 rounded-2xl border border-slate-100 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm shadow-sm shadow-slate-200/50 dark:shadow-xl dark:shadow-black/30 p-2">
               <div>
                 {recentAccounts.map((acc, i) => {
                   const isLoadingThis = quickLoadingUid === acc.uid;
