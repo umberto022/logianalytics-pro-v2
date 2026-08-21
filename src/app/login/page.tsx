@@ -9,12 +9,14 @@ import { Truck, Mail, Lock, Eye, EyeOff, X, Plus, Search, Loader2 } from "lucide
 import { getRecentAccounts, removeRecentAccount, type RecentAccount } from "@/lib/recentAccounts";
 import type { Department } from "@/types";
 
-const ROLE_BADGE: Record<Department, { label: string; cls: string }> = {
-  admin:     { label: "Admin",      cls: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300" },
-  ventas:    { label: "Ventas",     cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
-  compras:   { label: "Compras",    cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
-  logistica: { label: "Logística",  cls: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300" },
+const ROLE_BADGE: Record<Department, { label: string; cls: string; ring: string; grad: string }> = {
+  admin:     { label: "Admin",      cls: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300",     ring: "ring-brand-300 dark:ring-brand-500/60",     grad: "from-brand-400 to-brand-600" },
+  ventas:    { label: "Ventas",     cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300", ring: "ring-emerald-300 dark:ring-emerald-500/60", grad: "from-emerald-400 to-emerald-600" },
+  compras:   { label: "Compras",    cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",     ring: "ring-amber-300 dark:ring-amber-500/60",     grad: "from-amber-400 to-orange-500" },
+  logistica: { label: "Logística",  cls: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",             ring: "ring-sky-300 dark:ring-sky-500/60",         grad: "from-sky-400 to-blue-600" },
 };
+const DEFAULT_AVATAR_GRAD = "from-fuchsia-400 to-brand-600";
+const DEFAULT_AVATAR_RING = "ring-white dark:ring-slate-700";
 
 function GoogleIcon() {
   return (
@@ -157,8 +159,15 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
+      <div className="flex-1 relative flex items-center justify-center p-8 overflow-hidden bg-slate-50 dark:bg-slate-900">
+        {/* Aurora decorativa — sutil, no interactiva */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-32 -right-20 w-96 h-96 bg-brand-400/25 dark:bg-brand-500/15 rounded-full blur-3xl" />
+          <div className="absolute -bottom-32 -left-20 w-96 h-96 bg-fuchsia-300/25 dark:bg-fuchsia-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 left-1/2 w-72 h-72 bg-emerald-200/15 dark:bg-emerald-500/5 rounded-full blur-3xl" />
+        </div>
+
+        <div className="w-full max-w-md relative">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Truck size={28} className="text-brand-600" />
             <span className="text-xl font-bold text-brand-600">LogiAnalytics Pro</span>
@@ -170,91 +179,94 @@ export default function LoginPage() {
           </p>
 
           {recentAccounts.length > 0 && !manualMode ? (
-            <div className="mb-2 rounded-2xl border border-slate-100 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm shadow-sm shadow-slate-200/50 dark:shadow-xl dark:shadow-black/30 p-2">
-              <div>
-                {recentAccounts.map((acc, i) => {
-                  const isLoadingThis = quickLoadingUid === acc.uid;
-                  return (
-                    <button
-                      key={acc.uid}
-                      type="button"
-                      onClick={() => handleQuickAccount(acc)}
-                      disabled={!!quickLoadingUid}
-                      style={{ animationDelay: `${i * 60}ms` }}
-                      className="animate-account-row group w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition disabled:cursor-default text-left"
-                    >
-                      <span className="relative shrink-0">
-                        {acc.photoURL ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={acc.photoURL}
-                            alt=""
-                            className="w-14 h-14 rounded-full object-cover ring-2 ring-white dark:ring-slate-700 shadow-sm transition-transform duration-200 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center font-semibold text-lg ring-2 ring-white dark:ring-slate-700 shadow-sm transition-transform duration-200 group-hover:scale-105">
-                            {initials(acc.fullName)}
-                          </div>
-                        )}
-                        {acc.provider === "google.com" && (
-                          <span className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-slate-800 rounded-full p-1 shadow">
-                            <GoogleIcon />
-                          </span>
-                        )}
-                        {isLoadingThis && (
-                          <span className="absolute inset-0 rounded-full bg-slate-900/40 flex items-center justify-center">
-                            <Loader2 size={20} className="text-white animate-spin" />
-                          </span>
-                        )}
-                      </span>
-                      <span className="flex-1 min-w-0">
-                        <span className="block font-medium dark:text-slate-100 truncate">{acc.fullName}</span>
-                        {acc.role && (
-                          <span className={`inline-block mt-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full ${ROLE_BADGE[acc.role].cls}`}>
-                            {ROLE_BADGE[acc.role].label}
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => handleRemoveAccount(acc.uid, e)}
-                        onKeyDown={(e) => { if (e.key === "Enter") handleRemoveAccount(acc.uid, e as unknown as React.MouseEvent); }}
-                        aria-label={`Quitar ${acc.fullName} de este dispositivo`}
-                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1.5 shrink-0"
+            <div className="mb-2 rounded-2xl p-[1.5px] bg-gradient-to-br from-brand-300/70 via-fuchsia-200/40 to-emerald-200/50 dark:from-brand-500/50 dark:via-fuchsia-500/20 dark:to-emerald-500/20 shadow-lg shadow-brand-900/10 dark:shadow-black/40">
+              <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-2">
+                <div>
+                  {recentAccounts.map((acc, i) => {
+                    const isLoadingThis = quickLoadingUid === acc.uid;
+                    const roleMeta = acc.role ? ROLE_BADGE[acc.role] : null;
+                    return (
+                      <button
+                        key={acc.uid}
+                        type="button"
+                        onClick={() => handleQuickAccount(acc)}
+                        disabled={!!quickLoadingUid}
+                        style={{ animationDelay: `${i * 60}ms` }}
+                        className="animate-account-row group w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition disabled:cursor-default text-left"
                       >
-                        <X size={16} />
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span className="relative shrink-0">
+                          {acc.photoURL ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={acc.photoURL}
+                              alt=""
+                              className={`w-14 h-14 rounded-full object-cover ring-2 ${roleMeta?.ring ?? DEFAULT_AVATAR_RING} shadow-sm transition-transform duration-200 group-hover:scale-105`}
+                            />
+                          ) : (
+                            <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${roleMeta?.grad ?? DEFAULT_AVATAR_GRAD} text-white flex items-center justify-center font-semibold text-lg ring-2 ${roleMeta?.ring ?? DEFAULT_AVATAR_RING} shadow-sm transition-transform duration-200 group-hover:scale-105`}>
+                              {initials(acc.fullName)}
+                            </div>
+                          )}
+                          {acc.provider === "google.com" && (
+                            <span className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-slate-800 rounded-full p-1 shadow">
+                              <GoogleIcon />
+                            </span>
+                          )}
+                          {isLoadingThis && (
+                            <span className="absolute inset-0 rounded-full bg-slate-900/40 flex items-center justify-center">
+                              <Loader2 size={20} className="text-white animate-spin" />
+                            </span>
+                          )}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block font-medium dark:text-slate-100 truncate">{acc.fullName}</span>
+                          {roleMeta && (
+                            <span className={`inline-block mt-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full ${roleMeta.cls}`}>
+                              {roleMeta.label}
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => handleRemoveAccount(acc.uid, e)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleRemoveAccount(acc.uid, e as unknown as React.MouseEvent); }}
+                          aria-label={`Quitar ${acc.fullName} de este dispositivo`}
+                          className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1.5 shrink-0"
+                        >
+                          <X size={16} />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-1 mx-2" />
+
+                <button
+                  type="button"
+                  onClick={() => setManualMode(true)}
+                  style={{ animationDelay: `${recentAccounts.length * 60}ms` }}
+                  className="animate-account-row w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition text-left"
+                >
+                  <span className="w-14 h-14 rounded-full border-2 border-dashed border-brand-300 dark:border-brand-500/50 bg-brand-50/60 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 dark:text-brand-300 shrink-0">
+                    <Plus size={22} />
+                  </span>
+                  <span className="font-medium text-slate-600 dark:text-slate-300">Iniciar sesión en otra cuenta</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleRecoverAccount}
+                  style={{ animationDelay: `${(recentAccounts.length + 1) * 60}ms` }}
+                  className="animate-account-row w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition text-left"
+                >
+                  <span className="w-14 h-14 rounded-full bg-cyan-50 dark:bg-cyan-500/10 flex items-center justify-center text-cyan-600 dark:text-cyan-300 shrink-0">
+                    <Search size={20} />
+                  </span>
+                  <span className="font-medium text-slate-600 dark:text-slate-300">Recuperar tu cuenta</span>
+                </button>
               </div>
-
-              <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-1 mx-2" />
-
-              <button
-                type="button"
-                onClick={() => setManualMode(true)}
-                style={{ animationDelay: `${recentAccounts.length * 60}ms` }}
-                className="animate-account-row w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition text-left"
-              >
-                <span className="w-14 h-14 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-400 shrink-0">
-                  <Plus size={22} />
-                </span>
-                <span className="font-medium text-slate-600 dark:text-slate-300">Iniciar sesión en otra cuenta</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleRecoverAccount}
-                style={{ animationDelay: `${(recentAccounts.length + 1) * 60}ms` }}
-                className="animate-account-row w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition text-left"
-              >
-                <span className="w-14 h-14 rounded-full flex items-center justify-center text-slate-400 shrink-0">
-                  <Search size={20} />
-                </span>
-                <span className="font-medium text-slate-600 dark:text-slate-300">Recuperar tu cuenta</span>
-              </button>
             </div>
           ) : (
             <div className="animate-fade-in">
@@ -271,7 +283,7 @@ export default function LoginPage() {
               <button
                 onClick={handleGoogle}
                 disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-sm active:scale-[0.99] transition font-medium disabled:opacity-50 dark:text-slate-200"
+                className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-md hover:shadow-brand-900/5 hover:border-brand-200 dark:hover:border-brand-500/30 active:scale-[0.99] transition font-medium disabled:opacity-50 dark:text-slate-200"
               >
                 <GoogleIcon />
                 {googleLoading ? "Conectando…" : "Continuar con Google"}
@@ -340,7 +352,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl hover:shadow-md active:scale-[0.99] transition disabled:opacity-50 disabled:active:scale-100"
+                  className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-brand-500/30 active:scale-[0.99] transition disabled:opacity-50 disabled:active:scale-100"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
