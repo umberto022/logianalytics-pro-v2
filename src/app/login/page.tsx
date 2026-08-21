@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Truck, Mail, Lock, Eye, EyeOff, X } from "lucide-react";
+import { Truck, Mail, Lock, Eye, EyeOff, X, Plus, Search } from "lucide-react";
 import { getRecentAccounts, removeRecentAccount, type RecentAccount } from "@/lib/recentAccounts";
 
 function GoogleIcon() {
@@ -39,6 +39,7 @@ export default function LoginPage() {
   const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>([]);
   const [manualMode,     setManualMode]     = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const emailRef    = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setRecentAccounts(getRecentAccounts());
@@ -60,6 +61,11 @@ export default function LoginPage() {
     e.stopPropagation();
     removeRecentAccount(uid);
     setRecentAccounts((prev) => prev.filter((a) => a.uid !== uid));
+  }
+
+  function handleRecoverAccount() {
+    setManualMode(true);
+    setTimeout(() => emailRef.current?.focus(), 0);
   }
 
   function initials(name: string) {
@@ -145,51 +151,69 @@ export default function LoginPage() {
 
           <h1 className="text-3xl font-bold mb-2 dark:text-slate-100">Bienvenido de vuelta</h1>
           <p className="text-slate-500 dark:text-slate-400 mb-8">
-            {recentAccounts.length > 0 && !manualMode ? "Elige una cuenta para continuar" : "Ingresa a tu cuenta para continuar"}
+            {recentAccounts.length > 0 && !manualMode ? "Toca una cuenta para iniciar sesión" : "Ingresa a tu cuenta para continuar"}
           </p>
 
           {recentAccounts.length > 0 && !manualMode ? (
             <div className="mb-2">
-              <div className="space-y-2 mb-4">
+              <div className="mb-2">
                 {recentAccounts.map((acc) => (
                   <button
                     key={acc.uid}
                     type="button"
                     onClick={() => handleQuickAccount(acc)}
-                    className="group w-full flex items-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
+                    className="group w-full flex items-center gap-4 py-2.5 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
                   >
-                    {acc.photoURL ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={acc.photoURL} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-200 flex items-center justify-center font-semibold shrink-0">
-                        {initials(acc.fullName)}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm dark:text-slate-100 truncate">{acc.fullName}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{acc.email}</div>
-                    </div>
-                    {acc.provider === "google.com" && <GoogleIcon />}
+                    <span className="relative shrink-0">
+                      {acc.photoURL ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={acc.photoURL} alt="" className="w-14 h-14 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-200 flex items-center justify-center font-semibold text-lg">
+                          {initials(acc.fullName)}
+                        </div>
+                      )}
+                      {acc.provider === "google.com" && (
+                        <span className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-slate-800 rounded-full p-1 shadow">
+                          <GoogleIcon />
+                        </span>
+                      )}
+                    </span>
+                    <span className="flex-1 min-w-0 font-medium dark:text-slate-100 truncate">{acc.fullName}</span>
                     <span
                       role="button"
                       tabIndex={0}
                       onClick={(e) => handleRemoveAccount(acc.uid, e)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleRemoveAccount(acc.uid, e as unknown as React.MouseEvent); }}
                       aria-label={`Quitar ${acc.fullName} de este dispositivo`}
-                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1 shrink-0"
+                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1.5 shrink-0"
                     >
                       <X size={16} />
                     </span>
                   </button>
                 ))}
               </div>
+
               <button
                 type="button"
                 onClick={() => setManualMode(true)}
-                className="w-full text-center text-sm text-brand-600 hover:underline py-2"
+                className="w-full flex items-center gap-4 py-2.5 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
               >
-                Usar otra cuenta
+                <span className="w-14 h-14 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-400 shrink-0">
+                  <Plus size={22} />
+                </span>
+                <span className="font-medium text-slate-600 dark:text-slate-300">Iniciar sesión en otra cuenta</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRecoverAccount}
+                className="w-full flex items-center gap-4 py-2.5 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
+              >
+                <span className="w-14 h-14 rounded-full flex items-center justify-center text-slate-400 shrink-0">
+                  <Search size={20} />
+                </span>
+                <span className="font-medium text-slate-600 dark:text-slate-300">Recuperar tu cuenta</span>
               </button>
             </div>
           ) : (
@@ -225,6 +249,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
+                      ref={emailRef}
                       id="login-email"
                       type="email"
                       value={email}
