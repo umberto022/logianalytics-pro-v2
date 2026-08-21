@@ -390,7 +390,7 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Ingresos totales",  value: fmtCurrency(summary.revenue), sub: `${summary.numSales} ventas`,               icon: DollarSign, color: "indigo" },
           { label: "Ganancia total",    value: fmtCurrency(summary.profit),  sub: `Margen ${fmt(margin, 1)}%`,                icon: TrendingUp, color: "emerald" },
@@ -411,7 +411,7 @@ function AnalyticsTab({ sales }: { sales: Sale[] }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top products */}
         {byProd.length > 0 && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
@@ -591,7 +591,7 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
       </div>
 
       {/* Resumen del día */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Ventas del día",   value: todaySales.length,         sub: `${totalItems} unidades`, color: "indigo" },
           { label: "Total facturado",  value: fmtCurrency(totalSales),   sub: "Monto bruto",            color: "emerald" },
@@ -1117,7 +1117,7 @@ export default function VentasPage() {
                   </div>
 
                   {/* RNC + Phone */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">RNC / Cédula</label>
                       <input value={clientRnc} onChange={(e) => setClientRnc(e.target.value)} placeholder="000-0000000-0"
@@ -1145,7 +1145,7 @@ export default function VentasPage() {
                   </div>
 
                   {/* Route + Zone */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Ruta *</label>
                       <input value={route} onChange={(e) => { setRoute(e.target.value); setFormErrors((p) => ({ ...p, route: "" })); }} placeholder="ej. Norte, Sur"
@@ -1160,7 +1160,7 @@ export default function VentasPage() {
                   </div>
 
                   {/* Date + NCF */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Fecha de venta</label>
                       <input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)}

@@ -402,7 +402,7 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
                 </select>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { label: "Nombre del proveedor *", key: "supplierName" as const, placeholder: "ej. Distribuidora ABC" },
                 { label: "RNC / ID fiscal",        key: "supplierRnc"  as const, placeholder: "ej. 1-31-12345-6" },
@@ -671,7 +671,7 @@ export default function ComprasPage() {
       />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total órdenes",       value: fmt(orders.length, 0),  icon: FileText,    color: "text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-500/15" },
           { label: "Pendientes",          value: fmt(pending, 0),         icon: Clock,       color: "text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15" },

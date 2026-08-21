@@ -156,7 +156,7 @@ export default function ClientesPage() {
       />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total clientes",   value: customers.length,                                          icon: Users,       color: "text-brand-600 bg-brand-50 dark:bg-brand-500/15 dark:text-brand-300" },
           { label: `Con compras (${salesPeriod}d)`, value: clientStats.size,                                         icon: ShoppingCart, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300" },
@@ -288,7 +288,7 @@ export default function ClientesPage() {
                   className={`${inp} ${formErrors.name ? "border-red-400 dark:border-red-500" : ""}`} placeholder="Nombre del cliente o empresa" />
                 {formErrors.name && <p className="text-xs text-red-500 mt-0.5">{formErrors.name}</p>}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={lbl}>RNC / Cédula</label>
                   <input value={form.rnc} onChange={(e) => setForm((p) => ({ ...p, rnc: e.target.value }))} className={inp} placeholder="000-00000-0" />
@@ -375,7 +375,7 @@ export default function ClientesPage() {
                 <p className="text-xs text-slate-400 mt-4 text-center">Sin ventas registradas en los últimos 90 días</p>
               );
               return (
-                <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-700">
                   {[
                     { label: "Ventas",    value: stats.numSales },
                     { label: "Ingresos",  value: fmtCurrency(stats.revenue) },

@@ -370,7 +370,7 @@ export default function DashboardPage() {
       />
 
       {/* KPIs — clic abre modal de desglose */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {canViewSales && (
           <>
             <KPICard label="Ingresos"         value={fmtCurrency(summary.revenue)}                  icon={DollarSign}  color="indigo"
@@ -473,7 +473,7 @@ export default function DashboardPage() {
 
       {/* Route + Product charts */}
       {canViewSales && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {routes.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Ganancia por ruta ($)</h3>
@@ -518,7 +518,7 @@ export default function DashboardPage() {
       {canViewInv && items.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6 dark:bg-slate-800 dark:border-slate-700">
           <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Estado del inventario</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               {(() => {
                 const statusData = [

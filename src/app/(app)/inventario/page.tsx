@@ -632,7 +632,7 @@ function InventoryDashboard({ items, activeFilter, onFilter }: {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total productos" value={fmt(cTotal, 0)} icon={Boxes} color="bg-indigo-500"
           sub={`${fmt(cUnits, 0)} unidades en stock`}
           active={activeFilter === "all"} onClick={() => onFilter("all")} />
@@ -647,8 +647,8 @@ function InventoryDashboard({ items, activeFilter, onFilter }: {
           active={activeFilter === "low"} onClick={() => toggle("low")} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <BarChart2 size={16} className="text-indigo-500" />
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Top productos por valor en stock</h3>
@@ -1012,7 +1012,7 @@ function OrdenesTab({ items, uid, canViewPO, canReceive }: { items: InventoryIte
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
                 <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Productos a reabastecer</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{needRestock.length}</p>
@@ -1300,7 +1300,7 @@ function ConteoTab({ items, uid, onDone }: {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
           <p className="text-xs text-slate-400 dark:text-slate-400 mb-1">Productos a contar</p>
           <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{items.length}</p>
@@ -1954,7 +1954,7 @@ export default function InventarioPage() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm max-w-2xl">
           <h2 className="text-lg font-semibold mb-5 dark:text-slate-100">{editing ? "Editar producto" : "Registrar nuevo producto"}</h2>
           <form onSubmit={editing ? handleUpdate : handleAdd} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
                 { label: "Nombre del producto *", key: "name" as const,     placeholder: "ej. Camiseta manga corta" },
                 { label: "Tipo / Categoría *",    key: "category" as const, placeholder: "ej. Ropa, Electrónico" },

@@ -73,7 +73,7 @@ export default function CuentasPorCobrarPage() {
       <PageHeader title="Cuentas por cobrar" subtitle="Ventas a crédito y su estado de pago" />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Por cobrar",       value: fmtCurrency(totalPending),   icon: CreditCard,   color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-500/15 dark:text-indigo-300" },
           { label: "Vencidas",         value: fmtCurrency(totalOverdue),   icon: AlertTriangle, color: "text-red-600 bg-red-50 dark:bg-red-500/15 dark:text-red-300" },

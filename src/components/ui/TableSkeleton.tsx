@@ -2,7 +2,7 @@ export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden animate-pulse">
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 border-b border-slate-100 dark:border-slate-700">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border-b border-slate-100 dark:border-slate-700">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-16 bg-slate-100 dark:bg-slate-700 rounded-xl" />
         ))}

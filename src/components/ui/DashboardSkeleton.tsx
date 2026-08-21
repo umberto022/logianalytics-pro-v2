@@ -43,13 +43,13 @@ export function DashboardSkeleton() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {Array.from({ length: 5 }).map((_, i) => <KPISkeleton key={i} />)}
       </div>
 
       {/* Charts */}
       <ChartSkeleton height={220} />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 mb-6">
         <ChartSkeleton height={220} />
         <ChartSkeleton height={220} />
       </div>

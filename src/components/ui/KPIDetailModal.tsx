@@ -70,7 +70,7 @@ export function KPIDetailModal({
           {/* ── INGRESOS ── */}
           {type === "revenue" && (
             <>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                 <Stat label="Mes actual"   value={fmtCurrency(curRevenue)} />
                 <Stat label="Mes anterior" value={fmtCurrency(prevRevenue)} />
                 <Stat
@@ -101,7 +101,7 @@ export function KPIDetailModal({
           {/* ── GANANCIA ── */}
           {type === "profit" && (
             <>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                 <Stat label="Mes actual"   value={fmtCurrency(curProfit)} />
                 <Stat label="Mes anterior" value={fmtCurrency(prevProfit)} />
                 <Stat
@@ -133,7 +133,7 @@ export function KPIDetailModal({
           {/* ── VENTAS ── */}
           {type === "sales" && (
             <>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                 <Stat label="Total ventas"    value={fmt(summary.numSales, 0)} />
                 <Stat label="Promedio/día"    value={fmt(summary.numSales / Math.max(period, 1), 1)} />
                 <Stat label="Ticket promedio" value={fmtCurrency(summary.numSales > 0 ? summary.revenue / summary.numSales : 0)} />
@@ -175,7 +175,7 @@ export function KPIDetailModal({
           {/* ── INVENTARIO ── */}
           {type === "inventory" && (
             <>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                 <Stat label="Total productos" value={String(items.length)} />
                 <Stat label="Valor total"     value={fmtCurrency(invValue)} />
                 <Stat label="Costo promedio"  value={fmtCurrency(items.length > 0 ? invValue / items.length : 0)} />

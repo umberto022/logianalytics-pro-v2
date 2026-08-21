@@ -295,7 +295,7 @@ export default function ConfiguracionPage() {
     <div>
       <PageHeader title="Configuración" subtitle="Administra tu perfil y empresa" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Profile */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
@@ -374,12 +374,12 @@ export default function ConfiguracionPage() {
 
         {/* Company — full width, admin only */}
         {isAdmin && (
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
           <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-5">
             {company ? "Datos de la empresa" : "Registrar empresa"}
           </h2>
           <form onSubmit={saveCompany}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               {[
                 { label: "Nombre de la empresa *", key: "name" as const },
                 { label: "RIF / NIT / RFC",        key: "rif" as const  },
@@ -408,7 +408,7 @@ export default function ConfiguracionPage() {
                 </select>
               </div>
 
-              <div className="lg:col-span-3">
+              <div className="md:col-span-3">
                 <label className={labelCls}>Dirección</label>
                 <textarea value={comp.address} onChange={(e) => setComp((p) => ({ ...p, address: e.target.value }))}
                   className={`${inputCls} resize-none`} rows={2} />
@@ -425,7 +425,7 @@ export default function ConfiguracionPage() {
 
         {/* Facturación electrónica (DGII / e-CF) — admin only, requiere empresa ya registrada */}
         {isAdmin && company && (
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
           <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-1 flex items-center gap-2">
             <Receipt size={16} className="text-brand-500" /> Facturación electrónica (DGII)
           </h2>
@@ -436,7 +436,7 @@ export default function ConfiguracionPage() {
             e-NCF que le haya autorizado DGII para cada tipo de comprobante.
           </p>
           <form onSubmit={saveECf}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
               <div>
                 <label className={labelCls}>ID de empresa asociada en Alanube</label>
                 <input
@@ -517,7 +517,7 @@ export default function ConfiguracionPage() {
         )}
 
         {/* Push Notifications */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
           <h2 className="font-semibold text-slate-700 dark:text-slate-100 mb-1">Notificaciones de stock</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
             Recibe alertas del navegador cuando un producto caiga por debajo del stock mínimo.
@@ -583,7 +583,7 @@ export default function ConfiguracionPage() {
 
         {/* Audit Log — admin only */}
         {isAdmin && (
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+        <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <ShieldCheck size={18} className="text-brand-600" />

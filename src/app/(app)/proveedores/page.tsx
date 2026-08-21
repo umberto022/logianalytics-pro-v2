@@ -157,7 +157,7 @@ export default function ProveedoresPage() {
               </button>
             </div>
             <form onSubmit={handleSave} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {([
                   { label: "Nombre *",        key: "name"  as const, placeholder: "ej. Distribuidora ABC" },
                   { label: "RNC / ID fiscal", key: "rnc"   as const, placeholder: "ej. 1-31-12345-6" },
@@ -225,7 +225,7 @@ export default function ProveedoresPage() {
                 <div className="py-10 text-center text-slate-400 text-sm">Cargando datos…</div>
               ) : perfData ? (
                 <>
-                  <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                     {[
                       { label: "Órdenes", value: perfData.orders.length, icon: ShoppingBag, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-500/15 dark:text-indigo-300" },
                       { label: "Total comprado", value: fmtCurrency(perfData.totalSpent), icon: DollarSign, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300" },
@@ -245,6 +245,7 @@ export default function ProveedoresPage() {
                     <p className="text-center text-sm text-slate-400 py-4">Sin órdenes de compra registradas para este proveedor.</p>
                   ) : (
                     <div className="rounded-xl border border-slate-100 overflow-hidden dark:border-slate-700">
+                      <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="bg-slate-50 text-slate-500 dark:bg-slate-700/40 dark:text-slate-400">
@@ -276,6 +277,7 @@ export default function ProveedoresPage() {
                           ))}
                         </tbody>
                       </table>
+                      </div>
                       {perfData.orders.length > 10 && (
                         <p className="px-3 py-2 text-xs text-slate-400 bg-slate-50 border-t border-slate-100 dark:bg-slate-700/40 dark:border-slate-700">
                           Mostrando 10 de {perfData.orders.length} órdenes
@@ -353,6 +355,7 @@ export default function ProveedoresPage() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
@@ -418,6 +421,7 @@ export default function ProveedoresPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

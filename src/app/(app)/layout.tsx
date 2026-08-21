@@ -101,7 +101,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-5 lg:py-8 pb-24 lg:pb-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-5 md:py-6 lg:py-8 pb-24 lg:pb-8">
           {children}
         </div>
       </main>

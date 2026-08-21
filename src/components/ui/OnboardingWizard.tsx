@@ -148,7 +148,7 @@ export function OnboardingWizard({ onDone }: Props) {
                 <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">6 módulos integrados para gestionar tu negocio completo</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {MODULES.map(({ icon: Icon, color, title, desc }) => (
                   <div key={title} className="bg-slate-50 rounded-xl p-3.5 border border-slate-100 dark:bg-slate-700/40 dark:border-slate-700">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${color}`}>

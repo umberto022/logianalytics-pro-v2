@@ -301,7 +301,7 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
             )}
 
             {/* Client + payment grid */}
-            <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
               <div className="bg-slate-50 rounded-xl border border-slate-100 p-3.5 dark:bg-slate-700/40 dark:border-slate-700">
                 <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold mb-2 dark:text-slate-400">Datos del cliente</p>
                 <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{data.client || "—"}</p>
@@ -327,6 +327,7 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
 
             {/* Items table */}
             <div className="rounded-xl overflow-hidden border border-slate-100 mb-5 dark:border-slate-700">
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-indigo-600 text-white text-xs uppercase tracking-wide">
@@ -356,6 +357,7 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Totals */}

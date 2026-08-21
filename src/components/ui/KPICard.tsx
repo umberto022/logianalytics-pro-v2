@@ -55,7 +55,7 @@ export function KPICard({
             </div>
           )}
         </div>
-        <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-none mb-1 tracking-tight">{value}</p>
+        <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 leading-none mb-1 tracking-tight">{value}</p>
         {delta && (
           <p className={cn("text-xs font-medium mt-1.5 flex items-center gap-1", deltaColorMap[deltaType])}>
             {deltaType === "positive" && "↑"}

@@ -106,7 +106,7 @@ export default function RentabilidadPage() {
       />
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         <KPICard label="Ventas"             value={fmt(summary.numSales, 0)}      color="indigo" />
         <KPICard label="Unidades vendidas"  value={fmt(summary.totalUnits, 0)}    color="blue"   />
         <KPICard label="Ingresos totales"   value={fmtCurrency(summary.revenue)}  color="green"  />
@@ -143,7 +143,7 @@ export default function RentabilidadPage() {
                 Mejor ruta: <strong>{routes[0].route}</strong> — Ganancia <strong>{fmtCurrency(routes[0].profit)}</strong> | Margen <strong>{routes[0].marginPct}%</strong>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                   <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Ingresos, costo y ganancia por ruta</h3>
                   <ResponsiveContainer width="100%" height={240}>
@@ -215,7 +215,7 @@ export default function RentabilidadPage() {
             <p className="text-slate-400 text-sm">Sin datos de productos para este período.</p>
           ) : (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300">
                   Mejor producto: <strong>{products[0].productName}</strong> — Ganancia <strong>{fmtCurrency(products[0].profit)}</strong> | Margen <strong>{products[0].marginPct}%</strong>
                 </div>
@@ -253,7 +253,7 @@ export default function RentabilidadPage() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                   <h3 className="font-semibold text-slate-700 mb-4 dark:text-slate-200">Top 10 por ganancia</h3>
                   <ResponsiveContainer width="100%" height={240}>

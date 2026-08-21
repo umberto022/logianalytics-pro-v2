@@ -204,37 +204,39 @@ export default function RutasPage() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
-                    {["Nombre", "Zona", "Estado", "Descripción", ""].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                  {managed.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors dark:hover:bg-slate-700/50">
-                      <td className="px-4 py-3 font-semibold text-slate-800 flex items-center gap-2 dark:text-slate-100">
-                        <MapPin size={14} className="text-brand-500 flex-shrink-0" />{r.name}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.zone || "—"}</td>
-                      <td className="px-4 py-3">
-                        {r.active
-                          ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full dark:bg-emerald-500/15 dark:text-emerald-300"><CheckCircle2 size={10}/> Activa</span>
-                          : <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full dark:bg-slate-700 dark:text-slate-400">Inactiva</span>}
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 max-w-xs truncate dark:text-slate-400">{r.description || "—"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 justify-end">
-                          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition dark:hover:bg-brand-500/15"><Edit2 size={14} /></button>
-                          <button onClick={() => setConfirmDelete(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition dark:hover:bg-red-500/15"><Trash2 size={14} /></button>
-                        </div>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
+                      {["Nombre", "Zona", "Estado", "Descripción", ""].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
+                    {managed.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50 transition-colors dark:hover:bg-slate-700/50">
+                        <td className="px-4 py-3 font-semibold text-slate-800 flex items-center gap-2 dark:text-slate-100">
+                          <MapPin size={14} className="text-brand-500 flex-shrink-0" />{r.name}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.zone || "—"}</td>
+                        <td className="px-4 py-3">
+                          {r.active
+                            ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full dark:bg-emerald-500/15 dark:text-emerald-300"><CheckCircle2 size={10}/> Activa</span>
+                            : <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full dark:bg-slate-700 dark:text-slate-400">Inactiva</span>}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 max-w-xs truncate dark:text-slate-400">{r.description || "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 justify-end">
+                            <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition dark:hover:bg-brand-500/15"><Edit2 size={14} /></button>
+                            <button onClick={() => setConfirmDelete(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition dark:hover:bg-red-500/15"><Trash2 size={14} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -244,7 +246,7 @@ export default function RutasPage() {
       {tab === "analytics" && (<div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
         <KPICard label="Rutas activas"    value={String(routes.length)}     color="indigo" icon={MapPin}    />
         <KPICard label="Ingresos totales" value={fmtCurrency(totalRevenue)} color="blue"   icon={TrendingUp} />
         <KPICard label="Ganancia total"   value={fmtCurrency(totalProfit)}  color="green"  icon={BarChart2}  />
@@ -261,11 +263,10 @@ export default function RutasPage() {
       </div>
 
       {/* Map + Ranking */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         {/* Map */}
         <div
-          className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700"
-          style={{ height: 440 }}
+          className="lg:col-span-2 h-64 md:h-80 lg:h-[440px] bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700"
         >
           <RouteMap routes={routes} />
         </div>
@@ -326,7 +327,7 @@ export default function RutasPage() {
               ✕ cerrar
             </button>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[
               { label: "Ventas",    value: String(selectedRoute.numSales) },
               { label: "Unidades", value: fmt(selectedRoute.totalUnits, 0) },

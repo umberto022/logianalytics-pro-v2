@@ -280,7 +280,7 @@ function ItemCard({
           </div>
 
           {/* Serial / Batch */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1 dark:text-slate-400">
                 <Hash size={11} /> N° de serie
