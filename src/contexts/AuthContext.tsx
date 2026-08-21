@@ -15,16 +15,17 @@ import {
   createUserProfile, getUserProfile, touchLastLogin, backfillWorkspaceId,
 } from "@/lib/firestore/users";
 import { saveRecentAccount } from "@/lib/recentAccounts";
-import type { UserProfile } from "@/types";
+import type { UserProfile, Department } from "@/types";
 
 /** Guarda la cuenta en el selector rápido de /login (ver recentAccounts.ts). */
-function rememberAccount(u: User, provider: "password" | "google.com") {
+function rememberAccount(u: User, provider: "password" | "google.com", role?: Department) {
   saveRecentAccount({
     uid:      u.uid,
     email:    u.email ?? "",
     fullName: u.displayName ?? u.email ?? "",
     photoURL: u.photoURL ?? undefined,
     provider,
+    role,
   });
 }
 
@@ -47,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadProfile(u: User) {
+  async function loadProfile(u: User): Promise<UserProfile | null> {
     try {
       let p = await getUserProfile(u.uid);
       if (p && !p.workspaceId) {
@@ -56,9 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setProfile(p);
       if (p) touchLastLogin(u.uid).catch(() => {});
+      return p;
     } catch (e) {
       console.error("loadProfile error:", e);
       setProfile(null);
+      return null;
     }
   }
 
@@ -67,13 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getRedirectResult(auth).then(async (result) => {
       if (result?.user) {
         const exists = await getUserProfile(result.user.uid).catch(() => null);
+        let role = exists?.role;
         if (!exists) {
           await createUserProfile(result.user.uid, {
             email:    result.user.email!,
             fullName: result.user.displayName ?? "",
           });
+          role = "admin"; // createUserProfile siempre da de alta como admin de un workspace nuevo
         }
-        rememberAccount(result.user, "google.com");
+        rememberAccount(result.user, "google.com", role);
       }
     }).catch(console.error);
 
@@ -95,8 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signIn(email: string, password: string) {
     await setPersistence(auth, browserSessionPersistence);
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    await loadProfile(cred.user);
-    rememberAccount(cred.user, "password");
+    const p = await loadProfile(cred.user);
+    rememberAccount(cred.user, "password", p?.role);
   }
 
   async function signInGoogle() {
@@ -116,8 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           fullName: cred.user.displayName ?? "",
         });
       }
-      await loadProfile(cred.user);
-      rememberAccount(cred.user, "google.com");
+      const p = await loadProfile(cred.user);
+      rememberAccount(cred.user, "google.com", p?.role);
     } catch (e) {
       // Callers only show a generic toast — log the real Firebase error code
       // (e.g. auth/operation-not-allowed, auth/popup-blocked, auth/unauthorized-domain)
@@ -135,7 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateProfile(cred.user, { displayName: fullName });
     await createUserProfile(cred.user.uid, { email, fullName, phone });
     await loadProfile(cred.user);
-    saveRecentAccount({ uid: cred.user.uid, email, fullName, provider: "password" });
+    // createUserProfile siempre da de alta como admin de un workspace nuevo.
+    saveRecentAccount({ uid: cred.user.uid, email, fullName, provider: "password", role: "admin" });
   }
 
   async function logout() {

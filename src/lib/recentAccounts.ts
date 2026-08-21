@@ -9,6 +9,8 @@
  * el email; sigue pidiendo la contraseña.
  */
 
+import type { Department } from "@/types";
+
 const STORAGE_KEY = "logi_recent_accounts";
 const MAX_ACCOUNTS = 5;
 
@@ -18,6 +20,8 @@ export interface RecentAccount {
   fullName: string;
   photoURL?: string;
   provider: "password" | "google.com";
+  /** Departamento al momento del último login — solo para mostrar un badge; no gatea permisos (eso lo hacen las Firestore rules). */
+  role?: Department;
   /** epoch ms del último login exitoso — define el orden del selector. */
   lastLogin: number;
 }

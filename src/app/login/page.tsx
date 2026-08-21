@@ -5,8 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Truck, Mail, Lock, Eye, EyeOff, X, Plus, Search } from "lucide-react";
+import { Truck, Mail, Lock, Eye, EyeOff, X, Plus, Search, Loader2 } from "lucide-react";
 import { getRecentAccounts, removeRecentAccount, type RecentAccount } from "@/lib/recentAccounts";
+import type { Department } from "@/types";
+
+const ROLE_BADGE: Record<Department, { label: string; cls: string }> = {
+  admin:     { label: "Admin",      cls: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300" },
+  ventas:    { label: "Ventas",     cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
+  compras:   { label: "Compras",    cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
+  logistica: { label: "Logística",  cls: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300" },
+};
 
 function GoogleIcon() {
   return (
@@ -38,6 +46,7 @@ export default function LoginPage() {
   // Selector rápido de cuentas ya usadas en este dispositivo (tipo Facebook/Google).
   const [recentAccounts, setRecentAccounts] = useState<RecentAccount[]>([]);
   const [manualMode,     setManualMode]     = useState(false);
+  const [quickLoadingUid, setQuickLoadingUid] = useState<string | null>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const emailRef    = useRef<HTMLInputElement>(null);
 
@@ -45,9 +54,15 @@ export default function LoginPage() {
     setRecentAccounts(getRecentAccounts());
   }, []);
 
-  function handleQuickAccount(acc: RecentAccount) {
+  async function handleQuickAccount(acc: RecentAccount) {
+    if (quickLoadingUid) return; // ya hay un login rápido en curso
     if (acc.provider === "google.com") {
-      handleGoogle();
+      setQuickLoadingUid(acc.uid);
+      try {
+        await handleGoogle();
+      } finally {
+        setQuickLoadingUid(null);
+      }
       return;
     }
     // Cuenta de email/contraseña: nunca guardamos la contraseña — solo
@@ -149,55 +164,79 @@ export default function LoginPage() {
             <span className="text-xl font-bold text-brand-600">LogiAnalytics Pro</span>
           </div>
 
-          <h1 className="text-3xl font-bold mb-2 dark:text-slate-100">Bienvenido de vuelta</h1>
-          <p className="text-slate-500 dark:text-slate-400 mb-8">
+          <h1 className="text-3xl font-bold mb-2 dark:text-slate-100 animate-fade-in">Bienvenido de vuelta</h1>
+          <p className="text-slate-500 dark:text-slate-400 mb-8 animate-fade-in">
             {recentAccounts.length > 0 && !manualMode ? "Toca una cuenta para iniciar sesión" : "Ingresa a tu cuenta para continuar"}
           </p>
 
           {recentAccounts.length > 0 && !manualMode ? (
-            <div className="mb-2">
-              <div className="mb-2">
-                {recentAccounts.map((acc) => (
-                  <button
-                    key={acc.uid}
-                    type="button"
-                    onClick={() => handleQuickAccount(acc)}
-                    className="group w-full flex items-center gap-4 py-2.5 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
-                  >
-                    <span className="relative shrink-0">
-                      {acc.photoURL ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={acc.photoURL} alt="" className="w-14 h-14 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-14 h-14 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-200 flex items-center justify-center font-semibold text-lg">
-                          {initials(acc.fullName)}
-                        </div>
-                      )}
-                      {acc.provider === "google.com" && (
-                        <span className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-slate-800 rounded-full p-1 shadow">
-                          <GoogleIcon />
-                        </span>
-                      )}
-                    </span>
-                    <span className="flex-1 min-w-0 font-medium dark:text-slate-100 truncate">{acc.fullName}</span>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => handleRemoveAccount(acc.uid, e)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleRemoveAccount(acc.uid, e as unknown as React.MouseEvent); }}
-                      aria-label={`Quitar ${acc.fullName} de este dispositivo`}
-                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1.5 shrink-0"
+            <div className="mb-2 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-800/40 backdrop-blur-sm shadow-sm shadow-slate-200/50 dark:shadow-none p-2">
+              <div>
+                {recentAccounts.map((acc, i) => {
+                  const isLoadingThis = quickLoadingUid === acc.uid;
+                  return (
+                    <button
+                      key={acc.uid}
+                      type="button"
+                      onClick={() => handleQuickAccount(acc)}
+                      disabled={!!quickLoadingUid}
+                      style={{ animationDelay: `${i * 60}ms` }}
+                      className="animate-account-row group w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition disabled:cursor-default text-left"
                     >
-                      <X size={16} />
-                    </span>
-                  </button>
-                ))}
+                      <span className="relative shrink-0">
+                        {acc.photoURL ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={acc.photoURL}
+                            alt=""
+                            className="w-14 h-14 rounded-full object-cover ring-2 ring-white dark:ring-slate-700 shadow-sm transition-transform duration-200 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center font-semibold text-lg ring-2 ring-white dark:ring-slate-700 shadow-sm transition-transform duration-200 group-hover:scale-105">
+                            {initials(acc.fullName)}
+                          </div>
+                        )}
+                        {acc.provider === "google.com" && (
+                          <span className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-slate-800 rounded-full p-1 shadow">
+                            <GoogleIcon />
+                          </span>
+                        )}
+                        {isLoadingThis && (
+                          <span className="absolute inset-0 rounded-full bg-slate-900/40 flex items-center justify-center">
+                            <Loader2 size={20} className="text-white animate-spin" />
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block font-medium dark:text-slate-100 truncate">{acc.fullName}</span>
+                        {acc.role && (
+                          <span className={`inline-block mt-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded-full ${ROLE_BADGE[acc.role].cls}`}>
+                            {ROLE_BADGE[acc.role].label}
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => handleRemoveAccount(acc.uid, e)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleRemoveAccount(acc.uid, e as unknown as React.MouseEvent); }}
+                        aria-label={`Quitar ${acc.fullName} de este dispositivo`}
+                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1.5 shrink-0"
+                      >
+                        <X size={16} />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
+
+              <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-1 mx-2" />
 
               <button
                 type="button"
                 onClick={() => setManualMode(true)}
-                className="w-full flex items-center gap-4 py-2.5 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
+                style={{ animationDelay: `${recentAccounts.length * 60}ms` }}
+                className="animate-account-row w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition text-left"
               >
                 <span className="w-14 h-14 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-400 shrink-0">
                   <Plus size={22} />
@@ -208,7 +247,8 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleRecoverAccount}
-                className="w-full flex items-center gap-4 py-2.5 px-2 -mx-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition text-left"
+                style={{ animationDelay: `${(recentAccounts.length + 1) * 60}ms` }}
+                className="animate-account-row w-full flex items-center gap-4 py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition text-left"
               >
                 <span className="w-14 h-14 rounded-full flex items-center justify-center text-slate-400 shrink-0">
                   <Search size={20} />
@@ -217,7 +257,7 @@ export default function LoginPage() {
               </button>
             </div>
           ) : (
-            <>
+            <div className="animate-fade-in">
               {recentAccounts.length > 0 && (
                 <button
                   type="button"
@@ -231,7 +271,7 @@ export default function LoginPage() {
               <button
                 onClick={handleGoogle}
                 disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 dark:hover:bg-slate-800 transition font-medium disabled:opacity-50 dark:text-slate-200"
+                className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 mb-6 hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-sm active:scale-[0.99] transition font-medium disabled:opacity-50 dark:text-slate-200"
               >
                 <GoogleIcon />
                 {googleLoading ? "Conectando…" : "Continuar con Google"}
@@ -300,12 +340,16 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50"
+                  className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl hover:shadow-md active:scale-[0.99] transition disabled:opacity-50 disabled:active:scale-100"
                 >
-                  {loading ? "Ingresando…" : "Ingresar"}
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 size={16} className="animate-spin" /> Ingresando…
+                    </span>
+                  ) : "Ingresar"}
                 </button>
               </form>
-            </>
+            </div>
           )}
 
           <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-6">

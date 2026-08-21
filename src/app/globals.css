@@ -42,9 +42,15 @@
   70%  { box-shadow: 0 0 0 10px rgba(99,102,241,0); }
   100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
 }
+@keyframes account-row-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .animate-slide-up   { animation: slide-up 0.25s ease-out; }
 .animate-fade-in    { animation: fade-in  0.2s  ease-out; }
 .animate-pulse-ring { animation: pulse-ring 2s infinite; }
+/* Selector de cuentas en /login — entrada escalonada por fila (ver animationDelay inline). */
+.animate-account-row { animation: account-row-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 @media print {
   nav, aside, header, footer, .print\:hidden { display: none !important; }
