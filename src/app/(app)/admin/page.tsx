@@ -10,7 +10,7 @@ import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import toast from "react-hot-toast";
 import {
   MessageSquare, Users, Bug, Lightbulb, HelpCircle,
-  Trash2, Search, RefreshCw, ShieldAlert, CheckCircle2, Clock,
+  Trash2, Search, RefreshCw, ShieldAlert, CheckCircle2, Clock, Download,
 } from "lucide-react";
 
 interface FeedbackItem {
@@ -90,6 +90,31 @@ export default function AdminPage() {
     }
   }
 
+  /** Envuelve en comillas y escapa comillas internas si el campo trae coma, comilla o salto de línea. */
+  function escapeCsvField(value: unknown): string {
+    const s = String(value ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+
+  function exportFeedbackCSV() {
+    const header = ["Tipo", "Mensaje", "Usuario", "Email", "Página", "Fecha"];
+    const rows = filteredFeedback.map((f) => [
+      TYPE_META[f.type]?.label ?? f.type,
+      f.message,
+      f.userName,
+      f.userEmail,
+      f.page,
+      fmtDate(f.createdAt),
+    ].map(escapeCsvField).join(","));
+    // BOM UTF-8 al inicio para que Excel detecte los acentos correctamente.
+    const csv = "﻿" + header.join(",") + "\n" + rows.join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    a.download = `feedback-logianalytics-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   async function deleteFeedback(uid: string, id: string) {
     setDeleting(id);
     try {
@@ -145,9 +170,16 @@ export default function AdminPage() {
         title="Panel de Administración"
         subtitle="Feedback de beta testers y gestión de usuarios"
         action={
-          <button onClick={loadAll} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
-            <RefreshCw size={13} /> Actualizar
-          </button>
+          <div className="flex items-center gap-2">
+            {tab === "feedback" && filteredFeedback.length > 0 && (
+              <button onClick={exportFeedbackCSV} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+                <Download size={13} /> Exportar CSV
+              </button>
+            )}
+            <button onClick={loadAll} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+              <RefreshCw size={13} /> Actualizar
+            </button>
+          </div>
         }
       />
 
