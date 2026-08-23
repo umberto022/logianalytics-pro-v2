@@ -13,6 +13,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!process.env.RESEND_API_KEY) {
+    console.error("Monthly report error: falta RESEND_API_KEY en las env vars de Vercel");
+    return NextResponse.json({ error: "El envío de emails no está configurado (falta RESEND_API_KEY)" }, { status: 500 });
+  }
+
   try {
     const db     = getAdminDb();
     const resend = getResend();
@@ -38,6 +43,7 @@ export async function POST(req: NextRequest) {
         });
         sent.push(email);
       } catch (e) {
+        console.error(`Monthly report error for ${email}:`, e);
         errors.push(`${email}: ${e instanceof Error ? e.message : "error"}`);
       }
     }

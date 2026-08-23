@@ -11,6 +11,11 @@ export async function POST(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!token) return NextResponse.json({ error: "No token" }, { status: 401 });
 
+  if (!process.env.RESEND_API_KEY) {
+    console.error("Test report error: falta RESEND_API_KEY en las env vars de Vercel");
+    return NextResponse.json({ error: "El envío de emails no está configurado (falta RESEND_API_KEY)" }, { status: 500 });
+  }
+
   try {
     const auth    = getAdminAuth();
     const decoded = await auth.verifyIdToken(token);
