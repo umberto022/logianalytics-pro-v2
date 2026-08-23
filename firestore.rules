@@ -66,11 +66,17 @@ service cloud.firestore {
         (resource == null || resource.data.ownerId == request.auth.uid);
     }
 
-    // Inventory: Logística edits; Ventas reads (to know what's sellable);
+    // Inventory: Logística crea/edita; Ventas reads (to know what's sellable);
     // Compras reads (to look up products/stock while building purchase orders).
+    // Eliminar queda solo para Admin — coincide con el AdminButton de
+    // inventario/page.tsx; separado de create/update porque el keyword `write`
+    // de Firestore Rules cubre create+update+delete juntos, y sin este split
+    // Logística podría borrar un producto llamando al SDK directo, saltándose
+    // el botón deshabilitado en la UI.
     match /inventory/{workspaceId}/items/{itemId} {
       allow read: if roleIn(workspaceId, ['admin', 'logistica', 'ventas', 'compras']);
-      allow write: if roleIn(workspaceId, ['admin', 'logistica']);
+      allow create, update: if roleIn(workspaceId, ['admin', 'logistica']);
+      allow delete: if roleIn(workspaceId, ['admin']);
     }
 
     match /inventoryMovements/{workspaceId}/records/{movId} {
@@ -83,10 +89,14 @@ service cloud.firestore {
       allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
     }
 
-    // Purchase orders: Compras creates/manages, Logística receives — both can write;
-    // the finer-grained "who does what" split is enforced in the UI, not here.
+    // Purchase orders: Compras creates/manages, Logística receives — both can
+    // create/update; the finer-grained "who does what" split is enforced in the
+    // UI, not here. Eliminar queda solo para Admin (ver nota de Inventory arriba
+    // sobre por qué delete va separado) — coincide con el AdminButton de compras/page.tsx.
     match /purchaseOrders/{workspaceId}/orders/{orderId} {
-      allow read, write: if roleIn(workspaceId, ['admin', 'compras', 'logistica']);
+      allow read: if roleIn(workspaceId, ['admin', 'compras', 'logistica']);
+      allow create, update: if roleIn(workspaceId, ['admin', 'compras', 'logistica']);
+      allow delete: if roleIn(workspaceId, ['admin']);
     }
 
     // Feedback: personal beta feedback, not workspace-scoped. Reads only via admin SDK.
@@ -95,16 +105,22 @@ service cloud.firestore {
       allow read, delete: if false;
     }
 
-    // Customers: Ventas only.
+    // Customers: Ventas crea/edita. Eliminar queda solo para Admin (ver nota de
+    // Inventory arriba) — coincide con el AdminButton de clientes/page.tsx.
     match /customers/{workspaceId}/records/{recordId} {
-      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
+      allow read: if roleIn(workspaceId, ['admin', 'ventas']);
+      allow create, update: if roleIn(workspaceId, ['admin', 'ventas']);
+      allow delete: if roleIn(workspaceId, ['admin']);
     }
 
-    // Suppliers: Compras edits; Logística/Ventas read (populates the supplier
+    // Suppliers: Compras crea/edita; Logística/Ventas read (populates the supplier
     // dropdown on the Inventario product form, which they can also reach).
+    // Eliminar queda solo para Admin (ver nota de Inventory arriba) — coincide
+    // con el AdminButton de proveedores/page.tsx.
     match /users/{workspaceId}/suppliers/{supplierId} {
       allow read: if roleIn(workspaceId, ['admin', 'compras', 'logistica', 'ventas']);
-      allow write: if roleIn(workspaceId, ['admin', 'compras']);
+      allow create, update: if roleIn(workspaceId, ['admin', 'compras']);
+      allow delete: if roleIn(workspaceId, ['admin']);
     }
 
     // Routes: Logística only.
