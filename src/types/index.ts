@@ -18,6 +18,8 @@ export interface UserProfile {
   onboardingCompleted?: boolean;
   /** Gates the platform-wide /admin panel (feedback + all-companies user list). Only true for the LogiAnalytics operator account. */
   platformAdmin?: boolean;
+  /** FCM registration tokens, one per browser/device where the user granted push permission. */
+  fcmTokens?: string[];
   createdAt: Timestamp;
   lastLogin?: Timestamp;
 }

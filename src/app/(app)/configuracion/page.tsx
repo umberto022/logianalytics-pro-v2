@@ -18,6 +18,7 @@ import {
   setPushEnabled,
   requestNotificationPermission,
 } from "@/lib/notifications";
+import { registerFcmToken, unregisterFcmToken, getCurrentFcmToken } from "@/lib/fcm";
 
 const ACTION_LABELS: Record<AuditAction, string> = {
   inventory_add:    "Producto agregado",
@@ -68,10 +69,14 @@ export default function ConfiguracionPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setPushEnabledState(isPushEnabled());
+      const enabled = isPushEnabled();
+      setPushEnabledState(enabled);
       if ("Notification" in window) setPushPermission(Notification.permission);
+      // Backfill: gente que ya tenía notificaciones activadas antes de que existiera el push
+      // real (FCM) nunca registró un token — de(re)gistrarlo es gratis si ya existe.
+      if (enabled && Notification.permission === "granted" && user) registerFcmToken(user.uid);
     }
-  }, []);
+  }, [user]);
 
   async function sendTestReport() {
     const currentUser = auth.currentUser;
@@ -107,10 +112,18 @@ export default function ConfiguracionPage() {
       setPushEnabled(true);
       setPushEnabledState(true);
       toast.success("Notificaciones de stock crítico activadas");
+      // Best-effort: registra este dispositivo para recibir el push real (FCM) aunque la
+      // pestaña esté cerrada. Si el navegador no soporta Push API, sigue funcionando con la
+      // notificación local instantánea de siempre — no bloquea el toggle.
+      if (user) registerFcmToken(user.uid);
     } else {
       setPushEnabled(false);
       setPushEnabledState(false);
       toast("Notificaciones desactivadas", { icon: "🔕" });
+      if (user) {
+        const token = await getCurrentFcmToken();
+        if (token) unregisterFcmToken(user.uid, token);
+      }
     }
   }
 

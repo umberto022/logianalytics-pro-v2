@@ -47,10 +47,13 @@ service cloud.firestore {
         !('platformAdmin' in request.resource.data);
 
       // Ongoing profile edits: safe personal fields only. `workspaceId` may be
-      // set exactly once, as a self-heal, and only to your own uid.
+      // set exactly once, as a self-heal, and only to your own uid. `fcmTokens` is the
+      // FCM push registration list — client only ever arrayUnion/arrayRemove's its own
+      // device token here; the server prunes dead tokens separately via the Admin SDK,
+      // which bypasses these rules entirely.
       allow update: if isOwner(userId) &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['fullName', 'phone', 'photoURL', 'companyId', 'companyName', 'onboardingCompleted', 'lastLogin', 'workspaceId']) &&
+          .hasOnly(['fullName', 'phone', 'photoURL', 'companyId', 'companyName', 'onboardingCompleted', 'lastLogin', 'workspaceId', 'fcmTokens']) &&
         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['workspaceId']) ||
           (!('workspaceId' in resource.data) && request.resource.data.workspaceId == userId));
     }

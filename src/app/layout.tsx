@@ -54,6 +54,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        {/* Aplica el tema guardado (o preferencia del sistema) antes del primer paint,
+            para que /login, /register y la landing respeten el modo oscuro igual que
+            el resto de la app (donde el toggle vive en el Sidebar) — misma lógica que useTheme.ts */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('logi_theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={`${inter.className} bg-slate-50 text-slate-900 antialiased`}>
         <ErrorBoundary>
         <QueryProvider>
