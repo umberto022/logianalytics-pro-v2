@@ -11,6 +11,14 @@ export interface RouteRecord {
   description: string;
   active: boolean;
   createdAt: Timestamp;
+  /** Provincia real de RD (de DOMINICAN_PROVINCES) — fuente de las coordenadas del mapa.
+   *  Opcional solo por compatibilidad con rutas creadas antes de este campo; el formulario
+   *  la exige para rutas nuevas. `lat`/`lng` se guardan como snapshot de esa provincia al
+   *  momento de crear/editar, mismo patrón que otros snapshots del proyecto (ej. supplierName
+   *  en las órdenes de compra) — así el mapa no depende de un lookup en cada render. */
+  province?: string;
+  lat?: number;
+  lng?: number;
 }
 
 const col = (uid: string) =>

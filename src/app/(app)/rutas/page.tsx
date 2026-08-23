@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { Period, RouteStats } from "@/types";
+import { DOMINICAN_PROVINCES } from "@/types";
 
 const RouteMap = dynamic(() => import("@/components/map/RouteMap"), {
   ssr: false,
@@ -26,7 +27,7 @@ const RouteMap = dynamic(() => import("@/components/map/RouteMap"), {
 });
 
 type Tab = "analytics" | "gestion";
-const EMPTY_ROUTE = { name: "", zone: "", description: "", active: true };
+const EMPTY_ROUTE = { name: "", zone: "", province: "", description: "", active: true };
 
 export default function RutasPage() {
   const { user } = useAuth();
@@ -67,10 +68,13 @@ export default function RutasPage() {
 
   async function handleSave() {
     if (!form.name.trim() || !user) { toast.error("El nombre es obligatorio"); return; }
+    if (!form.province) { toast.error("Selecciona la provincia — es lo que ubica la ruta en el mapa"); return; }
+    const coords = DOMINICAN_PROVINCES.find((p) => p.name === form.province);
+    const data = { ...form, lat: coords?.lat, lng: coords?.lng };
     setSaving(true);
     const result = editing
-      ? await updateRoute(workspaceId, editing.id, form)
-      : await addRoute(workspaceId, form);
+      ? await updateRoute(workspaceId, editing.id, data)
+      : await addRoute(workspaceId, data);
     setSaving(false);
     if (!result.ok) { toast.error(result.message ?? "Error al guardar"); return; }
     toast.success(editing ? "Ruta actualizada" : "Ruta creada");
@@ -92,7 +96,7 @@ export default function RutasPage() {
 
   function openEdit(r: RouteRecord) {
     setEditing(r);
-    setForm({ name: r.name, zone: r.zone, description: r.description, active: r.active });
+    setForm({ name: r.name, zone: r.zone, province: r.province ?? "", description: r.description, active: r.active });
     setShowForm(true);
   }
 
@@ -135,9 +139,20 @@ export default function RutasPage() {
                   placeholder="ej. Ruta Norte" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Zona / Ciudad</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Provincia *</label>
+                <select value={form.province} onChange={(e) => setForm((p) => ({ ...p, province: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <option value="">Selecciona una provincia…</option>
+                  {DOMINICAN_PROVINCES.map((p) => (
+                    <option key={p.name} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-400 mt-1">Ubica la ruta en el mapa de Analíticas.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Zona / Sector (opcional)</label>
                 <input value={form.zone} onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  placeholder="ej. Santo Domingo Norte" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
+                  placeholder="ej. Villa Mella, Los Mina…" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Descripción</label>
@@ -208,7 +223,7 @@ export default function RutasPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide dark:bg-slate-700/40 dark:border-slate-700 dark:text-slate-400">
-                      {["Nombre", "Zona", "Estado", "Descripción", ""].map((h) => (
+                      {["Nombre", "Provincia", "Zona", "Estado", "Descripción", ""].map((h) => (
                         <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
                       ))}
                     </tr>
@@ -218,6 +233,11 @@ export default function RutasPage() {
                       <tr key={r.id} className="hover:bg-slate-50 transition-colors dark:hover:bg-slate-700/50">
                         <td className="px-4 py-3 font-semibold text-slate-800 flex items-center gap-2 dark:text-slate-100">
                           <MapPin size={14} className="text-brand-500 flex-shrink-0" />{r.name}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                          {r.province
+                            ? <span className="inline-flex items-center gap-1"><MapPin size={11} className="text-slate-300 dark:text-slate-600" />{r.province}</span>
+                            : <span className="text-amber-500 dark:text-amber-400 text-xs" title="Sin provincia — el mapa la va a ubicar por adivinanza">sin ubicar ⚠️</span>}
                         </td>
                         <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{r.zone || "—"}</td>
                         <td className="px-4 py-3">
@@ -268,7 +288,7 @@ export default function RutasPage() {
         <div
           className="lg:col-span-2 h-64 md:h-80 lg:h-[440px] bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700"
         >
-          <RouteMap routes={routes} />
+          <RouteMap routes={routes} records={managed} />
         </div>
 
         {/* Ranking list */}

@@ -187,6 +187,7 @@ export const INDUSTRIES = [
 ] as const;
 
 export const COUNTRIES = [
+  "República Dominicana",
   "Venezuela",
   "Colombia",
   "México",
@@ -196,6 +197,45 @@ export const COUNTRIES = [
   "Ecuador",
   "Uruguay",
   "Otro",
+] as const;
+
+// Las 32 regiones de República Dominicana (31 provincias + Distrito Nacional) con la
+// coordenada real de su ciudad cabecera — fuente de verdad para ubicar rutas en el mapa
+// (ver src/components/map/RouteMap.tsx). Es el mercado real de la app: todo el motor fiscal
+// (RNC, ITBIS, e-CF/DGII) ya es dominicano, así que esto va sin gating por país seleccionado.
+export const DOMINICAN_PROVINCES = [
+  { name: "Distrito Nacional",        lat: 18.4861, lng: -69.9312 },
+  { name: "Azua",                     lat: 18.4539, lng: -70.7358 },
+  { name: "Baoruco",                  lat: 18.4864, lng: -71.4241 },
+  { name: "Barahona",                 lat: 18.2085, lng: -71.1002 },
+  { name: "Dajabón",                  lat: 19.5490, lng: -71.7089 },
+  { name: "Duarte",                   lat: 19.3008, lng: -70.2540 },
+  { name: "Elías Piña",               lat: 18.8748, lng: -71.6825 },
+  { name: "El Seibo",                 lat: 18.7644, lng: -69.0392 },
+  { name: "Espaillat",                lat: 19.3945, lng: -70.5271 },
+  { name: "Hato Mayor",               lat: 18.7667, lng: -69.2500 },
+  { name: "Hermanas Mirabal",         lat: 19.3810, lng: -70.4152 },
+  { name: "Independencia",            lat: 18.4922, lng: -71.8511 },
+  { name: "La Altagracia",            lat: 18.6147, lng: -68.7078 },
+  { name: "La Romana",                lat: 18.4273, lng: -68.9728 },
+  { name: "La Vega",                  lat: 19.2233, lng: -70.5287 },
+  { name: "María Trinidad Sánchez",   lat: 19.3801, lng: -69.8489 },
+  { name: "Monseñor Nouel",           lat: 18.9388, lng: -70.4083 },
+  { name: "Monte Cristi",             lat: 19.8508, lng: -71.6492 },
+  { name: "Monte Plata",              lat: 18.8083, lng: -69.7833 },
+  { name: "Pedernales",               lat: 18.0384, lng: -71.7434 },
+  { name: "Peravia",                  lat: 18.2799, lng: -70.3308 },
+  { name: "Puerto Plata",             lat: 19.7934, lng: -70.6884 },
+  { name: "Samaná",                   lat: 19.2058, lng: -69.3364 },
+  { name: "San Cristóbal",            lat: 18.4167, lng: -70.1058 },
+  { name: "San José de Ocoa",         lat: 18.5442, lng: -70.5044 },
+  { name: "San Juan",                 lat: 18.8058, lng: -71.2295 },
+  { name: "San Pedro de Macorís",     lat: 18.4539, lng: -69.3084 },
+  { name: "Sánchez Ramírez",          lat: 19.0533, lng: -70.1517 },
+  { name: "Santiago",                 lat: 19.4517, lng: -70.6970 },
+  { name: "Santiago Rodríguez",       lat: 19.4831, lng: -71.3350 },
+  { name: "Santo Domingo",            lat: 18.5001, lng: -69.8850 },
+  { name: "Valverde",                 lat: 19.5497, lng: -71.0783 },
 ] as const;
 
 export const PERIOD_OPTIONS = [7, 15, 30, 60, 90, 180] as const;
