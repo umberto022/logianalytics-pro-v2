@@ -11,7 +11,7 @@ import {
   Minus, History, ShoppingCart, QrCode, Printer,
   ArrowUpCircle, ArrowDownCircle, SlidersHorizontal,
   Tag, Layers, Eye, ExternalLink, CheckCircle2, Clock,
-  PackageCheck, XCircle, FileText,
+  PackageCheck, XCircle, FileText, Factory,
 } from "lucide-react";
 import Papa from "papaparse";
 import {
@@ -757,9 +757,10 @@ function HistorialTab({ uid }: { uid: string }) {
   }, [uid, days]);
 
   const typeLabel: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-    purchase:   { label: "Entrada",  icon: <ArrowUpCircle size={14} />,   color: "text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/15" },
-    sale:       { label: "Venta",    icon: <ArrowDownCircle size={14} />, color: "text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-500/15" },
-    adjustment: { label: "Ajuste",   icon: <SlidersHorizontal size={14} />, color: "text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15" },
+    purchase:   { label: "Entrada",   icon: <ArrowUpCircle size={14} />,   color: "text-emerald-600 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-500/15" },
+    sale:       { label: "Venta",     icon: <ArrowDownCircle size={14} />, color: "text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-500/15" },
+    adjustment: { label: "Ajuste",    icon: <SlidersHorizontal size={14} />, color: "text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15" },
+    production: { label: "Producción", icon: <Factory size={14} />,       color: "text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-500/15" },
   };
 
   return (

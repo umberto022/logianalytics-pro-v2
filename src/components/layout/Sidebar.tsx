@@ -6,6 +6,7 @@ import {
   LayoutDashboard, ShoppingCart, TrendingUp, Package,
   Settings, LogOut, Truck, Building2, MapPin, ClipboardList,
   Users, Sun, Moon, Store, CreditCard, ShieldAlert, PackageCheck, UsersRound, Receipt,
+  Layers,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCaja } from "@/contexts/CajaContext";
@@ -27,6 +28,7 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: "
   { href: "/recepciones",   label: "Recepciones",   icon: PackageCheck,    badge: null,             module: "recepciones" },
   { href: "/proveedores",   label: "Proveedores",   icon: Store,           badge: null,             module: "proveedores" },
   { href: "/inventario",    label: "Inventario",    icon: Package,         badge: "stock" as const, module: "inventario" },
+  { href: "/insumos",       label: "Insumos",       icon: Layers,          badge: null,             module: "insumos" },
   { href: "/configuracion", label: "Configuración", icon: Settings,        badge: null,             module: "configuracion" },
 ];
 

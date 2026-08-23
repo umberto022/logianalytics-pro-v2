@@ -16,7 +16,12 @@ export type AuditAction =
   | "customer_delete"
   | "supplier_add"
   | "supplier_update"
-  | "supplier_delete";
+  | "supplier_delete"
+  | "raw_material_add"
+  | "raw_material_update"
+  | "raw_material_delete"
+  | "raw_material_stock_adjust"
+  | "production_register";
 
 export interface AuditEntry {
   id: string;

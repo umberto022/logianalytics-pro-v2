@@ -51,6 +51,20 @@ export const supplierSchema = z.object({
 
 export type SupplierFormValues = z.infer<typeof supplierSchema>;
 
+// ─── Raw material (insumo) ─────────────────────────────────────────────────────
+
+export const rawMaterialSchema = z.object({
+  name:         z.string().min(1, "El nombre es obligatorio").max(120),
+  unit:         z.string().min(1, "La unidad es obligatoria").max(20),
+  unitCost:     z.number({ error: "Debe ser un número" }).min(0, "El costo no puede ser negativo"),
+  currentStock: z.number({ error: "Debe ser un número" }).min(0, "Stock mínimo 0"),
+  minStock:     z.number({ error: "Debe ser un número" }).min(0),
+  supplier:     z.string().max(120).default(""),
+  notes:        z.string().max(500).default(""),
+});
+
+export type RawMaterialFormValues = z.infer<typeof rawMaterialSchema>;
+
 // ─── Purchase order ───────────────────────────────────────────────────────────
 
 export const purchaseOrderSchema = z.object({

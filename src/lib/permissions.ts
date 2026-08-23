@@ -9,6 +9,7 @@ export type ModuleKey =
   | "compras"
   | "proveedores"
   | "inventario"
+  | "insumos"
   | "rutas"
   | "recepciones"
   | "rentabilidad"
@@ -27,6 +28,8 @@ export const MODULE_ACCESS: Record<ModuleKey, { edit: Department[]; readOnly?: D
   compras:           { edit: ["admin", "compras"] },
   proveedores:       { edit: ["admin", "compras"] },
   inventario:        { edit: ["admin", "logistica"], readOnly: ["ventas"] },
+  // Materia prima/insumos y su costo real de producción: solo la dueña, a pedido del usuario.
+  insumos:           { edit: ["admin"] },
   rutas:             { edit: ["admin", "logistica"] },
   recepciones:       { edit: ["admin", "logistica"] },
   rentabilidad:      { edit: ["admin"] },
@@ -45,6 +48,7 @@ export const ROUTE_MODULE: Record<string, ModuleKey> = {
   "/compras": "compras",
   "/proveedores": "proveedores",
   "/inventario": "inventario",
+  "/insumos": "insumos",
   "/rutas": "rutas",
   "/recepciones": "recepciones",
   "/rentabilidad": "rentabilidad",

@@ -344,10 +344,11 @@ export default function RentabilidadPage() {
                       <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap dark:text-slate-400">{fmtDatetime(m.createdAt)}</td>
                       <td className="py-2.5 px-4">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          m.movementType === "sale"     ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" :
-                          m.movementType === "purchase" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" :
+                          m.movementType === "sale"       ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" :
+                          m.movementType === "purchase"   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" :
+                          m.movementType === "production" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300" :
                           "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"}`}>
-                          {m.movementType === "sale" ? "🔴 Venta" : m.movementType === "purchase" ? "🟢 Compra" : "🟡 Ajuste"}
+                          {m.movementType === "sale" ? "🔴 Venta" : m.movementType === "purchase" ? "🟢 Compra" : m.movementType === "production" ? "🏭 Producción" : "🟡 Ajuste"}
                         </span>
                       </td>
                       <td className="py-2.5 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{m.sku}</td>

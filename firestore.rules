@@ -112,6 +112,21 @@ service cloud.firestore {
       allow read, write: if roleIn(workspaceId, ['admin', 'logistica']);
     }
 
+    // Insumos (materia prima) + su historial de movimientos + registros de
+    // producción: solo Admin, a pedido explícito del usuario (dueña gestiona
+    // costos reales de fabricación, ningún empleado toca esto).
+    match /users/{workspaceId}/rawMaterials/{rawMaterialId} {
+      allow read, write: if roleIn(workspaceId, ['admin']);
+    }
+
+    match /users/{workspaceId}/rawMaterialMovements/{movementId} {
+      allow read, write: if roleIn(workspaceId, ['admin']);
+    }
+
+    match /users/{workspaceId}/productionRecords/{recordId} {
+      allow read, write: if roleIn(workspaceId, ['admin']);
+    }
+
     // Audit log: any workspace member can log their own actions; only Admin reads.
     match /auditLog/{workspaceId}/events/{eventId} {
       allow read: if roleIn(workspaceId, ['admin']);

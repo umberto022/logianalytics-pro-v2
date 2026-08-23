@@ -36,6 +36,11 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   supplier_add:     "Proveedor agregado",
   supplier_update:  "Proveedor actualizado",
   supplier_delete:  "Proveedor eliminado",
+  raw_material_add:          "Insumo agregado",
+  raw_material_update:       "Insumo actualizado",
+  raw_material_delete:       "Insumo eliminado",
+  raw_material_stock_adjust: "Ajuste de stock de insumo",
+  production_register:       "Producción registrada",
 };
 
 const ACTION_COLOR: Record<AuditAction, string> = {
@@ -54,6 +59,11 @@ const ACTION_COLOR: Record<AuditAction, string> = {
   supplier_add: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
   supplier_update: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
   supplier_delete: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  raw_material_add: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  raw_material_update: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+  raw_material_delete: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300",
+  raw_material_stock_adjust: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  production_register: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300",
 };
 
 export default function ConfiguracionPage() {

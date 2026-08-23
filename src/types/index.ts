@@ -89,7 +89,7 @@ export interface InventoryMovement {
   inventoryId: string;
   sku: string;
   productName: string;
-  movementType: "sale" | "purchase" | "adjustment";
+  movementType: "sale" | "purchase" | "adjustment" | "production";
   quantity: number;
   reference: string;
   note: string;
@@ -294,6 +294,70 @@ export interface PurchaseOrder {
   receivedDate?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+// ─── Insumos (materia prima) ──────────────────────────────────────────────────
+// Para clientes que fabrican su propio producto (ej. artesanías con limpiapipas):
+// sin motor de "receta" fija — cada tanda de producción declara a mano qué insumos
+// y cuánto consumió, y de ahí sale el costo real por unidad (ver src/lib/firestore/production.ts).
+
+export interface RawMaterialPriceHistoryEntry {
+  date: Timestamp;
+  unitCost: number;
+}
+
+export interface RawMaterial {
+  id: string;
+  name: string;
+  /** Unidad de medida en texto libre: "unidad", "kg", "g", "L", "ml", "m", "paquete"... */
+  unit: string;
+  unitCost: number;
+  currentStock: number;
+  minStock: number;
+  supplier: string;
+  notes: string;
+  updatedAt: Timestamp;
+  priceHistory?: RawMaterialPriceHistoryEntry[];
+}
+
+export type RawMaterialMovementType = "compra" | "produccion" | "ajuste";
+
+export interface RawMaterialMovement {
+  id: string;
+  rawMaterialId: string;
+  rawMaterialName: string;
+  movementType: RawMaterialMovementType;
+  /** Positivo = entrada (compra/ajuste), negativo = salida (consumido en producción). */
+  quantity: number;
+  reference: string;
+  note: string;
+  createdAt: Timestamp;
+}
+
+export interface ProductionConsumedItem {
+  rawMaterialId: string;
+  rawMaterialName: string;
+  unit: string;
+  quantityUsed: number;
+  /** Costo del insumo al momento de producir (snapshot, no cambia si luego se edita el insumo). */
+  unitCost: number;
+  totalCost: number;
+}
+
+export interface ProductionRecord {
+  id: string;
+  inventoryId: string;
+  sku: string;
+  productName: string;
+  quantityProduced: number;
+  consumedItems: ProductionConsumedItem[];
+  materialsCost: number;
+  laborCost: number;
+  otherCosts: number;
+  totalCost: number;
+  costPerUnit: number;
+  note: string;
+  createdAt: Timestamp;
 }
 
 // ─── Facturación electrónica (e-CF / DGII) ────────────────────────────────────
