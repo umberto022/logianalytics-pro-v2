@@ -16,6 +16,7 @@ import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { AperturaCajaModal } from "@/components/ui/AperturaCajaModal";
 import { CajaAbiertaModal } from "@/components/ui/CajaAbiertaModal";
 import { useStockNotifications } from "@/hooks/useStockNotifications";
+import { useRawMaterialNotifications } from "@/hooks/useRawMaterialNotifications";
 import { useOverdueOrders } from "@/hooks/useOverdueOrders";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useStockNotifications();
+  useRawMaterialNotifications();
   useOverdueOrders();
   const { user, loading, profile } = useAuth();
   const { can } = useRole();

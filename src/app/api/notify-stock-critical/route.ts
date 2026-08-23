@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb, getAdminAuth, getAdminMessaging } from "@/lib/firebase-admin";
-import { canViewModule } from "@/lib/permissions";
+import { canViewModule, type ModuleKey } from "@/lib/permissions";
 import type { Department } from "@/types";
 
 // Called by useStockNotifications.ts the moment a product first crosses into "crítico" in
@@ -23,24 +23,27 @@ export async function POST(req: NextRequest) {
     const callerProfile = callerDoc.data()!;
     const workspaceId = (callerProfile.workspaceId as string | undefined) ?? decoded.uid;
 
-    const { itemName, currentStock, minStock, excludeToken } = (await req.json()) as {
+    const { itemName, currentStock, minStock, excludeToken, module } = (await req.json()) as {
       itemName: string;
       currentStock: number;
       minStock: number;
       excludeToken?: string;
+      /** Qué módulo dispara la alerta — decide quién la recibe. Default "inventario" por compatibilidad. */
+      module?: ModuleKey;
     };
     if (!itemName) return NextResponse.json({ error: "Missing itemName" }, { status: 400 });
+    const targetModule: ModuleKey = module ?? "inventario";
 
-    // Recipients: same audience the existing Web Notification already reaches (whoever can
-    // view Inventario — admin, logística, and ventas read-only), just fanned out to every
-    // device they've granted push permission on, not only the tab that detected the change.
+    // Recipients: quien puede VER ese módulo (ej. Inventario → admin/logística/ventas
+    // read-only; Insumos → solo admin), fanned out a cada dispositivo con push habilitado,
+    // no solo la pestaña que detectó el cambio.
     const membersSnap = await db.collection("users").where("workspaceId", "==", workspaceId).get();
 
     const tokenOwners = new Map<string, FirebaseFirestore.DocumentReference>();
     membersSnap.docs.forEach((d) => {
       const p = d.data();
       const role = p.role as Department | undefined;
-      if (!role || !canViewModule(role, "inventario")) return;
+      if (!role || !canViewModule(role, targetModule)) return;
       (p.fcmTokens as string[] | undefined)?.forEach((t) => {
         if (t !== excludeToken) tokenOwners.set(t, d.ref);
       });

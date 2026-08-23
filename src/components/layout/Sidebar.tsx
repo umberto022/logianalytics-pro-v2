@@ -11,12 +11,13 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useCaja } from "@/contexts/CajaContext";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
+import { useRawMaterialAlerts } from "@/hooks/useRawMaterialAlerts";
 import { useTheme } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
 import type { ModuleKey } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-const NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: "stock" | null; module: ModuleKey }[] = [
+const NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: "stock" | "insumos" | null; module: ModuleKey }[] = [
   { href: "/dashboard",     label: "Dashboard",     icon: LayoutDashboard, badge: null,             module: "dashboard" },
   { href: "/ventas",        label: "Ventas",        icon: ShoppingCart,    badge: null,             module: "ventas" },
   { href: "/clientes",      label: "Clientes",      icon: Users,           badge: null,             module: "clientes" },
@@ -28,7 +29,7 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: "
   { href: "/recepciones",   label: "Recepciones",   icon: PackageCheck,    badge: null,             module: "recepciones" },
   { href: "/proveedores",   label: "Proveedores",   icon: Store,           badge: null,             module: "proveedores" },
   { href: "/inventario",    label: "Inventario",    icon: Package,         badge: "stock" as const, module: "inventario" },
-  { href: "/insumos",       label: "Insumos",       icon: Layers,          badge: null,             module: "insumos" },
+  { href: "/insumos",       label: "Insumos",       icon: Layers,          badge: "insumos" as const, module: "insumos" },
   { href: "/configuracion", label: "Configuración", icon: Settings,        badge: null,             module: "configuracion" },
 ];
 
@@ -37,6 +38,7 @@ export function Sidebar() {
   const { profile }            = useAuth();
   const { requestLogout, session } = useCaja();
   const criticalCount          = useStockAlerts();
+  const rawCriticalCount       = useRawMaterialAlerts();
   const { isDark, toggle }     = useTheme();
   const { isAdmin, isPlatformAdmin, can } = useRole();
   const visibleNav = NAV.filter((item) => can(item.module).canView);
@@ -93,8 +95,9 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {visibleNav.map(({ href, label, icon: Icon, badge }) => {
-          const active    = pathname === href || pathname.startsWith(href + "/");
-          const showBadge = badge === "stock" && criticalCount > 0;
+          const active     = pathname === href || pathname.startsWith(href + "/");
+          const badgeCount = badge === "stock" ? criticalCount : badge === "insumos" ? rawCriticalCount : 0;
+          const showBadge  = badgeCount > 0;
 
           return (
             <Link key={href} href={href}
@@ -109,7 +112,7 @@ export function Sidebar() {
               <span className="flex-1">{label}</span>
               {showBadge && (
                 <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse">
-                  {criticalCount > 9 ? "9+" : criticalCount}
+                  {badgeCount > 9 ? "9+" : badgeCount}
                 </span>
               )}
             </Link>

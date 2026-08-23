@@ -10,6 +10,7 @@ import {
   PackageCheck, UsersRound, Receipt, Layers,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
+import { useRawMaterialAlerts } from "@/hooks/useRawMaterialAlerts";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCaja } from "@/contexts/CajaContext";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
@@ -25,11 +26,11 @@ const MAIN_NAV: { href: string; label: string; icon: typeof LayoutDashboard; bad
   { href: "/inventario", label: "Inventario", icon: Package,         badge: true,  module: "inventario" },
 ];
 
-const MORE_NAV: { href: string; label: string; icon: typeof LayoutDashboard; module: ModuleKey }[] = [
+const MORE_NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge?: "insumos"; module: ModuleKey }[] = [
   { href: "/rutas",               label: "Rutas",           icon: MapPin,       module: "rutas" },
   { href: "/recepciones",         label: "Recepciones",     icon: PackageCheck, module: "recepciones" },
   { href: "/proveedores",         label: "Proveedores",     icon: Store,        module: "proveedores" },
-  { href: "/insumos",             label: "Insumos",         icon: Layers,       module: "insumos" },
+  { href: "/insumos",             label: "Insumos",         icon: Layers,       badge: "insumos", module: "insumos" },
   { href: "/cuentas-por-cobrar",  label: "Por cobrar",      icon: CreditCard,   module: "cuentasPorCobrar" },
   { href: "/facturacion-electronica", label: "Fact. electrónica", icon: Receipt, module: "facturacionElectronica" },
   { href: "/rentabilidad",        label: "Rentabilidad",    icon: TrendingUp,   module: "rentabilidad" },
@@ -39,6 +40,7 @@ const MORE_NAV: { href: string; label: string; icon: typeof LayoutDashboard; mod
 export function BottomNav() {
   const pathname      = usePathname();
   const criticalCount = useStockAlerts();
+  const rawCriticalCount = useRawMaterialAlerts();
   const { logout }    = useAuth();
   const { canInstall, install } = usePWAInstall();
   const { isAdmin, isPlatformAdmin, can } = useRole();
@@ -82,8 +84,9 @@ export function BottomNav() {
 
             {/* Links */}
             <div className="px-4 pb-6 space-y-1">
-              {visibleMore.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href || pathname.startsWith(href + "/");
+              {visibleMore.map(({ href, label, icon: Icon, badge }) => {
+                const active     = pathname === href || pathname.startsWith(href + "/");
+                const badgeCount = badge === "insumos" ? rawCriticalCount : 0;
                 return (
                   <Link
                     key={href}
@@ -97,7 +100,12 @@ export function BottomNav() {
                     )}
                   >
                     <Icon size={20} />
-                    {label}
+                    <span className="flex-1">{label}</span>
+                    {badgeCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse">
+                        {badgeCount > 9 ? "9+" : badgeCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -184,7 +192,12 @@ export function BottomNav() {
             moreOpen || moreActive ? "text-brand-400" : "text-slate-500"
           )}
         >
-          <MoreHorizontal size={20} />
+          <span className="relative">
+            <MoreHorizontal size={20} />
+            {rawCriticalCount > 0 && (
+              <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-sidebar" />
+            )}
+          </span>
           <span className="text-[10px] font-medium leading-none">Más</span>
           {moreActive && (
             <span className="absolute top-0 inset-x-0 h-0.5 bg-brand-400 rounded-b" />
