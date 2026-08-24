@@ -1,4 +1,4 @@
-const CACHE_NAME = "logipro-v4";
+const CACHE_NAME = "logipro-v5";
 const STATIC_ASSETS = [
   "/",
   "/offline.html",
