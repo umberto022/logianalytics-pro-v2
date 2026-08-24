@@ -6,6 +6,7 @@ import {
   Zap, Shield, Users, Star,
 } from "lucide-react";
 import { LandingInstallButtonHeader, LandingInstallButtonHero } from "@/components/ui/LandingInstallButton";
+import { CONTACT_EMAIL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "LogiAnalytics Pro — Gestión logística para negocios",
@@ -283,7 +284,12 @@ export default function LandingPage() {
           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-400 border border-amber-400/30">BETA</span>
         </div>
         <p className="text-slate-500 text-sm">Plataforma de gestión logística y analítica para negocios</p>
-        <p className="text-slate-600 text-xs mt-2">pedromateo.desarrollo@gmail.com</p>
+        <p className="text-slate-600 text-xs mt-2">{CONTACT_EMAIL}</p>
+        <p className="mt-3 flex items-center justify-center gap-3 text-slate-500 text-xs">
+          <Link href="/terminos" className="hover:text-slate-300 transition">Términos y Condiciones</Link>
+          <span className="text-slate-700">·</span>
+          <Link href="/privacidad" className="hover:text-slate-300 transition">Política de Privacidad</Link>
+        </p>
       </footer>
     </div>
   );

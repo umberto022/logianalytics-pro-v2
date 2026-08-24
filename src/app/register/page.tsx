@@ -214,6 +214,13 @@ export default function RegisterPage() {
             Iniciar sesión
           </Link>
         </p>
+
+        <p className="text-center text-slate-400 dark:text-slate-500 text-xs mt-4">
+          Al crear tu cuenta aceptas los{" "}
+          <Link href="/terminos" className="hover:underline">Términos y Condiciones</Link>{" "}
+          y la{" "}
+          <Link href="/privacidad" className="hover:underline">Política de Privacidad</Link>.
+        </p>
         </div>
       </div>
     </div>
