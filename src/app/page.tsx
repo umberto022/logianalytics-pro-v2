@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Truck, BarChart3, Package, ShoppingCart, TrendingUp,
-  MapPin, ClipboardList, ArrowRight, CheckCircle,
-  Zap, Shield, Users, Star,
+  MapPin, ClipboardList, ArrowRight, CheckCircle, Mail,
+  UserCheck, SlidersHorizontal, Shield, MessageCircle,
 } from "lucide-react";
 import { LandingInstallButtonHeader, LandingInstallButtonHero } from "@/components/ui/LandingInstallButton";
 import { CONTACT_EMAIL } from "@/lib/legal";
 
+const MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Quiero información sobre LogiAnalytics Pro")}`;
+
 export const metadata: Metadata = {
   title: "LogiAnalytics Pro — Gestión logística para negocios",
   description:
-    "Gestiona inventario, ventas, compras y rentabilidad en una sola plataforma. Datos en tiempo real, desde cualquier dispositivo. Hecho para negocios latinoamericanos.",
+    "Gestiona inventario, ventas, compras y rentabilidad en una sola plataforma. Implementación guiada, datos en tiempo real, desde cualquier dispositivo. Hecho para negocios latinoamericanos.",
   openGraph: {
     title: "LogiAnalytics Pro — Gestión logística para negocios",
     description:
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "LogiAnalytics Pro — Gestión logística para negocios",
-    description: "Gestión logística y analítica para negocios latinoamericanos. Gratis para empezar.",
+    description: "Gestión logística y analítica para negocios latinoamericanos.",
     images: ["https://logianalytics-pro-v2.vercel.app/icon-512.png"],
   },
 };
@@ -48,24 +50,30 @@ const BENEFITS = [
   "Alertas automáticas cuando el stock está bajo",
 ];
 
-const BETA_PERKS = [
-  { icon: Zap,    title: "Acceso 100% gratuito",    desc: "Durante toda la fase beta, sin límites ni tarjeta." },
-  { icon: Star,   title: "Moldea el producto",       desc: "Tu feedback directo define las próximas funciones." },
-  { icon: Shield, title: "Datos seguros",            desc: "Firebase con backups automáticos y reglas de seguridad." },
-  { icon: Users,  title: "Soporte prioritario",      desc: "Acceso directo al equipo para resolver cualquier duda." },
+const WORK_PERKS = [
+  { icon: UserCheck,        title: "Implementación guiada",        desc: "Configuramos la plataforma con los datos reales de tu negocio, no una plantilla genérica." },
+  { icon: SlidersHorizontal,title: "Se adapta a tu operación",     desc: "Roles por departamento (Ventas, Compras, Logística) armados según cómo trabaja tu equipo." },
+  { icon: Shield,           title: "Datos seguros",                desc: "Firebase con backups automáticos y reglas de seguridad por empresa." },
+  { icon: MessageCircle,    title: "Soporte directo",               desc: "Hablás conmigo, no con un ticket de soporte genérico." },
 ];
+
+const STEPS = [
+  { step: "1", title: "Conversamos",           desc: "Entiendo qué necesita tu negocio y cómo trabaja hoy tu equipo." },
+  { step: "2", title: "Lo configuro por vos",   desc: "Cargo tu inventario inicial y armo los accesos de cada departamento." },
+  { step: "3", title: "Empezás a usarlo",       desc: "Con acompañamiento los primeros días, no un manual y listo." },
+];
+
+function ContactButton({ label, className }: { label: string; className: string }) {
+  return (
+    <a href={MAILTO} className={className}>
+      <Mail size={18} /> {label}
+    </a>
+  );
+}
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Beta top banner */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center py-2.5 px-4 text-sm font-semibold">
-        🚀 Versión Beta — Acceso anticipado gratuito · Sin tarjeta · Sin límites
-        <Link href="/register" className="ml-3 underline underline-offset-2 hover:no-underline opacity-90">
-          Únete ahora →
-        </Link>
-      </div>
-
       {/* Header */}
       <header className="sticky top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-sm border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -74,7 +82,6 @@ export default function LandingPage() {
               <Truck size={17} className="text-white" />
             </div>
             <span className="font-bold text-slate-900 text-lg leading-none">LogiAnalytics</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 leading-none">BETA</span>
           </div>
           <div className="flex items-center gap-2">
             <LandingInstallButtonHeader />
@@ -84,12 +91,12 @@ export default function LandingPage() {
             >
               Ingresar
             </Link>
-            <Link
-              href="/register"
+            <a
+              href={MAILTO}
               className="text-sm font-semibold bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition shadow-sm"
             >
-              Acceso Beta →
-            </Link>
+              Contáctanos
+            </a>
           </div>
         </div>
       </header>
@@ -97,8 +104,8 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="pt-28 pb-24 px-4 text-center bg-gradient-to-b from-slate-50 via-slate-50 to-white">
         <div className="max-w-3xl mx-auto">
-          <span className="inline-block mb-5 text-xs font-bold tracking-widest text-amber-700 uppercase bg-amber-50 border border-amber-200 px-4 py-1.5 rounded-full">
-            ✦ Acceso anticipado — Únete al beta gratuito
+          <span className="inline-block mb-5 text-xs font-bold tracking-widest text-brand-700 uppercase bg-brand-50 border border-brand-200 px-4 py-1.5 rounded-full">
+            ✦ Gestión de negocio, implementada a tu medida
           </span>
           <h1 className="text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight mb-6">
             Toma decisiones con{" "}
@@ -112,12 +119,10 @@ export default function LandingPage() {
             en una sola plataforma. En tiempo real, desde cualquier dispositivo.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/register"
+            <ContactButton
+              label="Solicitar información"
               className="inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold px-8 py-4 rounded-xl text-base transition shadow-lg shadow-brand-600/25 active:scale-95"
-            >
-              Empezar gratis <ArrowRight size={18} />
-            </Link>
+            />
             <Link
               href="/login"
               className="inline-flex items-center justify-center gap-2 border-2 border-slate-200 text-slate-700 font-semibold px-8 py-4 rounded-xl text-base hover:border-brand-300 hover:bg-brand-50 transition"
@@ -127,24 +132,17 @@ export default function LandingPage() {
           </div>
           <LandingInstallButtonHero />
 
-          {/* Social proof */}
-          <div className="mt-10 flex items-center justify-center gap-2 text-sm text-slate-400">
-            <div className="flex -space-x-2">
-              {["bg-indigo-400","bg-emerald-400","bg-amber-400","bg-rose-400"].map((c,i) => (
-                <div key={i} className={`w-7 h-7 rounded-full border-2 border-white ${c} flex items-center justify-center text-white text-[10px] font-bold`}>
-                  {["A","M","C","R"][i]}
-                </div>
-              ))}
-            </div>
-            <span>Beta testers activos usando la plataforma</span>
-          </div>
+          <p className="mt-10 text-sm text-slate-400">
+            Para más información comunícate a{" "}
+            <a href={MAILTO} className="text-brand-600 font-medium hover:underline">{CONTACT_EMAIL}</a>
+          </p>
         </div>
 
         {/* Stats strip */}
         <div className="mt-16 max-w-2xl mx-auto grid grid-cols-3 gap-6">
           {[
             { value: "Tiempo real", label: "Actualización de datos" },
-            { value: "100%",        label: "En la nube y gratis en beta" },
+            { value: "100%",        label: "En la nube, sin instalar nada" },
             { value: "PWA",         label: "Instálala en tu celular" },
           ].map(({ value, label }) => (
             <div key={label} className="text-center">
@@ -155,20 +153,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Beta access section */}
+      {/* Cómo trabajamos */}
       <section className="py-20 px-4 bg-gradient-to-br from-brand-900 via-brand-800 to-indigo-900 text-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <span className="inline-block text-xs font-bold tracking-widest text-amber-300 uppercase bg-amber-400/10 border border-amber-400/20 px-4 py-1.5 rounded-full mb-4">
-              Versión Beta
-            </span>
-            <h2 className="text-3xl font-extrabold mb-3">¿Qué incluye el acceso beta?</h2>
+            <h2 className="text-3xl font-extrabold mb-3">Cómo trabajamos con vos</h2>
             <p className="text-brand-200 text-lg max-w-xl mx-auto">
-              Los primeros usuarios moldean el producto. Sin costo, sin límites, con soporte directo.
+              No es un software que descargás y te las arreglás solo. Te acompaño desde el primer día.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
-            {BETA_PERKS.map(({ icon: Icon, title, desc }) => (
+            {WORK_PERKS.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="bg-white/10 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:bg-white/15 transition">
                 <div className="w-10 h-10 bg-brand-500/30 rounded-xl flex items-center justify-center mb-3">
                   <Icon size={20} className="text-brand-200" />
@@ -179,13 +174,11 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="text-center">
-            <Link
-              href="/register"
+            <ContactButton
+              label="Conversemos sobre tu negocio"
               className="inline-flex items-center gap-2 bg-white text-brand-700 font-bold px-10 py-4 rounded-xl text-base hover:bg-brand-50 transition shadow-xl active:scale-95"
-            >
-              Unirme al beta gratuito <ArrowRight size={18} />
-            </Link>
-            <p className="mt-3 text-brand-300 text-sm">Sin tarjeta · Sin compromisos · Cancela cuando quieras</p>
+            />
+            <p className="mt-3 text-brand-300 text-sm">Sin compromiso — te muestro cómo funciona con un caso real de tu negocio</p>
           </div>
         </div>
       </section>
@@ -237,14 +230,10 @@ export default function LandingPage() {
       {/* How it works */}
       <section className="py-24 px-4 bg-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-extrabold text-slate-900 mb-3">Empieza en 2 minutos</h2>
-          <p className="text-slate-500 text-lg mb-14">Sin configuraciones complicadas</p>
+          <h2 className="text-3xl font-extrabold text-slate-900 mb-3">Cómo arrancamos</h2>
+          <p className="text-slate-500 text-lg mb-14">Sin configuraciones complicadas de tu lado</p>
           <div className="grid sm:grid-cols-3 gap-8">
-            {[
-              { step: "1", title: "Crea tu cuenta",      desc: "Regístrate gratis con tu email o Google. Sin tarjeta requerida." },
-              { step: "2", title: "Configura tu negocio", desc: "Asistente de bienvenida te guía. Puedes cargar datos de demo para explorar." },
-              { step: "3", title: "Toma decisiones",      desc: "Dashboard con datos reales de tus ventas, stock y rentabilidad." },
-            ].map(({ step, title, desc }) => (
+            {STEPS.map(({ step, title, desc }) => (
               <div key={step} className="flex flex-col items-center text-center">
                 <div className="w-12 h-12 rounded-full bg-brand-600 text-white font-extrabold text-xl flex items-center justify-center mb-4 shadow-lg shadow-brand-600/25">
                   {step}
@@ -260,19 +249,18 @@ export default function LandingPage() {
       {/* CTA final */}
       <section className="py-24 px-4 bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 text-white text-center">
         <div className="max-w-2xl mx-auto">
-          <span className="inline-block text-xs font-bold tracking-widest text-amber-300 uppercase bg-amber-400/10 border border-amber-400/20 px-4 py-1.5 rounded-full mb-6">
-            Acceso beta gratuito
-          </span>
-          <h2 className="text-4xl font-extrabold mb-4">¿Listo para empezar?</h2>
+          <h2 className="text-4xl font-extrabold mb-4">¿Listo para modernizar la gestión de tu negocio?</h2>
           <p className="text-brand-100 text-lg mb-10 leading-relaxed">
-            Únete al beta y comienza a gestionar tu negocio hoy mismo. Gratis, sin límites, sin tarjeta.
+            Conversemos y te muestro cómo se vería LogiAnalytics Pro funcionando con los datos reales de tu negocio.
           </p>
-          <Link
-            href="/register"
+          <ContactButton
+            label="Escríbenos"
             className="inline-flex items-center gap-2 bg-white text-brand-700 font-bold px-10 py-4 rounded-xl text-lg hover:bg-brand-50 transition shadow-xl active:scale-95"
-          >
-            Crear cuenta gratis <ArrowRight size={20} />
-          </Link>
+          />
+          <p className="mt-4 text-brand-200 text-sm">
+            Para más información comunícate a{" "}
+            <a href={MAILTO} className="font-semibold hover:underline">{CONTACT_EMAIL}</a>
+          </p>
         </div>
       </section>
 
@@ -281,7 +269,6 @@ export default function LandingPage() {
         <div className="flex items-center justify-center gap-2 mb-2">
           <Truck size={16} className="text-brand-400" />
           <span className="text-white font-bold">LogiAnalytics</span>
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-400 border border-amber-400/30">BETA</span>
         </div>
         <p className="text-slate-500 text-sm">Plataforma de gestión logística y analítica para negocios</p>
         <p className="text-slate-600 text-xs mt-2">{CONTACT_EMAIL}</p>

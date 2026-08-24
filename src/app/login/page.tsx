@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Truck, Mail, Lock, Eye, EyeOff, X, Plus, Search, Loader2 } from "lucide-react";
 import { getRecentAccounts, removeRecentAccount, type RecentAccount } from "@/lib/recentAccounts";
 import type { Department } from "@/types";
+import { CONTACT_EMAIL } from "@/lib/legal";
 
 const ROLE_BADGE: Record<Department, { label: string; cls: string; ring: string; grad: string }> = {
   admin:     { label: "Admin",      cls: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300",     ring: "ring-brand-300 dark:ring-brand-500/60",     grad: "from-brand-400 to-brand-600" },
@@ -366,9 +366,9 @@ export default function LoginPage() {
 
           <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-6">
             ¿No tienes cuenta?{" "}
-            <Link href="/register" className="text-brand-600 font-medium hover:underline">
-              Crear cuenta gratis
-            </Link>
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-brand-600 font-medium hover:underline">
+              Comunícate con nosotros
+            </a>
           </p>
         </div>
       </div>
