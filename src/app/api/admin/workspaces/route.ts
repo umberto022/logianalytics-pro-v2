@@ -29,7 +29,9 @@ export async function GET(req: NextRequest) {
     // no hace falta el índice para nada.
     const snap = await getAdminDb().collection("users").where("role", "==", "admin").get();
     const workspaces = snap.docs
-      .filter((d) => d.data().workspaceId === d.id)
+      // Solo empresas reales — las cuentas de operador de plataforma
+      // (platformOnly, ver (app)/layout.tsx) no son un cliente a gestionar acá.
+      .filter((d) => d.data().workspaceId === d.id && d.data().platformOnly !== true)
       .map((d) => {
         const data = d.data();
         return {
