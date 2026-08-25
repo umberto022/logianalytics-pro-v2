@@ -23,6 +23,8 @@ export interface UserProfile {
   onboardingCompleted?: boolean;
   /** Gates the platform-wide /admin panel (feedback + all-companies user list). Only true for the LogiAnalytics operator account. */
   platformAdmin?: boolean;
+  /** Cuenta puramente operativa (el dueño de la plataforma, sin negocio propio) — su única interfaz es /admin, nunca ve Sidebar/Inventario/Ventas/etc. Solo tiene efecto junto con platformAdmin:true. */
+  platformOnly?: boolean;
   /** Solo en el doc del Admin dueño del workspace. Ausente = "active" (grandfathering de workspaces creados antes de esta feature). Ver [[project-logianalytics-pro-launch]]. */
   workspaceStatus?: WorkspaceStatus;
   paymentStatus?: WorkspacePaymentStatus;

@@ -55,13 +55,56 @@ function BlockedScreen({ status }: { status: Exclude<WorkspaceStatus, "active"> 
   );
 }
 
+/**
+ * Shell mínimo para cuentas platformOnly (el operador de la plataforma, sin
+ * negocio propio) — nada de Sidebar/BottomNav/CajaProvider/notificaciones de
+ * stock/FAB/onboarding: esas cuentas no tienen datos de negocio, así que ni
+ * tiene sentido montar los hooks que los leerían.
+ */
+function OperatorShell({ children }: { children: React.ReactNode }) {
+  const { profile, logout } = useAuth();
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <header className="bg-sidebar border-b border-white/10 px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center shadow-sm">
+            <Truck size={16} className="text-white" />
+          </div>
+          <span className="text-white font-bold text-sm">LogiAnalytics — Panel de administración</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-slate-400 text-xs hidden sm:block">{profile?.fullName}</span>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition"
+          >
+            <LogOut size={13} /> Salir
+          </button>
+        </div>
+      </header>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, workspaceStatus } = useAuth();
+  const { user, loading, workspaceStatus, profile } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isOperator = profile?.platformAdmin === true && profile?.platformOnly === true;
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
+
+  // Una cuenta platformOnly no tiene negocio propio — su única página válida
+  // es /admin. Si intenta ir a cualquier otro lado (o cae ahí después del
+  // login, que por defecto manda a /dashboard), la mandamos de vuelta.
+  useEffect(() => {
+    if (!loading && user && isOperator && pathname !== "/admin") router.replace("/admin");
+  }, [loading, user, isOperator, pathname, router]);
 
   if (loading) {
     return (
@@ -75,6 +118,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return null;
+
+  if (isOperator) {
+    return <OperatorShell>{children}</OperatorShell>;
+  }
 
   // Corta acá, ANTES de montar CajaProvider/AppLayoutInner — esos componentes
   // abren listeners de Firestore (onSnapshot) apenas se montan, y no tiene
