@@ -19,22 +19,30 @@ export async function GET(req: NextRequest) {
   if (!adminUid) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
-    const db   = getAdminDb();
-    const snap = await db.collectionGroup("reports").orderBy("createdAt", "desc").limit(200).get();
+    const db = getAdminDb();
+    // Sin orderBy acá a propósito: collectionGroup(...).orderBy(...) exige un
+    // índice de collection group que nunca se creó — la ruta fallaba en
+    // silencio hasta que se agregó el toast de error en admin/page.tsx, que
+    // fue lo que lo destapó. Se ordena en memoria en su lugar, mismo patrón
+    // que /api/admin/workspaces.
+    const snap = await db.collectionGroup("reports").get();
 
-    const items = snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        id:        d.id,
-        uid:       d.ref.parent.parent?.id ?? "",
-        type:      data.type      as string,
-        message:   data.message   as string,
-        userEmail: data.userEmail as string,
-        userName:  data.userName  as string,
-        page:      data.page      as string,
-        createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
-      };
-    });
+    const items = snap.docs
+      .map((d) => {
+        const data = d.data();
+        return {
+          id:        d.id,
+          uid:       d.ref.parent.parent?.id ?? "",
+          type:      data.type      as string,
+          message:   data.message   as string,
+          userEmail: data.userEmail as string,
+          userName:  data.userName  as string,
+          page:      data.page      as string,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
+        };
+      })
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
+      .slice(0, 200);
 
     return NextResponse.json({ items });
   } catch (e) {
