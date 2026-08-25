@@ -60,7 +60,7 @@ export default function EquipoPage() {
     setLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch("/api/admin/employees", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`/api/admin/employees?t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
       const data = await res.json();
       if (data.employees) setEmployees(data.employees);
     } catch {

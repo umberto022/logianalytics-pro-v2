@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { noStoreJson as noStore } from "@/lib/noStoreJson";
 
 // Esta ruta responde distinto según quién pregunta (mismo método+URL para
 // todos) — sin esto el navegador puede quedarse con la primera respuesta
@@ -8,12 +9,6 @@ import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 // Firestore y las reglas ya decían "active", pero esta ruta seguía
 // devolviendo la respuesta vieja hasta forzar esto).
 export const dynamic = "force-dynamic";
-
-function noStore(body: Record<string, unknown>, init?: ResponseInit) {
-  const res = NextResponse.json(body, init);
-  res.headers.set("Cache-Control", "no-store, must-revalidate");
-  return res;
-}
 
 /**
  * Cualquier usuario autenticado puede consultar el estado de SU PROPIO workspace —

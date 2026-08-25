@@ -1,6 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { noStoreJson } from "@/lib/noStoreJson";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import type { Department } from "@/types";
+
+export const dynamic = "force-dynamic";
 
 const DEPARTMENTS: Department[] = ["admin", "ventas", "compras", "logistica"];
 
@@ -20,10 +23,10 @@ async function requirePlatformAdmin(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (!(await requirePlatformAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await requirePlatformAdmin(req))) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   const workspaceId = req.nextUrl.searchParams.get("workspaceId");
-  if (!workspaceId) return NextResponse.json({ error: "Falta workspaceId" }, { status: 400 });
+  if (!workspaceId) return noStoreJson({ error: "Falta workspaceId" }, { status: 400 });
 
   try {
     const snap = await getAdminDb().collection("users").where("workspaceId", "==", workspaceId).get();
@@ -39,31 +42,31 @@ export async function GET(req: NextRequest) {
         lastLogin: data.lastLogin?.toDate?.()?.toISOString() ?? null,
       };
     });
-    return NextResponse.json({ employees });
+    return noStoreJson({ employees });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return noStoreJson({ error: String(e) }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requirePlatformAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await requirePlatformAdmin(req))) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   try {
     const { workspaceId, email, password, fullName, role } = await req.json();
     if (!workspaceId || !email || !password || !fullName || !role) {
-      return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+      return noStoreJson({ error: "Faltan datos" }, { status: 400 });
     }
     if (!DEPARTMENTS.includes(role)) {
-      return NextResponse.json({ error: "Área inválida" }, { status: 400 });
+      return noStoreJson({ error: "Área inválida" }, { status: 400 });
     }
     if (password.length < 6) {
-      return NextResponse.json({ error: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 });
+      return noStoreJson({ error: "La contraseña debe tener al menos 6 caracteres" }, { status: 400 });
     }
 
     const db = getAdminDb();
     const wsSnap = await db.collection("users").doc(workspaceId).get();
     if (!wsSnap.exists || wsSnap.data()?.workspaceId !== workspaceId) {
-      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+      return noStoreJson({ error: "Empresa no encontrada" }, { status: 404 });
     }
 
     const userRecord = await getAdminAuth().createUser({ email, password, displayName: fullName });
@@ -79,32 +82,32 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
     });
 
-    return NextResponse.json({ ok: true, uid: userRecord.uid });
+    return noStoreJson({ ok: true, uid: userRecord.uid });
   } catch (e: unknown) {
     const code = (e as { code?: string })?.code;
     const message = code === "auth/email-already-exists"
       ? "Ese email ya está registrado"
       : e instanceof Error ? e.message : "Error desconocido";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return noStoreJson({ error: message }, { status: 400 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!(await requirePlatformAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await requirePlatformAdmin(req))) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   try {
     const { uid, role } = await req.json();
     if (!uid || !role || !DEPARTMENTS.includes(role)) {
-      return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+      return noStoreJson({ error: "Datos inválidos" }, { status: 400 });
     }
 
     const db = getAdminDb();
     const targetSnap = await db.collection("users").doc(uid).get();
-    if (!targetSnap.exists) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    if (!targetSnap.exists) return noStoreJson({ error: "Usuario no encontrado" }, { status: 404 });
 
     await db.collection("users").doc(uid).update({ role });
-    return NextResponse.json({ ok: true });
+    return noStoreJson({ ok: true });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return noStoreJson({ error: String(e) }, { status: 500 });
   }
 }

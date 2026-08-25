@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { noStoreJson } from "@/lib/noStoreJson";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+
+export const dynamic = "force-dynamic";
 
 async function getAdminUid(req: NextRequest): Promise<string | null> {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -16,7 +19,7 @@ async function getAdminUid(req: NextRequest): Promise<string | null> {
 
 export async function GET(req: NextRequest) {
   const adminUid = await getAdminUid(req);
-  if (!adminUid) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!adminUid) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   try {
     const db = getAdminDb();
@@ -44,24 +47,24 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
       .slice(0, 200);
 
-    return NextResponse.json({ items });
+    return noStoreJson({ items });
   } catch (e) {
     console.error("Admin feedback error:", e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return noStoreJson({ error: String(e) }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest) {
   const adminUid = await getAdminUid(req);
-  if (!adminUid) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!adminUid) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   const { uid, id } = await req.json() as { uid: string; id: string };
-  if (!uid || !id) return NextResponse.json({ error: "Missing uid or id" }, { status: 400 });
+  if (!uid || !id) return noStoreJson({ error: "Missing uid or id" }, { status: 400 });
 
   try {
     await getAdminDb().collection("feedback").doc(uid).collection("reports").doc(id).delete();
-    return NextResponse.json({ ok: true });
+    return noStoreJson({ ok: true });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return noStoreJson({ error: String(e) }, { status: 500 });
   }
 }

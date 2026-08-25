@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { noStoreJson } from "@/lib/noStoreJson";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!token) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   try {
     const decoded  = await getAdminAuth().verifyIdToken(token);
     const userSnap = await getAdminDb().collection("users").doc(decoded.uid).get();
     if (!userSnap.exists || userSnap.data()?.platformAdmin !== true) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return noStoreJson({ error: "Forbidden" }, { status: 403 });
     }
 
     const db   = getAdminDb();
@@ -29,8 +32,8 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ users });
+    return noStoreJson({ users });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return noStoreJson({ error: String(e) }, { status: 500 });
   }
 }

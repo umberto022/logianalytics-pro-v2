@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { noStoreJson } from "@/lib/noStoreJson";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+
+export const dynamic = "force-dynamic";
 
 const ACTIONS = ["approve", "suspend", "reactivate", "cancel", "markPaid", "markDue"] as const;
 type Action = (typeof ACTIONS)[number];
@@ -17,7 +20,7 @@ async function requirePlatformAdmin(req: NextRequest) {
 // (role === 'admin' && workspaceId === su propio uid) — los empleados invitados
 // comparten ese mismo workspaceId pero no tienen doc propio de estado/pago.
 export async function GET(req: NextRequest) {
-  if (!(await requirePlatformAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await requirePlatformAdmin(req))) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   try {
     // Sin orderBy acá a propósito: where('role','==','admin') + orderBy('createdAt')
@@ -49,14 +52,14 @@ export async function GET(req: NextRequest) {
       })
       .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 
-    return NextResponse.json({ workspaces });
+    return noStoreJson({ workspaces });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return noStoreJson({ error: String(e) }, { status: 500 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!(await requirePlatformAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await requirePlatformAdmin(req))) return noStoreJson({ error: "Forbidden" }, { status: 403 });
 
   try {
     const body = await req.json();
@@ -64,14 +67,14 @@ export async function PATCH(req: NextRequest) {
       workspaceId?: string; action?: Action; nextPaymentDate?: string; billingNotes?: string;
     };
     if (!workspaceId || !action || !ACTIONS.includes(action)) {
-      return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+      return noStoreJson({ error: "Datos inválidos" }, { status: 400 });
     }
 
     const db  = getAdminDb();
     const ref = db.collection("users").doc(workspaceId);
     const snap = await ref.get();
     if (!snap.exists || snap.data()?.workspaceId !== workspaceId) {
-      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+      return noStoreJson({ error: "Empresa no encontrada" }, { status: 404 });
     }
 
     const patch: Record<string, unknown> = {};
@@ -85,8 +88,8 @@ export async function PATCH(req: NextRequest) {
     if (billingNotes    !== undefined) patch.billingNotes    = billingNotes;
 
     await ref.update(patch);
-    return NextResponse.json({ ok: true });
+    return noStoreJson({ ok: true });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    return noStoreJson({ error: String(e) }, { status: 500 });
   }
 }

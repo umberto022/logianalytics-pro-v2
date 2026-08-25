@@ -116,10 +116,14 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const token = await getToken();
+      // cache: "no-store" + querystring con timestamp en las 3 — un caché de
+      // borde pegado a la URL sin variar por Authorization ya causó que esta
+      // pantalla mostrara datos viejos (ver commit de /api/workspace-status).
+      const t = Date.now();
       const [fbRes, usRes, wsRes] = await Promise.all([
-        fetch("/api/admin/feedback",   { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/admin/users",      { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/admin/workspaces", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/admin/feedback?t=${t}`,   { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
+        fetch(`/api/admin/users?t=${t}`,      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
+        fetch(`/api/admin/workspaces?t=${t}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
       ]);
       const fbData = await fbRes.json();
       const usData = await usRes.json();
@@ -685,8 +689,9 @@ function CompanyTeamModal({
     setLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch(`/api/admin/team?workspaceId=${workspace.workspaceId}`, {
+      const res = await fetch(`/api/admin/team?workspaceId=${workspace.workspaceId}&t=${Date.now()}`, {
         headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
       });
       const data = await res.json();
       if (data.employees) setMembers(data.employees);
