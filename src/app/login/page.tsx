@@ -33,10 +33,6 @@ export default function LoginPage() {
   const { signIn, signInGoogle, resetPassword, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!authLoading && user) router.replace("/dashboard");
-  }, [user, authLoading, router]);
-
   const [email,         setEmail]         = useState("");
   const [password,      setPassword]      = useState("");
   const [showPw,        setShowPw]        = useState(false);
@@ -51,6 +47,18 @@ export default function LoginPage() {
   const [quickLoadingUid, setQuickLoadingUid] = useState<string | null>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const emailRef    = useRef<HTMLInputElement>(null);
+
+  // Para "ya tenés sesión y entrás a /login directo". El guard contra
+  // loading/googleLoading/quickLoadingUid es necesario: si alguien se
+  // registra por primera vez con Google DESDE esta página, en cuanto el
+  // popup resuelve el listener de onAuthStateChanged ya ve `user` seteado y
+  // `authLoading` en false — el perfil de Firestore recién se crea un paso
+  // después, dentro de signInGoogle(). Sin este guard, este efecto gana la
+  // carrera y redirige a /dashboard antes de que createUserProfile() llegue
+  // a correr (mismo bug encontrado y arreglado en /register).
+  useEffect(() => {
+    if (!authLoading && user && !loading && !googleLoading && !quickLoadingUid) router.replace("/dashboard");
+  }, [user, authLoading, loading, googleLoading, quickLoadingUid, router]);
 
   useEffect(() => {
     setRecentAccounts(getRecentAccounts());

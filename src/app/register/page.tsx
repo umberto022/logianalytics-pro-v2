@@ -30,9 +30,17 @@ export default function RegisterPage() {
   const [showPw,       setShowPw]       = useState(false);
   const [showConfirm,  setShowConfirm]  = useState(false);
 
+  // Este efecto es para el caso "ya tenés sesión y entrás a /register directo"
+  // — el guard !loading && !googleLoading es necesario porque, apenas
+  // createUserWithEmailAndPassword() resuelve dentro de register(), el listener
+  // de onAuthStateChanged en AuthContext ya ve `user` seteado y `loading` en
+  // false (el perfil de Firestore recién se crea un paso después, dentro de
+  // register()) — sin este guard, este efecto ganaba la carrera y redirigía a
+  // /dashboard ANTES de que createUserProfile() llegara a correr, dejando la
+  // cuenta sin doc de perfil (confirmado en vivo: Auth existía, Firestore no).
   useEffect(() => {
-    if (!authLoading && user) router.replace("/dashboard");
-  }, [user, authLoading, router]);
+    if (!authLoading && user && !loading && !googleLoading) router.replace("/dashboard");
+  }, [user, authLoading, loading, googleLoading, router]);
 
   async function handleGoogle() {
     setGoogleLoading(true);
