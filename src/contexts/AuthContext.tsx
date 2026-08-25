@@ -17,10 +17,22 @@ import {
 import { saveRecentAccount } from "@/lib/recentAccounts";
 import type { UserProfile, Department, WorkspaceStatus } from "@/types";
 
-/** Solo UX — la protección real vive en firestore.rules (workspaceIsActive()). */
+/**
+ * Solo UX — la protección real vive en firestore.rules (workspaceIsActive()).
+ * El querystring con timestamp no es decorativo: sin él, un cache de borde
+ * (Vercel Edge / CDN) puede quedarse pegado a la primera respuesta para esta
+ * URL exacta y seguir sirviéndola aunque el estado real ya cambió — pasó en
+ * vivo al verificar este flujo, con `cache: "no-store"` puesto y todo. Una
+ * URL distinta en cada llamada es lo único que garantiza no pegarle nunca a
+ * una entrada de caché vieja, sin depender de que cada capa intermedia
+ * respete el header Cache-Control.
+ */
 async function fetchWorkspaceStatus(u: User): Promise<WorkspaceStatus> {
   const token = await u.getIdToken();
-  const res = await fetch("/api/workspace-status", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+  const res = await fetch(`/api/workspace-status?t=${Date.now()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
   const data = await res.json();
   return (data.status as WorkspaceStatus) ?? "active";
 }
