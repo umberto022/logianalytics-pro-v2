@@ -20,7 +20,14 @@ export async function GET(req: NextRequest) {
   if (!(await requirePlatformAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
-    const snap = await getAdminDb().collection("users").where("role", "==", "admin").orderBy("createdAt", "desc").get();
+    // Sin orderBy acá a propósito: where('role','==','admin') + orderBy('createdAt')
+    // es una query compuesta que Firestore rechaza (FAILED_PRECONDITION) sin un
+    // índice creado a mano — pasó en vivo, la ruta fallaba en silencio (el
+    // frontend solo pinta la lista si `data.workspaces` existe) y el panel
+    // mostraba "Empresas (0)" sin ningún error visible. Se ordena en memoria en
+    // su lugar — a esta escala (decenas/cientos de empresas admin, no millones)
+    // no hace falta el índice para nada.
+    const snap = await getAdminDb().collection("users").where("role", "==", "admin").get();
     const workspaces = snap.docs
       .filter((d) => d.data().workspaceId === d.id)
       .map((d) => {
@@ -37,7 +44,8 @@ export async function GET(req: NextRequest) {
           createdAt:       data.createdAt?.toDate?.()?.toISOString() ?? null,
           approvedAt:      data.approvedAt?.toDate?.()?.toISOString() ?? null,
         };
-      });
+      })
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 
     return NextResponse.json({ workspaces });
   } catch (e) {

@@ -118,6 +118,14 @@ export default function AdminPage() {
       if (fbData.items) setFeedback(fbData.items);
       if (usData.users) setUsers(usData.users);
       if (wsData.workspaces) setWorkspaces(wsData.workspaces);
+      // Antes esto fallaba en silencio (ver commit) — un error de Firestore en
+      // cualquiera de las 3 rutas dejaba esa lista vacía sin ningún aviso.
+      const failed = [
+        !fbData.items && fbData.error,
+        !usData.users && usData.error,
+        !wsData.workspaces && wsData.error,
+      ].filter(Boolean);
+      if (failed.length > 0) toast.error(`Error al cargar datos: ${failed[0]}`);
     } catch {
       toast.error("Error al cargar datos");
     } finally {
