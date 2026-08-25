@@ -12,9 +12,9 @@ import toast from "react-hot-toast";
 import {
   MessageSquare, Users, Bug, Lightbulb, HelpCircle,
   Trash2, Search, RefreshCw, ShieldAlert, CheckCircle2, Clock, Download,
-  Building2, X, DollarSign,
+  Building2, X, DollarSign, Reply, UsersRound, Plus,
 } from "lucide-react";
-import type { WorkspaceStatus, WorkspacePaymentStatus } from "@/types";
+import type { WorkspaceStatus, WorkspacePaymentStatus, Department } from "@/types";
 
 interface WorkspaceItem {
   workspaceId:     string;
@@ -69,6 +69,14 @@ const TYPE_META = {
   pregunta:   { label: "Pregunta",   icon: HelpCircle,  color: "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30"     },
 };
 
+/** mailto con el mensaje original citado — responder no crea ninguna función nueva de mensajería, usa el email de quien mandó el feedback. */
+function feedbackMailto(f: FeedbackItem): string {
+  const subject = `Re: tu ${TYPE_META[f.type]?.label ?? "feedback"} en LogiAnalytics Pro`;
+  const quoted = f.message.split("\n").map((l) => `> ${l}`).join("\n");
+  const body = `Hola ${f.userName || ""},\n\nSobre lo que nos escribiste:\n\n${quoted}\n\n`;
+  return `mailto:${f.userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function fmtDate(iso: string | null) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("es-ES", {
@@ -90,6 +98,7 @@ export default function AdminPage() {
   const [typeFilter,    setTypeFilter]    = useState<"all" | "bug" | "sugerencia" | "pregunta">("all");
   const [deleting,      setDeleting]      = useState<string | null>(null);
   const [managing,      setManaging]      = useState<WorkspaceItem | null>(null);
+  const [viewingTeam,   setViewingTeam]   = useState<WorkspaceItem | null>(null);
   const [confirmAction,  setConfirmAction] = useState<{ workspace: WorkspaceItem; action: "suspend" | "cancel" } | null>(null);
   const [savingAction,   setSavingAction]  = useState(false);
 
@@ -411,15 +420,24 @@ export default function AdminPage() {
                             {fmtDate(f.createdAt)}
                           </td>
                           <td className="px-4 py-3">
-                            <button
-                              onClick={() => deleteFeedback(f.uid, f.id)}
-                              disabled={deleting === f.id}
-                              className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:text-slate-500 dark:hover:text-red-400 dark:hover:bg-red-500/15 transition disabled:opacity-50"
-                            >
-                              {deleting === f.id
-                                ? <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-red-400 rounded-full animate-spin block" />
-                                : <Trash2 size={14} />}
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={feedbackMailto(f)}
+                                title={`Responder a ${f.userEmail}`}
+                                className="p-1.5 rounded-lg text-slate-300 hover:text-brand-600 hover:bg-brand-50 dark:text-slate-500 dark:hover:text-brand-400 dark:hover:bg-brand-500/15 transition"
+                              >
+                                <Reply size={14} />
+                              </a>
+                              <button
+                                onClick={() => deleteFeedback(f.uid, f.id)}
+                                disabled={deleting === f.id}
+                                className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:text-slate-500 dark:hover:text-red-400 dark:hover:bg-red-500/15 transition disabled:opacity-50"
+                              >
+                                {deleting === f.id
+                                  ? <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-red-400 rounded-full animate-spin block" />
+                                  : <Trash2 size={14} />}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -493,7 +511,12 @@ export default function AdminPage() {
           onSaveBilling={(nextPaymentDate, billingNotes) => runWorkspaceAction(managing.workspaceId, managing.paymentStatus === "current" ? "markPaid" : "markDue", { nextPaymentDate, billingNotes })}
           onRequestSuspend={() => setConfirmAction({ workspace: managing, action: "suspend" })}
           onRequestCancel={() => setConfirmAction({ workspace: managing, action: "cancel" })}
+          onViewTeam={() => setViewingTeam(managing)}
         />
+      )}
+
+      {viewingTeam && (
+        <CompanyTeamModal workspace={viewingTeam} onClose={() => setViewingTeam(null)} getToken={getToken} />
       )}
 
       <ConfirmModal
@@ -515,7 +538,7 @@ export default function AdminPage() {
 }
 
 function ManageWorkspaceModal({
-  workspace, saving, onClose, onApprove, onReactivate, onTogglePayment, onSaveBilling, onRequestSuspend, onRequestCancel,
+  workspace, saving, onClose, onApprove, onReactivate, onTogglePayment, onSaveBilling, onRequestSuspend, onRequestCancel, onViewTeam,
 }: {
   workspace: WorkspaceItem;
   saving: boolean;
@@ -526,6 +549,7 @@ function ManageWorkspaceModal({
   onSaveBilling: (nextPaymentDate: string, billingNotes: string) => void;
   onRequestSuspend: () => void;
   onRequestCancel: () => void;
+  onViewTeam: () => void;
 }) {
   const [nextPaymentDate, setNextPaymentDate] = useState(workspace.nextPaymentDate ?? "");
   const [billingNotes,    setBillingNotes]    = useState(workspace.billingNotes ?? "");
@@ -550,6 +574,12 @@ function ManageWorkspaceModal({
             {PAY_STATUS_META[workspace.paymentStatus].label}
           </span>
         </div>
+
+        <button onClick={onViewTeam}
+          className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+          <UsersRound size={15} />
+          Ver / gestionar equipo
+        </button>
 
         {workspace.workspaceStatus === "pending" && (
           <button onClick={onApprove} disabled={saving}
@@ -605,6 +635,216 @@ function ManageWorkspaceModal({
             className="w-full mt-3 py-2.5 text-red-500 hover:text-red-600 dark:text-red-400 text-sm font-semibold transition disabled:opacity-50">
             Cancelar empresa
           </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface TeamMember {
+  uid: string;
+  email: string;
+  fullName: string;
+  role: Department;
+  isOwner: boolean;
+  createdAt: string | null;
+  lastLogin: string | null;
+}
+
+const DEPT_META: Record<Department, { label: string; color: string }> = {
+  admin:     { label: "Admin",      color: "bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/15 dark:text-brand-300 dark:border-brand-500/30" },
+  ventas:    { label: "Ventas",     color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30" },
+  compras:   { label: "Compras",    color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30" },
+  logistica: { label: "Logística",  color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30" },
+};
+
+const EMPTY_MEMBER_FORM = { fullName: "", email: "", password: "", role: "ventas" as Department };
+
+/**
+ * Mismo patrón que /equipo (donde cada empresa gestiona su propio personal),
+ * pero apuntando a /api/admin/team con el workspaceId explícito — así el
+ * operador de plataforma puede dar de alta empleados y asignarles área en
+ * CUALQUIER empresa, sin tener que loguearse como ella. Pedido explícito del
+ * usuario ("asignar roles" desde su panel).
+ */
+function CompanyTeamModal({
+  workspace, onClose, getToken,
+}: {
+  workspace: WorkspaceItem;
+  onClose: () => void;
+  getToken: () => Promise<string>;
+}) {
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ ...EMPTY_MEMBER_FORM });
+  const [creating, setCreating] = useState(false);
+  const [savingRole, setSavingRole] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/team?workspaceId=${workspace.workspaceId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.employees) setMembers(data.employees);
+      else toast.error(data.error ?? "Error al cargar el equipo");
+    } catch {
+      toast.error("Error al cargar el equipo");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspace.workspaceId]);
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.fullName || !form.email || !form.password) {
+      toast.error("Completa nombre, email y contraseña");
+      return;
+    }
+    setCreating(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/admin/team", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId: workspace.workspaceId, ...form }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(`${form.fullName} agregado a ${DEPT_META[form.role].label}`);
+        setShowForm(false);
+        setForm({ ...EMPTY_MEMBER_FORM });
+        load();
+      } else {
+        toast.error(data.error ?? "Error al crear usuario");
+      }
+    } catch {
+      toast.error("Error al crear usuario");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleRoleChange(uid: string, role: Department) {
+    setSavingRole(uid);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/admin/team", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ uid, role }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setMembers((prev) => prev.map((m) => (m.uid === uid ? { ...m, role } : m)));
+        toast.success("Área actualizada");
+      } else {
+        toast.error(data.error ?? "Error al actualizar");
+      }
+    } catch {
+      toast.error("Error al actualizar");
+    } finally {
+      setSavingRole(null);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-bold text-slate-800 dark:text-slate-100">
+            Equipo — {workspace.companyName || workspace.adminName}
+          </h2>
+          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 transition">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-xs text-slate-400 mb-5">Roles y accesos de esta empresa</p>
+
+        {loading ? (
+          <div className="py-8 text-center text-sm text-slate-400">Cargando…</div>
+        ) : (
+          <div className="space-y-2 mb-4">
+            {members.map((m) => (
+              <div key={m.uid} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                    {m.fullName || "—"} {m.isOwner && <span className="text-slate-400 font-normal">(dueño/a)</span>}
+                  </p>
+                  <p className="text-xs text-slate-400 truncate">{m.email}</p>
+                </div>
+                <select
+                  value={m.role}
+                  disabled={savingRole === m.uid}
+                  onChange={(e) => handleRoleChange(m.uid, e.target.value as Department)}
+                  className={`flex-shrink-0 text-xs font-bold px-2 py-1 rounded-lg border ${DEPT_META[m.role].color} disabled:opacity-50`}
+                >
+                  {(Object.keys(DEPT_META) as Department[]).map((d) => (
+                    <option key={d} value={d}>{DEPT_META[d].label}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+            {members.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-6">Sin usuarios todavía.</p>
+            )}
+          </div>
+        )}
+
+        {!showForm ? (
+          <button onClick={() => setShowForm(true)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+            <Plus size={15} /> Agregar usuario
+          </button>
+        ) : (
+          <form onSubmit={handleCreate} className="space-y-3 border-t border-slate-100 dark:border-slate-700 pt-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre completo</label>
+              <input value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
+                placeholder="ej. Juan Pérez"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-400" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+              <input type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                placeholder="juan@empresa.com"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-400" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contraseña temporal</label>
+              <input type="text" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-400" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Área</label>
+              <select value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as Department }))}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                <option value="ventas">Ventas</option>
+                <option value="compras">Compras</option>
+                <option value="logistica">Logística</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={() => setShowForm(false)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition">
+                Cancelar
+              </button>
+              <button type="submit" disabled={creating}
+                className="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50">
+                {creating ? "Creando…" : "Crear usuario"}
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>
