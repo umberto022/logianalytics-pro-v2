@@ -23,9 +23,21 @@ service cloud.firestore {
       return callerProfile().role;
     }
 
-    // True if the caller belongs to the given workspace (company).
+    // Workspace status lives ONLY on the doc of the Admin who owns that workspace
+    // (users/{workspaceId}, where workspaceId == that admin's own uid — same doc
+    // callerProfile() already reads when the caller IS that admin, so this adds
+    // zero extra get() calls for admins and exactly one for their employees).
+    // Missing field = "active" — grandfathers every workspace created before this
+    // status system existed (their docs never got the field backfilled).
+    function workspaceIsActive(workspaceId) {
+      let ws = get(/databases/$(database)/documents/users/$(workspaceId)).data;
+      return !('workspaceStatus' in ws) || ws.workspaceStatus == 'active';
+    }
+
+    // True if the caller belongs to the given workspace (company) AND that
+    // workspace hasn't been suspended/cancelled/isn't still pending approval.
     function inWorkspace(workspaceId) {
-      return isAuth() && callerWorkspaceId() == workspaceId;
+      return isAuth() && callerWorkspaceId() == workspaceId && workspaceIsActive(workspaceId);
     }
 
     // True if the caller belongs to the workspace AND their department is in `roles`.
@@ -40,11 +52,15 @@ service cloud.firestore {
       allow read: if isOwner(userId);
 
       // Self-registration: you may only ever create yourself as the admin of
-      // your own brand-new workspace (workspaceId == your own uid).
+      // your own brand-new workspace (workspaceId == your own uid). If you send
+      // a workspaceStatus at all, it can only be 'pending' — otherwise anyone
+      // could self-activate at signup by just setting workspaceStatus: 'active'
+      // in the same write, completely bypassing the approval step.
       allow create: if isOwner(userId) &&
         request.resource.data.role == 'admin' &&
         request.resource.data.workspaceId == userId &&
-        !('platformAdmin' in request.resource.data);
+        !('platformAdmin' in request.resource.data) &&
+        (!('workspaceStatus' in request.resource.data) || request.resource.data.workspaceStatus == 'pending');
 
       // Ongoing profile edits: safe personal fields only. `workspaceId` may be
       // set exactly once, as a self-heal, and only to your own uid. `fcmTokens` is the

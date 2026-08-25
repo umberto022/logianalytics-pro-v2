@@ -2,6 +2,11 @@ import { Timestamp } from "firebase/firestore";
 
 export type Department = "admin" | "ventas" | "compras" | "logistica";
 
+/** Solo tiene sentido en el doc del Admin dueño de un workspace (`id === workspaceId`). Controla acceso real vía firestore.rules — ver `workspaceIsActive()`. */
+export type WorkspaceStatus = "pending" | "active" | "suspended" | "cancelled";
+/** Seguimiento de facturación del workspace (no confundir con `PaymentStatus` de Sale, más abajo). */
+export type WorkspacePaymentStatus = "current" | "due";
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -18,6 +23,12 @@ export interface UserProfile {
   onboardingCompleted?: boolean;
   /** Gates the platform-wide /admin panel (feedback + all-companies user list). Only true for the LogiAnalytics operator account. */
   platformAdmin?: boolean;
+  /** Solo en el doc del Admin dueño del workspace. Ausente = "active" (grandfathering de workspaces creados antes de esta feature). Ver [[project-logianalytics-pro-launch]]. */
+  workspaceStatus?: WorkspaceStatus;
+  paymentStatus?: WorkspacePaymentStatus;
+  nextPaymentDate?: string;
+  billingNotes?: string;
+  approvedAt?: Timestamp;
   /** FCM registration tokens, one per browser/device where the user granted push permission. */
   fcmTokens?: string[];
   createdAt: Timestamp;

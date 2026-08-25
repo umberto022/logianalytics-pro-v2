@@ -15,7 +15,15 @@ import {
   createUserProfile, getUserProfile, touchLastLogin, backfillWorkspaceId,
 } from "@/lib/firestore/users";
 import { saveRecentAccount } from "@/lib/recentAccounts";
-import type { UserProfile, Department } from "@/types";
+import type { UserProfile, Department, WorkspaceStatus } from "@/types";
+
+/** Solo UX — la protección real vive en firestore.rules (workspaceIsActive()). */
+async function fetchWorkspaceStatus(u: User): Promise<WorkspaceStatus> {
+  const token = await u.getIdToken();
+  const res = await fetch("/api/workspace-status", { headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json();
+  return (data.status as WorkspaceStatus) ?? "active";
+}
 
 /** Guarda la cuenta en el selector rápido de /login (ver recentAccounts.ts). */
 function rememberAccount(u: User, provider: "password" | "google.com", role?: Department) {
@@ -33,6 +41,8 @@ interface AuthCtx {
   user:         User | null;
   profile:      UserProfile | null;
   loading:      boolean;
+  /** null mientras se resuelve o si no hay sesión — tratar como "no bloquear todavía". */
+  workspaceStatus: WorkspaceStatus | null;
   signIn:       (email: string, password: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
   register:     (email: string, password: string, fullName: string, phone: string) => Promise<void>;
@@ -47,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,    setUser]    = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus | null>(null);
 
   async function loadProfile(u: User): Promise<UserProfile | null> {
     try {
@@ -57,6 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setProfile(p);
       if (p) touchLastLogin(u.uid).catch(() => {});
+      if (p) {
+        // Se espera acá (no fire-and-forget) para que `loading` no baje a false
+        // hasta tener el estado — evita un parpadeo de la app normal antes de
+        // mostrar la pantalla de bloqueo a una cuenta pendiente/suspendida.
+        const status = await fetchWorkspaceStatus(u).catch(() => "active" as WorkspaceStatus);
+        setWorkspaceStatus(status);
+      } else {
+        setWorkspaceStatus(null);
+      }
       return p;
     } catch (e) {
       console.error("loadProfile error:", e);
@@ -148,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
     setUser(null);
     setProfile(null);
+    setWorkspaceStatus(null);
   }
 
   async function resetPassword(email: string) {
@@ -159,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, profile, loading, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
+    <Ctx.Provider value={{ user, profile, loading, workspaceStatus, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
       {children}
     </Ctx.Provider>
   );

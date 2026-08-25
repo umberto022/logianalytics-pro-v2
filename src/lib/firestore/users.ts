@@ -17,6 +17,11 @@ export async function createUserProfile(
     role:             "admin",
     workspaceId:      uid,
     subscriptionPlan: "free",
+    // Todo workspace nuevo arranca pendiente de aprobación — firestore.rules bloquea
+    // el resto de las colecciones hasta que quede "active" (ver workspaceIsActive()).
+    // La regla de creación valida que este campo solo pueda ser 'pending' acá, así
+    // que no alcanza con que el cliente mienta y mande "active" directamente.
+    workspaceStatus:  "pending",
     createdAt:        Timestamp.now(),
   });
 }

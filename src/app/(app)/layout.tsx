@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Zap, LogOut, Truck } from "lucide-react";
+import { Zap, LogOut, Truck, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { moduleForPath } from "@/lib/permissions";
@@ -18,40 +18,50 @@ import { CajaAbiertaModal } from "@/components/ui/CajaAbiertaModal";
 import { useStockNotifications } from "@/hooks/useStockNotifications";
 import { useRawMaterialNotifications } from "@/hooks/useRawMaterialNotifications";
 import { useOverdueOrders } from "@/hooks/useOverdueOrders";
+import { CONTACT_EMAIL } from "@/lib/legal";
+import type { WorkspaceStatus } from "@/types";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+const BLOCKED_COPY: Record<Exclude<WorkspaceStatus, "active">, { title: string; desc: string }> = {
+  pending:   { title: "Tu cuenta está pendiente de aprobación",  desc: "Te avisamos apenas quede lista. Si tenés dudas mientras tanto, escribinos." },
+  suspended: { title: "Tu acceso fue suspendido",                 desc: "Escribinos para resolverlo y reactivar tu cuenta." },
+  cancelled: { title: "Esta cuenta fue cancelada",                 desc: "Si creés que es un error, escribinos y lo revisamos." },
+};
+
+function BlockedScreen({ status }: { status: Exclude<WorkspaceStatus, "active"> }) {
+  const { logout } = useAuth();
+  const copy = BLOCKED_COPY[status];
   return (
-    <CajaProvider>
-      <AppLayoutInner>{children}</AppLayoutInner>
-    </CajaProvider>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-6">
+      <div className="max-w-sm w-full text-center bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm p-8">
+        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-50 dark:bg-amber-500/15 flex items-center justify-center">
+          <Truck size={22} className="text-amber-600 dark:text-amber-400" />
+        </div>
+        <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">{copy.title}</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{copy.desc}</p>
+        <a
+          href={`mailto:${CONTACT_EMAIL}`}
+          className="inline-flex items-center justify-center gap-2 w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition mb-3"
+        >
+          <Mail size={16} /> Escribinos a {CONTACT_EMAIL}
+        </a>
+        <button
+          onClick={logout}
+          className="text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+        >
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
   );
 }
 
-function AppLayoutInner({ children }: { children: React.ReactNode }) {
-  useStockNotifications();
-  useRawMaterialNotifications();
-  useOverdueOrders();
-  const { user, loading, profile } = useAuth();
-  const { can } = useRole();
-  const { session, loading: cajaLoading, needsCierre, requestLogout } = useCaja();
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading, workspaceStatus } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-  const [saleOpen,      setSaleOpen]      = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [skipApertura,  setSkipApertura]  = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [user, loading, router]);
-
-  useEffect(() => {
-    if (loading || !user) return;
-    const moduleKey = moduleForPath(pathname);
-    if (moduleKey && !can(moduleKey).canView) router.replace("/dashboard");
-  }, [pathname, loading, user, can, router]);
-
-  const canSell = can("ventas").canEdit;
-  const canUseCaja = can("caja").canView;
 
   if (loading) {
     return (
@@ -65,6 +75,43 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return null;
+
+  // Corta acá, ANTES de montar CajaProvider/AppLayoutInner — esos componentes
+  // abren listeners de Firestore (onSnapshot) apenas se montan, y no tiene
+  // sentido dejar que lo intenten para una cuenta que firestore.rules va a
+  // rechazar de todos modos. La protección real sigue siendo las reglas, esto
+  // es solo para no mostrar la app ni gastar lecturas que van a fallar.
+  if (workspaceStatus && workspaceStatus !== "active") {
+    return <BlockedScreen status={workspaceStatus} />;
+  }
+
+  return (
+    <CajaProvider>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </CajaProvider>
+  );
+}
+
+function AppLayoutInner({ children }: { children: React.ReactNode }) {
+  useStockNotifications();
+  useRawMaterialNotifications();
+  useOverdueOrders();
+  const { profile } = useAuth();
+  const { can } = useRole();
+  const { session, loading: cajaLoading, needsCierre, requestLogout } = useCaja();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [saleOpen,      setSaleOpen]      = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [skipApertura,  setSkipApertura]  = useState(false);
+
+  useEffect(() => {
+    const moduleKey = moduleForPath(pathname);
+    if (moduleKey && !can(moduleKey).canView) router.replace("/dashboard");
+  }, [pathname, can, router]);
+
+  const canSell = can("ventas").canEdit;
+  const canUseCaja = can("caja").canView;
 
   // Show apertura modal if no open session today (and user hasn't skipped)
   const showApertura = canUseCaja && !cajaLoading && !session && !skipApertura;
