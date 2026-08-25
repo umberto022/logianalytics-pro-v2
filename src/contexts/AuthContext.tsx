@@ -20,7 +20,7 @@ import type { UserProfile, Department, WorkspaceStatus } from "@/types";
 /** Solo UX — la protección real vive en firestore.rules (workspaceIsActive()). */
 async function fetchWorkspaceStatus(u: User): Promise<WorkspaceStatus> {
   const token = await u.getIdToken();
-  const res = await fetch("/api/workspace-status", { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch("/api/workspace-status", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
   const data = await res.json();
   return (data.status as WorkspaceStatus) ?? "active";
 }
