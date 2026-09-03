@@ -6,7 +6,7 @@ import {
   Plus, X, Search, Printer, Trash2, CheckCircle2,
   Clock, PackageCheck, XCircle, ChevronDown, ChevronUp,
   ShoppingBag, DollarSign, TruckIcon, AlertTriangle,
-  Edit2, FileText, Package,
+  Edit2, FileText, Package, Layers,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AdminButton } from "@/components/ui/AdminOnly";
@@ -17,6 +17,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { listInventory } from "@/lib/firestore/inventory";
+import { listRawMaterials } from "@/lib/firestore/rawMaterials";
 import { type Supplier } from "@/lib/firestore/suppliers";
 import {
   listPurchaseOrders, createPurchaseOrder,
@@ -28,7 +29,27 @@ import { fmtCurrency, fmt } from "@/lib/utils";
 import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/ui/Pagination";
 import { Timestamp } from "firebase/firestore";
-import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, InventoryItem } from "@/types";
+import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderType, InventoryItem, RawMaterial } from "@/types";
+
+// ─── Order type helpers ────────────────────────────────────────────────────────
+
+const TYPE_META: Record<PurchaseOrderType, { label: string; color: string; icon: React.ReactNode }> = {
+  producto: { label: "Producto",  color: "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300",              icon: <Package size={11} /> },
+  insumo:   { label: "Insumo",    color: "bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300",       icon: <Layers size={11} /> },
+};
+
+function orderType(o: PurchaseOrder): PurchaseOrderType {
+  return o.orderType ?? "producto";
+}
+
+function TypeBadge({ order }: { order: PurchaseOrder }) {
+  const m = TYPE_META[orderType(order)];
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${m.color}`}>
+      {m.icon} {m.label}
+    </span>
+  );
+}
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
@@ -59,11 +80,12 @@ function esc(s: string | undefined | null): string {
 }
 
 function printOrder(order: PurchaseOrder) {
+  const isInsumo = orderType(order) === "insumo";
   const rows = order.items.map((i) =>
     `<tr>
       <td>${esc(i.sku)}</td><td>${esc(i.productName)}</td><td>${esc(i.category)}</td>
-      <td style="text-align:center">${i.qtyOrdered}</td>
-      <td style="text-align:center">${i.qtyReceived}</td>
+      <td style="text-align:center">${i.qtyOrdered}${i.unit ? ` ${esc(i.unit)}` : ""}</td>
+      <td style="text-align:center">${i.qtyReceived}${i.unit ? ` ${esc(i.unit)}` : ""}</td>
       <td style="text-align:right">${fmtCurrency(i.unitCost)}</td>
       <td style="text-align:right">${fmtCurrency(i.total)}</td>
     </tr>`
@@ -92,7 +114,7 @@ function printOrder(order: PurchaseOrder) {
     <body>
       <div class="header">
         <div>
-          <h1>Orden de Compra</h1>
+          <h1>Orden de Compra${isInsumo ? " · Insumos" : ""}</h1>
           <p style="color:#64748b;margin:4px 0 8px">${esc(order.orderNumber)}</p>
           <span class="badge">${esc(STATUS_META[order.status].label)}</span>
         </div>
@@ -114,7 +136,7 @@ function printOrder(order: PurchaseOrder) {
         </div>
       </div>
       <table>
-        <thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>Cant. pedida</th><th>Cant. recibida</th><th>Costo unit.</th><th>Total</th></tr></thead>
+        <thead><tr><th>${isInsumo ? "" : "SKU"}</th><th>${isInsumo ? "Insumo" : "Producto"}</th><th>${isInsumo ? "" : "Categoría"}</th><th>Cant. pedida</th><th>Cant. recibida</th><th>Costo unit.</th><th>Total</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <div class="totals">
@@ -152,6 +174,7 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{order.supplierName}</h2>
           </div>
           <div className="flex items-center gap-2">
+            <TypeBadge order={order} />
             <StatusBadge status={order.status} />
             <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"><X size={16} /></button>
           </div>
@@ -179,7 +202,7 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
           <div>
             <button onClick={() => setExpanded(e => !e)}
               className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-100 mb-3 w-full text-left">
-              <Package size={15} /> Productos ({order.items.length})
+              <Package size={15} /> {orderType(order) === "insumo" ? "Insumos" : "Productos"} ({order.items.length})
               {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {expanded && (
@@ -200,10 +223,10 @@ function OrderDetailModal({ order, onClose, onReceive, onDelete, onEdit, canRece
                       <tr key={i} className="border-t border-slate-50 dark:border-slate-700/50">
                         <td className="py-2.5 px-3 font-medium">{item.productName}</td>
                         <td className="py-2.5 px-3 font-mono text-xs text-slate-400 dark:text-slate-400">{item.sku}</td>
-                        <td className="py-2.5 px-3 text-center">{item.qtyOrdered}</td>
+                        <td className="py-2.5 px-3 text-center">{item.qtyOrdered}{item.unit ? ` ${item.unit}` : ""}</td>
                         <td className="py-2.5 px-3 text-center">
                           <span className={`font-semibold ${item.qtyReceived >= item.qtyOrdered ? "text-emerald-600 dark:text-emerald-400" : item.qtyReceived > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-slate-500"}`}>
-                            {item.qtyReceived}
+                            {item.qtyReceived}{item.unit ? ` ${item.unit}` : ""}
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-400">{fmtCurrency(item.unitCost)}</td>
@@ -272,16 +295,21 @@ const EMPTY_ORDER = {
   expectedDate: "", status: "pendiente" as PurchaseOrderStatus,
 };
 
-function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose, onDone }: {
+function OrderFormModal({ inventory, rawMaterials, editOrder, preloadItems, preloadType, suppliers, onClose, onDone }: {
   inventory: InventoryItem[];
+  rawMaterials: RawMaterial[];
   editOrder: PurchaseOrder | null;
   preloadItems?: PurchaseOrder["items"] | null;
+  preloadType?: PurchaseOrderType;
   suppliers: Supplier[];
   onClose: () => void;
   onDone: () => void;
 }) {
   const { user } = useAuth();
-  const { workspaceId } = useRole();
+  const { workspaceId, isAdmin } = useRole();
+  const [type, setType] = useState<PurchaseOrderType>(
+    editOrder ? orderType(editOrder) : (preloadType ?? "producto")
+  );
   const [fields, setFields] = useState(editOrder ? {
     supplierId: editOrder.supplierId,
     supplierName: editOrder.supplierName,
@@ -317,12 +345,35 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
      p.sku.toLowerCase().includes(productSearch.toLowerCase()))
   );
 
+  const filteredRaw = rawMaterials.filter((m) =>
+    !items.find((i) => i.inventoryId === m.id) &&
+    m.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
   function addProduct(p: InventoryItem) {
     setItems((prev) => [...prev, {
       inventoryId: p.id, sku: p.sku, productName: p.name,
       category: p.category, qtyOrdered: 1, qtyReceived: 0,
       unitCost: p.unitCost, total: p.unitCost, _inventoryId: p.id,
     }]);
+    setProductSearch("");
+  }
+
+  function addMaterial(m: RawMaterial) {
+    setItems((prev) => [...prev, {
+      inventoryId: m.id, sku: "", productName: m.name,
+      category: "", unit: m.unit, qtyOrdered: 1, qtyReceived: 0,
+      unitCost: m.unitCost, total: m.unitCost, _inventoryId: m.id,
+    }]);
+    setProductSearch("");
+  }
+
+  // Cambiar de tipo con items ya cargados mezclaría inventario/insumos en la misma orden —
+  // no tiene sentido de negocio, así que se limpia la lista al cambiar (solo posible al crear).
+  function handleTypeChange(next: PurchaseOrderType) {
+    if (next === type) return;
+    setType(next);
+    setItems([]);
     setProductSearch("");
   }
 
@@ -349,12 +400,13 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
       toast.error("Corrige los errores del formulario");
       return;
     }
-    if (items.length === 0) { toast.error("Agrega al menos un producto"); return; }
+    if (items.length === 0) { toast.error(type === "insumo" ? "Agrega al menos un insumo" : "Agrega al menos un producto"); return; }
     setFieldErrors({});
 
     setSaving(true);
     const payload = {
       ...fields,
+      orderType: type,
       items,
       subtotal,
       tax,
@@ -380,6 +432,31 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Order type */}
+          {isAdmin && !editOrder && (
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">¿Qué estás comprando?</label>
+              <div className="flex gap-2">
+                {([
+                  { key: "producto" as const, label: "Producto terminado", sub: "reabastece Inventario", icon: Package },
+                  { key: "insumo"   as const, label: "Insumo / materia prima", sub: "reabastece Insumos", icon: Layers },
+                ]).map(({ key, label, sub, icon: Icon }) => (
+                  <button key={key} type="button" onClick={() => handleTypeChange(key)}
+                    className={`flex-1 flex items-start gap-2 p-3 rounded-xl border text-left transition ${type === key
+                      ? "border-brand-500 bg-brand-50 dark:bg-brand-500/10 dark:border-brand-500/50"
+                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"}`}>
+                    <Icon size={16} className={type === key ? "text-brand-600 dark:text-brand-400 mt-0.5" : "text-slate-400 dark:text-slate-500 mt-0.5"} />
+                    <span>
+                      <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">{label}</span>
+                      <span className="block text-xs text-slate-400 dark:text-slate-400">{sub}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {editOrder && <TypeBadge order={editOrder} />}
+
           {/* Supplier */}
           <div>
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100 mb-3 flex items-center gap-2">
@@ -439,18 +516,18 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
           {/* Products */}
           <div>
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100 mb-3 flex items-center gap-2">
-              <Package size={14} /> Productos a comprar
+              {type === "insumo" ? <Layers size={14} /> : <Package size={14} />} {type === "insumo" ? "Insumos a comprar" : "Productos a comprar"}
             </h3>
 
-            {/* Product search */}
+            {/* Product / material search */}
             <div className="mb-3">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Buscar producto del inventario…"
+                  placeholder={type === "insumo" ? "Buscar insumo de materia prima…" : "Buscar producto del inventario…"}
                   className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
               </div>
-              {productSearch && (
+              {productSearch && type === "producto" && (
                 <div className="mt-1 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl overflow-hidden">
                   {filteredInv.length === 0 ? (
                     <p className="px-4 py-3 text-sm text-slate-400 dark:text-slate-400">Sin resultados</p>
@@ -467,18 +544,35 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
                   )}
                 </div>
               )}
+              {productSearch && type === "insumo" && (
+                <div className="mt-1 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl overflow-hidden">
+                  {filteredRaw.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-slate-400 dark:text-slate-400">Sin resultados</p>
+                  ) : (
+                    filteredRaw.slice(0, 8).map((m) => (
+                      <button key={m.id} type="button" onClick={() => addMaterial(m)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-brand-50 dark:hover:bg-brand-500/10 text-sm flex items-center justify-between border-b border-slate-100 dark:border-slate-700 last:border-0 transition-colors">
+                        <span className="font-medium text-slate-800 dark:text-slate-100">{m.name}
+                          <span className="text-slate-400 dark:text-slate-400 text-xs ml-1.5">· {m.unit}</span>
+                        </span>
+                        <span className="text-slate-500 dark:text-slate-400 text-xs ml-4 flex-shrink-0">{fmtCurrency(m.unitCost)}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {items.length === 0 ? (
               <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-slate-400 dark:text-slate-400 text-sm">
-                Busca y selecciona productos del inventario
+                {type === "insumo" ? "Busca y selecciona insumos registrados" : "Busca y selecciona productos del inventario"}
               </div>
             ) : (
               <div className="rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-700/40 text-xs text-slate-500 dark:text-slate-400">
-                      <th className="text-left py-2.5 px-3 font-medium">Producto</th>
+                      <th className="text-left py-2.5 px-3 font-medium">{type === "insumo" ? "Insumo" : "Producto"}</th>
                       <th className="text-center py-2.5 px-3 font-medium">Cantidad</th>
                       <th className="text-right py-2.5 px-3 font-medium">Costo unit.</th>
                       <th className="text-right py-2.5 px-3 font-medium">Total</th>
@@ -493,9 +587,12 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
                           <p className="text-xs text-slate-400 dark:text-slate-400 font-mono">{item.sku}</p>
                         </td>
                         <td className="py-2.5 px-3">
-                          <input type="number" min={1} value={item.qtyOrdered}
-                            onChange={(e) => updateItem(idx, "qtyOrdered", Number(e.target.value))}
-                            className="w-20 text-center border border-slate-200 dark:border-slate-700 rounded-lg py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 mx-auto block bg-white dark:bg-slate-800 dark:text-slate-100" />
+                          <div className="flex items-center justify-center gap-1.5">
+                            <input type="number" min={1} value={item.qtyOrdered}
+                              onChange={(e) => updateItem(idx, "qtyOrdered", Number(e.target.value))}
+                              className="w-20 text-center border border-slate-200 dark:border-slate-700 rounded-lg py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 block bg-white dark:bg-slate-800 dark:text-slate-100" />
+                            {item.unit && <span className="text-xs text-slate-400 dark:text-slate-400">{item.unit}</span>}
+                          </div>
                         </td>
                         <td className="py-2.5 px-3">
                           <input type="number" min={0} step="0.01" value={item.unitCost}
@@ -550,12 +647,14 @@ function OrderFormModal({ inventory, editOrder, preloadItems, suppliers, onClose
 
 export default function ComprasPage() {
   const { user } = useAuth();
-  const { workspaceId, can } = useRole();
+  const { workspaceId, can, isAdmin } = useRole();
   const [orders,    setOrders]    = useState<PurchaseOrder[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [rawMaterials, setRawMaterials] = useState<RawMaterial[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState("");
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<PurchaseOrderType | "all">("all");
 
   const [showForm,    setShowForm]    = useState(false);
   const [editOrder,   setEditOrder]   = useState<PurchaseOrder | null>(null);
@@ -569,22 +668,30 @@ export default function ComprasPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const [o, i] = await Promise.all([listPurchaseOrders(workspaceId), listInventory(workspaceId)]);
-      setOrders(o); setInventory(i);
+      // Insumos es admin-only (mismas reglas de Firestore que el módulo Insumos) —
+      // no pedir esa colección si el rol no puede leerla, tiraría permission-denied.
+      const [o, i, m] = await Promise.all([
+        listPurchaseOrders(workspaceId),
+        listInventory(workspaceId),
+        isAdmin ? listRawMaterials(workspaceId) : Promise.resolve([]),
+      ]);
+      setOrders(o); setInventory(i); setRawMaterials(m);
     } catch { toast.error("Error al cargar datos"); }
     finally { setLoading(false); }
-  }, [user]);
+  }, [user, isAdmin]);
 
-  // Open form pre-filled when coming from inventario/reabastecer
+  // Open form pre-filled when coming from inventario/reabastecer o insumos/reabastecer
   const [preloadItems, setPreloadItems] = useState<PurchaseOrder["items"] | null>(null);
+  const [preloadType,  setPreloadType]  = useState<PurchaseOrderType | undefined>(undefined);
   useEffect(() => {
-    const raw = localStorage.getItem("compras_preload");
-    if (raw) {
-      try {
-        setPreloadItems(JSON.parse(raw));
-        setShowForm(true);
-      } catch { /* ignore */ }
+    const rawProducto = localStorage.getItem("compras_preload");
+    const rawInsumo    = localStorage.getItem("compras_preload_insumo");
+    if (rawProducto) {
+      try { setPreloadItems(JSON.parse(rawProducto)); setPreloadType("producto"); setShowForm(true); } catch { /* ignore */ }
       localStorage.removeItem("compras_preload");
+    } else if (rawInsumo) {
+      try { setPreloadItems(JSON.parse(rawInsumo)); setPreloadType("insumo"); setShowForm(true); } catch { /* ignore */ }
+      localStorage.removeItem("compras_preload_insumo");
     }
   }, []);
 
@@ -611,7 +718,8 @@ export default function ComprasPage() {
       o.supplierName.toLowerCase().includes(search.toLowerCase()) ||
       o.supplierRnc.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || o.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchType = typeFilter === "all" || orderType(o) === typeFilter;
+    return matchSearch && matchStatus && matchType;
   });
 
   const { paged: pagedOrders, page: ordersPage, totalPages: ordersTotalPages,
@@ -631,9 +739,9 @@ export default function ComprasPage() {
   return (
     <div>
       {showForm && (
-        <OrderFormModal inventory={inventory} editOrder={editOrder}
-          preloadItems={preloadItems} suppliers={suppliers}
-          onClose={() => { setShowForm(false); setEditOrder(null); setPreloadItems(null); }}
+        <OrderFormModal inventory={inventory} rawMaterials={rawMaterials} editOrder={editOrder}
+          preloadItems={preloadItems} preloadType={preloadType} suppliers={suppliers}
+          onClose={() => { setShowForm(false); setEditOrder(null); setPreloadItems(null); setPreloadType(undefined); }}
           onDone={load} />
       )}
       {detailOrder && (
@@ -699,6 +807,16 @@ export default function ComprasPage() {
               placeholder="Buscar por N° orden, proveedor o RNC…"
               className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
           </div>
+          {isAdmin && (
+            <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+              {(["all","producto","insumo"] as const).map((t) => (
+                <button key={t} onClick={() => setTypeFilter(t)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${typeFilter === t ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
+                  {t === "all" ? "Todo" : TYPE_META[t].label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
             {(["all","pendiente","parcial","recibida","cancelada"] as const).map((s) => (
               <button key={s} onClick={() => setStatusFilter(s)}
@@ -723,11 +841,14 @@ export default function ComprasPage() {
                   onClick={() => setDetailOrder(order)}>
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</span>
-                    <StatusBadge status={order.status} />
+                    <div className="flex items-center gap-1.5">
+                      {orderType(order) === "insumo" && <TypeBadge order={order} />}
+                      <StatusBadge status={order.status} />
+                    </div>
                   </div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{order.supplierName}</p>
                   <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 dark:text-slate-400 flex-wrap">
-                    <span>{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</span>
+                    <span>{order.items.length} {orderType(order) === "insumo" ? "insumo" : "producto"}{order.items.length !== 1 ? "s" : ""}</span>
                     {order.expectedDate?.toDate?.() && (
                       <span>{order.expectedDate.toDate().toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}</span>
                     )}
@@ -767,7 +888,7 @@ export default function ComprasPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-slate-500 bg-slate-50 border-b border-slate-100 dark:text-slate-400 dark:bg-slate-700/40 dark:border-slate-700">
-                    {["N° Orden","Proveedor","RNC","Productos","Subtotal","ITBIS","Total","Fecha esperada","Estado",""].map((h) => (
+                    {["N° Orden", ...(isAdmin ? ["Tipo"] : []), "Proveedor","RNC","Productos","Subtotal","ITBIS","Total","Fecha esperada","Estado",""].map((h) => (
                       <th key={h} className="text-left py-3 px-4 font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -777,9 +898,10 @@ export default function ComprasPage() {
                     <tr key={order.id} className="border-t border-slate-50 hover:bg-slate-50 dark:border-slate-700/50 dark:hover:bg-slate-700/50 cursor-pointer"
                       onClick={() => setDetailOrder(order)}>
                       <td className="py-3 px-4 font-mono text-xs font-semibold text-brand-600">{order.orderNumber}</td>
+                      {isAdmin && <td className="py-3 px-4"><TypeBadge order={order} /></td>}
                       <td className="py-3 px-4 font-medium">{order.supplierName}</td>
                       <td className="py-3 px-4 text-slate-500 font-mono text-xs dark:text-slate-400">{order.supplierRnc || "—"}</td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{order.items.length} {orderType(order) === "insumo" ? "insumo" : "producto"}{order.items.length !== 1 ? "s" : ""}</td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{fmtCurrency(order.subtotal)}</td>
                       <td className="py-3 px-4 text-slate-500 dark:text-slate-400">{fmtCurrency(order.tax)}</td>
                       <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(order.total)}</td>
@@ -842,8 +964,28 @@ export default function ComprasPage() {
               {inventory.filter(i => i.currentStock <= i.minStock).length > 3 ? "…" : ""}
             </p>
           </div>
-          <button onClick={() => { setEditOrder(null); setShowForm(true); }}
+          <button onClick={() => { setEditOrder(null); setPreloadType("producto"); setShowForm(true); }}
             className="flex-shrink-0 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition">
+            Crear orden
+          </button>
+        </div>
+      )}
+
+      {/* Low stock alert — insumos (solo Admin, mismo criterio que el módulo Insumos) */}
+      {isAdmin && rawMaterials.filter(m => m.currentStock <= m.minStock).length > 0 && (
+        <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4 flex items-start gap-3 dark:bg-purple-500/15 dark:border-purple-500/30">
+          <AlertTriangle size={18} className="text-purple-600 flex-shrink-0 mt-0.5 dark:text-purple-400" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">
+              {rawMaterials.filter(m => m.currentStock <= m.minStock).length} insumos necesitan reabastecimiento
+            </p>
+            <p className="text-xs text-purple-600 mt-0.5 dark:text-purple-400">
+              {rawMaterials.filter(m => m.currentStock <= m.minStock).map(m => m.name).slice(0, 3).join(", ")}
+              {rawMaterials.filter(m => m.currentStock <= m.minStock).length > 3 ? "…" : ""}
+            </p>
+          </div>
+          <button onClick={() => { setEditOrder(null); setPreloadType("insumo"); setShowForm(true); }}
+            className="flex-shrink-0 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition">
             Crear orden
           </button>
         </div>

@@ -274,11 +274,19 @@ export interface Customer {
 
 export type PurchaseOrderStatus = "pendiente" | "recibida" | "parcial" | "cancelada";
 
+/** Qué se está comprando. Ausente = "producto" (compat con órdenes creadas antes de este campo). */
+export type PurchaseOrderType = "producto" | "insumo";
+
 export interface PurchaseOrderItem {
+  /** Id del InventoryItem (orderType "producto") o del RawMaterial (orderType "insumo") — se mantiene el nombre por compatibilidad con órdenes ya creadas. */
   inventoryId: string;
+  /** Vacío para insumos (RawMaterial no tiene SKU). */
   sku: string;
   productName: string;
+  /** Vacío para insumos (RawMaterial no tiene categoría). */
   category: string;
+  /** Unidad de medida (kg, L, unidad...) — solo se llena para items de orderType "insumo". */
+  unit?: string;
   qtyOrdered: number;
   qtyReceived: number;
   unitCost: number;
@@ -292,6 +300,7 @@ export interface PurchaseOrderItem {
 export interface PurchaseOrder {
   id: string;
   orderNumber: string;
+  orderType?: PurchaseOrderType;
   supplierId: string;
   supplierName: string;
   supplierRnc: string;

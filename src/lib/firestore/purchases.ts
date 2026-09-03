@@ -5,6 +5,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { PurchaseOrder, PurchaseOrderItem } from "@/types";
 import { adjustStock } from "./inventory";
+import { adjustRawMaterialStock } from "./rawMaterials";
 import { logAudit } from "./auditLog";
 
 const ordersCol = (uid: string) =>
@@ -38,7 +39,7 @@ export async function createPurchaseOrder(
       createdAt: now,
       updatedAt: now,
     });
-    void logAudit(uid, "purchase_create", ref.id, data.supplierName, `${data.items.length} productos · Total: ${data.total}`);
+    void logAudit(uid, "purchase_create", ref.id, data.supplierName, `${data.items.length} ${data.orderType === "insumo" ? "insumos" : "productos"} · Total: ${data.total}`);
     return { ok: true, message: "Orden creada", id: ref.id };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error desconocido";
@@ -70,18 +71,27 @@ export async function receivePurchaseOrder(
     const snap = await getDoc(ref);
     if (!snap.exists()) return { ok: false, message: "Orden no encontrada" };
 
+    const order = snap.data() as PurchaseOrder;
+    const isInsumo = order.orderType === "insumo";
+
     const allFull = receivedItems.every((i) => i.qtyReceived >= i.qtyOrdered);
     const status  = allFull ? "recibida" : "parcial";
 
     for (const item of receivedItems) {
       if (item.qtyReceived > 0) {
-        await adjustStock(uid, item.inventoryId, item.qtyReceived,
-          `Recepción OC ${snap.data().orderNumber}`, "purchase", {
-            serialNumber: item.serialNumber,
-            batchCode: item.batchCode,
-            receiptPhotoUrl: item.receiptPhotoUrl,
-            reference: snap.data().orderNumber,
-          });
+        if (isInsumo) {
+          // Reabastece el insumo (materia prima), no el Inventario de producto terminado.
+          const note = `Recepción OC ${order.orderNumber}${item.batchCode ? ` · Lote ${item.batchCode}` : ""}`;
+          await adjustRawMaterialStock(uid, item.inventoryId, item.qtyReceived, note, "compra", order.orderNumber);
+        } else {
+          await adjustStock(uid, item.inventoryId, item.qtyReceived,
+            `Recepción OC ${order.orderNumber}`, "purchase", {
+              serialNumber: item.serialNumber,
+              batchCode: item.batchCode,
+              receiptPhotoUrl: item.receiptPhotoUrl,
+              reference: order.orderNumber,
+            });
+        }
       }
     }
 
@@ -91,7 +101,7 @@ export async function receivePurchaseOrder(
       receivedDate: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
-    void logAudit(uid, "purchase_receive", orderId, snap.data().supplierName, `Estado: ${status} · ${receivedItems.length} productos recibidos`);
+    void logAudit(uid, "purchase_receive", orderId, order.supplierName, `Estado: ${status} · ${receivedItems.length} ${isInsumo ? "insumos" : "productos"} recibidos`);
     return { ok: true, message: `Orden marcada como ${status}` };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error";

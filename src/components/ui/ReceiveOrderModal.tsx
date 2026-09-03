@@ -209,6 +209,7 @@ interface ItemState {
   sku: string;
   productName: string;
   category: string;
+  unit?: string;
   qtyOrdered: number;
   qtyAlreadyReceived: number;
   qtyToReceive: number;
@@ -241,11 +242,13 @@ function ItemCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-slate-900 truncate dark:text-slate-100">{item.productName}</p>
-          <p className="text-xs text-slate-400 font-mono dark:text-slate-400">{item.sku} · Pedido: {item.qtyOrdered} · Recibido prev: {item.qtyAlreadyReceived}</p>
+          <p className="text-xs text-slate-400 font-mono dark:text-slate-400">
+            {item.sku ? `${item.sku} · ` : ""}Pedido: {item.qtyOrdered}{item.unit ? ` ${item.unit}` : ""} · Recibido prev: {item.qtyAlreadyReceived}{item.unit ? ` ${item.unit}` : ""}
+          </p>
         </div>
         <div className="text-right flex-shrink-0">
           <p className={`text-sm font-bold ${done ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200"}`}>
-            {item.qtyToReceive} / {maxQty}
+            {item.qtyToReceive} / {maxQty}{item.unit ? ` ${item.unit}` : ""}
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-400">a recibir</p>
         </div>
@@ -256,7 +259,7 @@ function ItemCard({
         <div className="px-4 pb-4 space-y-4 border-t border-slate-100 pt-4 dark:border-slate-700">
           {/* Quantity */}
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1.5 dark:text-slate-400">Cantidad a recibir</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5 dark:text-slate-400">Cantidad a recibir{item.unit ? ` (${item.unit})` : ""}</label>
             <div className="flex items-center gap-2">
               <button type="button"
                 onClick={() => onChange(idx, { qtyToReceive: Math.max(0, item.qtyToReceive - 1) })}
@@ -353,6 +356,7 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
       sku: i.sku,
       productName: i.productName,
       category: i.category,
+      unit: i.unit,
       qtyOrdered: i.qtyOrdered,
       qtyAlreadyReceived: i.qtyReceived,
       qtyToReceive: i.qtyOrdered - i.qtyReceived,
@@ -405,7 +409,14 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0 dark:border-slate-700">
           <div>
-            <h2 className="font-bold text-slate-900 dark:text-slate-100">Registrar recepción</h2>
+            <h2 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              Registrar recepción
+              {order.orderType === "insumo" && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30">
+                  Insumos
+                </span>
+              )}
+            </h2>
             <p className="text-xs text-slate-400 dark:text-slate-400">{order.orderNumber} · {order.supplierName}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -422,7 +433,7 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
         {/* Items */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-3">
           <p className="text-xs text-slate-500 mb-4 dark:text-slate-400">
-            Completa los detalles de cada producto recibido. El stock se actualizará automáticamente al confirmar.
+            Completa los detalles de {order.orderType === "insumo" ? "cada insumo recibido" : "cada producto recibido"}. El stock {order.orderType === "insumo" ? "de insumos" : ""} se actualizará automáticamente al confirmar.
           </p>
 
           {items.map((item, idx) => (

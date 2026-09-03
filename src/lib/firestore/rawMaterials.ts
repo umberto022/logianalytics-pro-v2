@@ -105,7 +105,9 @@ export async function adjustRawMaterialStock(
   workspaceId: string,
   id: string,
   delta: number,
-  note: string
+  note: string,
+  movementType: RawMaterialMovement["movementType"] = "ajuste",
+  reference = ""
 ): Promise<{ ok: boolean; message: string }> {
   try {
     const ref = doc(col(workspaceId), id);
@@ -118,9 +120,9 @@ export async function adjustRawMaterialStock(
     await addDoc(movementsCol(workspaceId), {
       rawMaterialId: id,
       rawMaterialName: prev.name,
-      movementType: "ajuste",
+      movementType,
       quantity: delta,
-      reference: "",
+      reference,
       note,
       createdAt: now,
     });

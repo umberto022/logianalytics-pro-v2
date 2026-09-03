@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, PackageCheck, Search } from "lucide-react";
+import { Clock, PackageCheck, Search, Layers } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { ReceiveOrderModal } from "@/components/ui/ReceiveOrderModal";
 import { usePurchaseOrders, useInvalidatePurchaseOrders } from "@/hooks/usePurchaseOrders";
+import { useRole } from "@/hooks/useRole";
 import { fmtCurrency } from "@/lib/utils";
 import type { PurchaseOrder } from "@/types";
 
@@ -18,10 +19,15 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
 export default function RecepcionesPage() {
   const { orders, loading } = usePurchaseOrders();
   const invalidate = useInvalidatePurchaseOrders();
+  const { isAdmin } = useRole();
   const [search, setSearch] = useState("");
   const [receiveOrder, setReceiveOrder] = useState<PurchaseOrder | null>(null);
 
-  const pending = orders.filter((o) => o.status === "pendiente" || o.status === "parcial");
+  // Insumos es admin-only (mismas reglas de Firestore que el módulo Insumos) — a Logística
+  // ni se le muestran, porque su "Recibir" fallaría con permission-denied al escribir en rawMaterials.
+  const pending = orders.filter((o) =>
+    (o.status === "pendiente" || o.status === "parcial") && (isAdmin || (o.orderType ?? "producto") !== "insumo")
+  );
   const filtered = pending.filter((o) => {
     const q = search.toLowerCase();
     return !q ||
@@ -62,11 +68,19 @@ export default function RecepcionesPage() {
               <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
                 {filtered.map((order) => {
                   const meta = STATUS_META[order.status] ?? STATUS_META.pendiente;
+                  const isInsumo = (order.orderType ?? "producto") === "insumo";
                   return (
                     <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold text-brand-600 whitespace-nowrap">{order.orderNumber}</td>
+                      <td className="px-4 py-3 font-mono text-xs font-semibold text-brand-600 whitespace-nowrap">
+                        {order.orderNumber}
+                        {isInsumo && (
+                          <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300">
+                            <Layers size={10} /> Insumo
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{order.supplierName}</td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{order.items.length} producto{order.items.length !== 1 ? "s" : ""}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{order.items.length} {isInsumo ? "insumo" : "producto"}{order.items.length !== 1 ? "s" : ""}</td>
                       <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(order.total)}</td>
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {order.expectedDate?.toDate?.()?.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) ?? "—"}

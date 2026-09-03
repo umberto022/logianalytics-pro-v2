@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
   Plus, Edit2, Trash2, X, Search, Layers, AlertTriangle,
-  Factory, History, SlidersHorizontal, PackagePlus,
+  Factory, History, SlidersHorizontal, PackagePlus, ShoppingBag,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
@@ -42,6 +43,7 @@ function stockBadge(rm: RawMaterial) {
 export default function InsumosPage() {
   const { user } = useAuth();
   const { workspaceId } = useRole();
+  const router = useRouter();
   const { rawMaterials, loading } = useRawMaterials();
   const invalidateRaw = useInvalidateRawMaterials();
   const { items: products } = useInventory();
@@ -133,8 +135,21 @@ export default function InsumosPage() {
 
   const total = rawMaterials.length;
   const stockValue = rawMaterials.reduce((s, rm) => s + rm.currentStock * rm.unitCost, 0);
-  const critical = rawMaterials.filter((rm) => rm.currentStock <= rm.minStock).length;
+  const needRestock = rawMaterials.filter((rm) => rm.currentStock <= rm.minStock);
+  const critical = needRestock.length;
   const withSupplier = rawMaterials.filter((rm) => rm.supplier).length;
+
+  // Mismo patrón que "Reabastecer" en Inventario: precarga la orden de compra
+  // (tipo insumo) con lo que está en crítico y manda a Compras.
+  function goToCreateOrder() {
+    const preload = needRestock.map((rm) => ({
+      inventoryId: rm.id, sku: "", productName: rm.name,
+      category: "", unit: rm.unit, qtyOrdered: Math.max(1, rm.minStock - rm.currentStock), qtyReceived: 0,
+      unitCost: rm.unitCost, total: rm.unitCost * Math.max(1, rm.minStock - rm.currentStock),
+    }));
+    localStorage.setItem("compras_preload_insumo", JSON.stringify(preload));
+    router.push("/compras");
+  }
 
   // ─────────────────────────── Producción ───────────────────────────
   const [prodInventoryId, setProdInventoryId] = useState("");
@@ -389,8 +404,18 @@ export default function InsumosPage() {
                 { label: "Con proveedor",      value: withSupplier,          color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
               ].map(({ label, value, color, bg }) => (
                 <div key={label} className={`${bg} rounded-2xl border border-slate-100 p-5 shadow-sm dark:border-slate-700`}>
-                  <p className="text-xs text-slate-500 font-medium mb-1 dark:text-slate-400">{label}</p>
-                  <p className={`text-2xl font-extrabold ${color}`}>{value}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium mb-1 dark:text-slate-400">{label}</p>
+                      <p className={`text-2xl font-extrabold ${color}`}>{value}</p>
+                    </div>
+                    {label === "Stock crítico" && critical > 0 && (
+                      <button onClick={goToCreateOrder} title="Crear orden de compra"
+                        className="flex-shrink-0 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                        <ShoppingBag size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
