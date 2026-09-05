@@ -5,7 +5,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { PurchaseOrder, PurchaseOrderItem } from "@/types";
 import { adjustStock } from "./inventory";
-import { adjustRawMaterialStock } from "./rawMaterials";
+import { adjustRawMaterialStock, addRawMaterial } from "./rawMaterials";
 import { logAudit } from "./auditLog";
 
 const ordersCol = (uid: string) =>
@@ -77,14 +77,42 @@ export async function receivePurchaseOrder(
     const allFull = receivedItems.every((i) => i.qtyReceived >= i.qtyOrdered);
     const status  = allFull ? "recibida" : "parcial";
 
-    for (const item of receivedItems) {
-      if (item.qtyReceived > 0) {
+    // "Editar" solo está disponible mientras la orden está "pendiente" (ver compras/page.tsx),
+    // así que una vez que empieza a recibirse, order.items ya no cambia de tamaño/orden entre
+    // recepciones parciales — alinear por índice contra el snapshot recién leído es seguro.
+    const finalItems: PurchaseOrderItem[] = [];
+    for (let idx = 0; idx < receivedItems.length; idx++) {
+      const item = receivedItems[idx];
+      // qtyReceived es acumulado (puede venir de varios envíos parciales) — el delta real a
+      // sumar al stock es solo lo que se recibió DESDE la última vez, no el total acumulado.
+      const prevQtyReceived = order.items[idx]?.qtyReceived ?? 0;
+      const delta = item.qtyReceived - prevQtyReceived;
+      let resolved = item;
+
+      if (delta > 0) {
         if (isInsumo) {
           // Reabastece el insumo (materia prima), no el Inventario de producto terminado.
           const note = `Recepción OC ${order.orderNumber}${item.batchCode ? ` · Lote ${item.batchCode}` : ""}`;
-          await adjustRawMaterialStock(uid, item.inventoryId, item.qtyReceived, note, "compra", order.orderNumber);
+          if (item.isNewRawMaterial) {
+            // Insumo agregado libremente al armar la orden (no existía en rawMaterials) — se crea recién ahora.
+            const created = await addRawMaterial(uid, {
+              name: item.productName,
+              unit: item.unit || "unidad",
+              unitCost: item.unitCost,
+              currentStock: 0,
+              minStock: 0,
+              supplier: order.supplierName,
+              notes: `Creado automáticamente al recibir OC ${order.orderNumber}`,
+            });
+            if (created.ok && created.id) {
+              await adjustRawMaterialStock(uid, created.id, delta, note, "compra", order.orderNumber);
+              resolved = { ...item, inventoryId: created.id, isNewRawMaterial: false };
+            }
+          } else {
+            await adjustRawMaterialStock(uid, item.inventoryId, delta, note, "compra", order.orderNumber);
+          }
         } else {
-          await adjustStock(uid, item.inventoryId, item.qtyReceived,
+          await adjustStock(uid, item.inventoryId, delta,
             `Recepción OC ${order.orderNumber}`, "purchase", {
               serialNumber: item.serialNumber,
               batchCode: item.batchCode,
@@ -93,15 +121,16 @@ export async function receivePurchaseOrder(
             });
         }
       }
+      finalItems.push(resolved);
     }
 
     await updateDoc(ref, {
       status,
-      items: receivedItems,
+      items: finalItems,
       receivedDate: Timestamp.now(),
       updatedAt: Timestamp.now(),
     });
-    void logAudit(uid, "purchase_receive", orderId, order.supplierName, `Estado: ${status} · ${receivedItems.length} ${isInsumo ? "insumos" : "productos"} recibidos`);
+    void logAudit(uid, "purchase_receive", orderId, order.supplierName, `Estado: ${status} · ${finalItems.length} ${isInsumo ? "insumos" : "productos"} recibidos`);
     return { ok: true, message: `Orden marcada como ${status}` };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Error";

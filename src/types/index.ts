@@ -295,6 +295,8 @@ export interface PurchaseOrderItem {
   serialNumber?: string;
   batchCode?: string;
   receiptPhotoUrl?: string;
+  /** true = se agregó libremente al armar la orden (orderType "insumo") y todavía no existe en rawMaterials — `inventoryId` es un id temporal. Al recibir, se crea el RawMaterial real y se limpia esta bandera. */
+  isNewRawMaterial?: boolean;
 }
 
 export interface PurchaseOrder {

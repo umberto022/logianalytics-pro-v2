@@ -333,6 +333,8 @@ function OrderFormModal({ inventory, rawMaterials, editOrder, preloadItems, prel
   const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [productSearch, setProductSearch] = useState("");
+  const [showNewMaterial, setShowNewMaterial] = useState(false);
+  const [newMaterial, setNewMaterial] = useState({ name: "", unit: "unidad", qty: "1", price: "" });
 
   const TAX_RATE = 0.18;
   const subtotal  = items.reduce((s, i) => s + i.total, 0);
@@ -366,6 +368,31 @@ function OrderFormModal({ inventory, rawMaterials, editOrder, preloadItems, prel
       unitCost: m.unitCost, total: m.unitCost, _inventoryId: m.id,
     }]);
     setProductSearch("");
+  }
+
+  // Insumo que Stefany quiere comprar pero todavía no existe en rawMaterials (ej. un color nuevo).
+  // Se agrega a la orden con un id temporal; al recepcionar, purchases.ts crea el RawMaterial real.
+  function addNewRawMaterialItem() {
+    const name = newMaterial.name.trim();
+    const qty = Number(newMaterial.qty);
+    const price = Number(newMaterial.price);
+    if (!name) { toast.error("Ponle un nombre al insumo nuevo"); return; }
+    if (!qty || qty <= 0) { toast.error("La cantidad debe ser mayor a 0"); return; }
+    if (Number.isNaN(price) || price < 0) { toast.error("El precio de compra no es válido"); return; }
+    if (rawMaterials.some((m) => m.name.trim().toLowerCase() === name.toLowerCase())) {
+      toast.error("Ya existe un insumo con ese nombre — búscalo arriba en vez de crearlo de nuevo");
+      return;
+    }
+    const placeholderId = `new_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    setItems((prev) => [...prev, {
+      inventoryId: placeholderId, sku: "", productName: name,
+      category: "", unit: newMaterial.unit.trim() || "unidad",
+      qtyOrdered: qty, qtyReceived: 0,
+      unitCost: price, total: qty * price,
+      isNewRawMaterial: true, _inventoryId: placeholderId,
+    }]);
+    setNewMaterial({ name: "", unit: "unidad", qty: "1", price: "" });
+    setShowNewMaterial(false);
   }
 
   // Cambiar de tipo con items ya cargados mezclaría inventario/insumos en la misma orden —
@@ -563,6 +590,50 @@ function OrderFormModal({ inventory, rawMaterials, editOrder, preloadItems, prel
               )}
             </div>
 
+            {/* Insumo libre — Stefany compra algo que aún no está registrado (ej. un color nuevo) */}
+            {type === "insumo" && (
+              <div className="mb-3">
+                {!showNewMaterial ? (
+                  <button type="button" onClick={() => setShowNewMaterial(true)}
+                    className="flex items-center gap-1 text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline">
+                    <Plus size={12} /> ¿No está en la lista? Agregar insumo nuevo
+                  </button>
+                ) : (
+                  <div className="p-3 border border-dashed border-brand-300 dark:border-brand-500/40 rounded-xl bg-brand-50/50 dark:bg-brand-500/10 space-y-2">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Insumo nuevo (aún no registrado en Insumos)</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                      <input value={newMaterial.name}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, name: e.target.value }))}
+                        placeholder="Nombre, ej. Limpiapipa negro"
+                        className="sm:col-span-2 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
+                      <input value={newMaterial.unit}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, unit: e.target.value }))}
+                        placeholder="Unidad (unidad, kg…)"
+                        className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
+                      <input type="number" min={1} value={newMaterial.qty}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, qty: e.target.value }))}
+                        placeholder="Cantidad"
+                        className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="number" min={0} step="0.01" value={newMaterial.price}
+                        onChange={(e) => setNewMaterial((p) => ({ ...p, price: e.target.value }))}
+                        placeholder="Precio de compra (unitario)"
+                        className="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-400" />
+                      <button type="button" onClick={addNewRawMaterialItem}
+                        className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition">
+                        Agregar
+                      </button>
+                      <button type="button" onClick={() => { setShowNewMaterial(false); setNewMaterial({ name: "", unit: "unidad", qty: "1", price: "" }); }}
+                        className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-300 transition">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {items.length === 0 ? (
               <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-slate-400 dark:text-slate-400 text-sm">
                 {type === "insumo" ? "Busca y selecciona insumos registrados" : "Busca y selecciona productos del inventario"}
@@ -583,7 +654,14 @@ function OrderFormModal({ inventory, rawMaterials, editOrder, preloadItems, prel
                     {items.map((item, idx) => (
                       <tr key={idx} className="border-t border-slate-50 dark:border-slate-700/50">
                         <td className="py-2.5 px-3">
-                          <p className="font-medium">{item.productName}</p>
+                          <p className="font-medium flex items-center gap-1.5">
+                            {item.productName}
+                            {item.isNewRawMaterial && (
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30">
+                                Nuevo
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-slate-400 dark:text-slate-400 font-mono">{item.sku}</p>
                         </td>
                         <td className="py-2.5 px-3">

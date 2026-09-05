@@ -218,6 +218,7 @@ interface ItemState {
   serialNumber: string;
   batchCode: string;
   receiptPhotoUrl: string;
+  isNewRawMaterial?: boolean;
 }
 
 function ItemCard({
@@ -241,7 +242,14 @@ function ItemCard({
           {done ? <CheckCircle2 size={16} /> : <Package size={16} />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900 truncate dark:text-slate-100">{item.productName}</p>
+          <p className="text-sm font-semibold text-slate-900 truncate dark:text-slate-100 flex items-center gap-1.5">
+            {item.productName}
+            {item.isNewRawMaterial && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 flex-shrink-0">
+                Se crea al recibir
+              </span>
+            )}
+          </p>
           <p className="text-xs text-slate-400 font-mono dark:text-slate-400">
             {item.sku ? `${item.sku} · ` : ""}Pedido: {item.qtyOrdered}{item.unit ? ` ${item.unit}` : ""} · Recibido prev: {item.qtyAlreadyReceived}{item.unit ? ` ${item.unit}` : ""}
           </p>
@@ -365,6 +373,7 @@ export function ReceiveOrderModal({ order, onClose, onDone }: {
       serialNumber: i.serialNumber ?? "",
       batchCode: i.batchCode ?? "",
       receiptPhotoUrl: i.receiptPhotoUrl ?? "",
+      isNewRawMaterial: i.isNewRawMaterial,
     }))
   );
 
