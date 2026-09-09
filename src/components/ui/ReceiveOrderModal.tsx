@@ -10,11 +10,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { receivePurchaseOrder } from "@/lib/firestore/purchases";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { fmtCurrency } from "@/lib/utils";
 import type { PurchaseOrder, PurchaseOrderItem } from "@/types";
-
-const CLOUDINARY_CLOUD  = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME  ?? "").trim();
-const CLOUDINARY_PRESET = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
 
 // ─── Photo uploader (inline, no modal) ───────────────────────────────────────
 
@@ -31,21 +29,10 @@ function InlinePhotoUpload({ value, onChange }: {
   const [imgErr,    setImgErr]    = useState(false);
 
   async function uploadBlob(blob: Blob, name: string) {
-    if (!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET) {
-      toast.error("Cloudinary no configurado"); return;
-    }
     setUploading(true);
     try {
-      const form = new FormData();
-      form.append("file", blob, name);
-      form.append("upload_preset", CLOUDINARY_PRESET);
-      form.append("folder", "receipt-photos");
-      const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-        method: "POST", body: form,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message ?? "Upload failed");
-      onChange(data.secure_url);
+      const url = await uploadToCloudinary(blob, name, "receipt-photos");
+      onChange(url);
       setImgErr(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al subir foto");

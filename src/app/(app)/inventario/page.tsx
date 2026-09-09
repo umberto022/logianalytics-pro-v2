@@ -19,12 +19,10 @@ import {
   Cell, PieChart, Pie, LineChart, Line, CartesianGrid,
 } from "recharts";
 
-const CLOUDINARY_CLOUD  = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME  ?? "").trim();
-const CLOUDINARY_PRESET = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "").trim();
-
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import {
   listInventory, addInventoryItem, updateInventoryItem,
   deleteInventoryItem, bulkAddInventory, listMovements, adjustStock,
@@ -125,28 +123,12 @@ function PhotoPicker({ current, onChange, onUploading }: {
   const streamRef = useRef<MediaStream | null>(null);
 
   async function uploadFile(blob: Blob, name: string) {
-    if (!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET) {
-      toast.error("Configuración de Cloudinary faltante. Verifica las variables de entorno.");
-      return;
-    }
     setUploading(true);
     onUploading?.(true);
     try {
-      const form = new FormData();
-      form.append("file", blob, name);
-      form.append("upload_preset", CLOUDINARY_PRESET);
-      form.append("folder", "inventory-photos");
-      const res  = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,
-        { method: "POST", body: form }
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        console.error("Cloudinary error:", data);
-        throw new Error(data?.error?.message ?? `HTTP ${res.status}`);
-      }
-      setPreview(data.secure_url);
-      onChange(data.secure_url);
+      const url = await uploadToCloudinary(blob, name, "inventory-photos");
+      setPreview(url);
+      onChange(url);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error desconocido";
       toast.error(`Error subiendo foto: ${msg}`);

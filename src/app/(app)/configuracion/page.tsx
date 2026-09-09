@@ -7,6 +7,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { updateUserProfile } from "@/lib/firestore/users";
 import { createCompany, getCompany, updateCompany } from "@/lib/firestore/companies";
+import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -212,22 +213,10 @@ export default function ConfiguracionPage() {
     if (!file || !user) return;
     setUploadingPhoto(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-      fd.append("folder", "profile-photos");
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST", body: fd }
-      );
-      const data = await res.json();
-      if (data.secure_url) {
-        await updateUserProfile(user.uid, { photoURL: data.secure_url });
-        await refreshProfile();
-        toast.success("Foto actualizada");
-      } else {
-        toast.error("Error al subir la foto");
-      }
+      const url = await uploadToCloudinary(file, file.name, "profile-photos");
+      await updateUserProfile(user.uid, { photoURL: url });
+      await refreshProfile();
+      toast.success("Foto actualizada");
     } catch {
       toast.error("Error al subir la foto");
     } finally {
