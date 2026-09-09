@@ -11,7 +11,19 @@ function getStripe() {
   return new Stripe(key);
 }
 
+// Desactivado 2026-09-09: el modelo de negocio pasó a venta personal (ver
+// [[project-logianalytics-pro-launch]]), sin checkout público que dispare este
+// webhook — queda como superficie muerta sin dueño activo vigilándola. Corta
+// ANTES de tocar Stripe/Firestore, sin borrar el handler real: si Fase 2
+// retoma cobro vía Stripe, se reactiva sacando este bloque (revisar primero
+// si sigue siendo el approach correcto, no asumir que sí).
+const WEBHOOK_DISABLED = true;
+
 export async function POST(req: NextRequest) {
+  if (WEBHOOK_DISABLED) {
+    return NextResponse.json({ error: "Endpoint disabled" }, { status: 410 });
+  }
+
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
