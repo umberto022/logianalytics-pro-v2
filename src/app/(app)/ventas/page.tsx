@@ -698,7 +698,8 @@ function CierreTab({ sales, uid }: { sales: Sale[]; uid: string }) {
 
 export default function VentasPage() {
   const { user, profile } = useAuth();
-  const { workspaceId } = useRole();
+  const { workspaceId, can } = useRole();
+  const cajaEnabled = can("caja").canView;
   const { session, cajaOpen } = useCaja();
   const [tab,        setTab]       = useState<Tab>("register");
   const [period,     setPeriod]    = useState<Period>(30);
@@ -943,7 +944,9 @@ export default function VentasPage() {
     { key: "register",  label: "🛒 Nueva venta" },
     { key: "analytics", label: "📊 Análisis" },
     { key: "history",   label: `📋 Historial (${sales.length})` },
-    { key: "cierre",    label: "💰 Cierre del día" },
+    // Si esta empresa no usa caja (UserProfile.disabledModules), el tab de
+    // cierre del día no tiene nada que mostrar — se saca del todo.
+    ...(cajaEnabled ? [{ key: "cierre" as const, label: "💰 Cierre del día" }] : []),
   ];
 
   return (
@@ -991,7 +994,10 @@ export default function VentasPage() {
       </div>
 
       {/* ── Nueva venta ── */}
-      {tab === "register" && !cajaOpen && (
+      {/* El bloqueo por caja cerrada solo aplica si esta empresa USA caja —
+          si el módulo está desactivado (UserProfile.disabledModules) para su
+          workspace, registrar ventas nunca depende de abrir/cerrar caja. */}
+      {tab === "register" && cajaEnabled && !cajaOpen && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-16 text-center shadow-sm">
           <Lock size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
           <p className="text-slate-700 dark:text-slate-200 font-semibold text-lg mb-1">Caja cerrada</p>
@@ -1000,7 +1006,7 @@ export default function VentasPage() {
         </div>
       )}
 
-      {tab === "register" && cajaOpen && (items.length === 0 ? (
+      {tab === "register" && (!cajaEnabled || cajaOpen) && (items.length === 0 ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-16 text-center shadow-sm">
             <ShoppingCart size={40} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
             <p className="text-slate-500 dark:text-slate-400 mb-1">No tienes productos en inventario</p>
@@ -1355,7 +1361,7 @@ export default function VentasPage() {
       )}
 
       {/* ── Cierre del día ── */}
-      {tab === "cierre" && user && (
+      {tab === "cierre" && user && cajaEnabled && (
         <CierreTab sales={sales} uid={workspaceId} />
       )}
     </div>

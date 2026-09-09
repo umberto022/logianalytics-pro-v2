@@ -27,6 +27,14 @@ export interface UserProfile {
   platformOnly?: boolean;
   /** Solo en el doc del Admin dueño del workspace. Ausente = "active" (grandfathering de workspaces creados antes de esta feature). Ver [[project-logianalytics-pro-launch]]. */
   workspaceStatus?: WorkspaceStatus;
+  /**
+   * Solo en el doc del Admin dueño del workspace. Módulos (ModuleKey de
+   * permissions.ts, tipado como string acá para evitar el import circular
+   * types↔permissions) desactivados a pedido de ESTA empresa puntual — no es
+   * un rol, aplica incluso al Admin. Ausente/vacío = todos los módulos que su
+   * rol permitiría siguen disponibles (comportamiento sin cambios).
+   */
+  disabledModules?: string[];
   paymentStatus?: WorkspacePaymentStatus;
   nextPaymentDate?: string;
   billingNotes?: string;

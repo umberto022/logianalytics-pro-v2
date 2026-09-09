@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const canViewSales = can("ventas").canView;
   const canViewInv   = can("inventario").canView;
   const canViewPO    = can("compras").canView || can("recepciones").canView;
+  const cajaEnabled  = can("caja").canView;
 
   const [activeKPI, setActiveKPI] = useState<ActiveKPI>(null);
   const { items, loading: loadingInv } = useInventory(canViewInv && !isVentasOnly);
@@ -159,13 +160,17 @@ export default function DashboardPage() {
           <KPICard label="Ganancia hoy" value={fmtCurrency(todaySummary.profit)}    icon={TrendingUp}   color="green" deltaType="neutral" />
         </div>
 
-        <div className={`rounded-2xl border p-5 mb-6 shadow-sm flex items-center gap-3 ${cajaStatus.color}`}>
-          <cajaStatus.icon size={22} className="flex-shrink-0" />
-          <div>
-            <p className="font-semibold">{cajaStatus.label}</p>
-            <p className="text-sm opacity-80">{cajaStatus.detail}</p>
+        {/* Si esta empresa no usa caja (UserProfile.disabledModules), este
+            widget no tiene nada útil que mostrar — se saca del todo. */}
+        {cajaEnabled && (
+          <div className={`rounded-2xl border p-5 mb-6 shadow-sm flex items-center gap-3 ${cajaStatus.color}`}>
+            <cajaStatus.icon size={22} className="flex-shrink-0" />
+            <div>
+              <p className="font-semibold">{cajaStatus.label}</p>
+              <p className="text-sm opacity-80">{cajaStatus.detail}</p>
+            </div>
           </div>
-        </div>
+        )}
 
         {todaySales.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center shadow-sm dark:bg-slate-800 dark:border-slate-700">

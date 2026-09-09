@@ -64,11 +64,17 @@ export function moduleForPath(pathname: string): ModuleKey | null {
   return match ? ROUTE_MODULE[match] : null;
 }
 
-export function canEditModule(role: Department, moduleKey: ModuleKey): boolean {
+// `disabledModules` viene del doc del Admin dueño del workspace (ver
+// UserProfile.disabledModules) — un módulo desactivado ahí gana sobre
+// cualquier rol, incluido Admin: es una decisión de "esta empresa puntual no
+// usa esta parte de la app", no una restricción de permisos.
+export function canEditModule(role: Department, moduleKey: ModuleKey, disabledModules?: string[]): boolean {
+  if (disabledModules?.includes(moduleKey)) return false;
   return MODULE_ACCESS[moduleKey].edit.includes(role);
 }
 
-export function canViewModule(role: Department, moduleKey: ModuleKey): boolean {
+export function canViewModule(role: Department, moduleKey: ModuleKey, disabledModules?: string[]): boolean {
+  if (disabledModules?.includes(moduleKey)) return false;
   const access = MODULE_ACCESS[moduleKey];
   return access.edit.includes(role) || (access.readOnly?.includes(role) ?? false);
 }

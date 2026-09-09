@@ -27,14 +27,17 @@ import type { UserProfile, Department, WorkspaceStatus } from "@/types";
  * una entrada de caché vieja, sin depender de que cada capa intermedia
  * respete el header Cache-Control.
  */
-async function fetchWorkspaceStatus(u: User): Promise<WorkspaceStatus> {
+async function fetchWorkspaceStatus(u: User): Promise<{ status: WorkspaceStatus; disabledModules: string[] }> {
   const token = await u.getIdToken();
   const res = await fetch(`/api/workspace-status?t=${Date.now()}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   const data = await res.json();
-  return (data.status as WorkspaceStatus) ?? "active";
+  return {
+    status: (data.status as WorkspaceStatus) ?? "active",
+    disabledModules: (data.disabledModules as string[]) ?? [],
+  };
 }
 
 /** Guarda la cuenta en el selector rápido de /login (ver recentAccounts.ts). */
@@ -55,6 +58,8 @@ interface AuthCtx {
   loading:      boolean;
   /** null mientras se resuelve o si no hay sesión — tratar como "no bloquear todavía". */
   workspaceStatus: WorkspaceStatus | null;
+  /** Módulos desactivados para el workspace del usuario actual (ver UserProfile.disabledModules). */
+  disabledModules: string[];
   signIn:       (email: string, password: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
   register:     (email: string, password: string, fullName: string, phone: string) => Promise<void>;
@@ -70,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus | null>(null);
+  const [disabledModules, setDisabledModules] = useState<string[]>([]);
 
   async function loadProfile(u: User): Promise<UserProfile | null> {
     try {
@@ -84,10 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Se espera acá (no fire-and-forget) para que `loading` no baje a false
         // hasta tener el estado — evita un parpadeo de la app normal antes de
         // mostrar la pantalla de bloqueo a una cuenta pendiente/suspendida.
-        const status = await fetchWorkspaceStatus(u).catch(() => "active" as WorkspaceStatus);
+        const { status, disabledModules: dm } = await fetchWorkspaceStatus(u)
+          .catch(() => ({ status: "active" as WorkspaceStatus, disabledModules: [] as string[] }));
         setWorkspaceStatus(status);
+        setDisabledModules(dm);
       } else {
         setWorkspaceStatus(null);
+        setDisabledModules([]);
       }
       return p;
     } catch (e) {
@@ -181,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setWorkspaceStatus(null);
+    setDisabledModules([]);
   }
 
   async function resetPassword(email: string) {
@@ -192,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, profile, loading, workspaceStatus, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
+    <Ctx.Provider value={{ user, profile, loading, workspaceStatus, disabledModules, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
       {children}
     </Ctx.Provider>
   );

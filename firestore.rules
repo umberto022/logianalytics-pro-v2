@@ -45,6 +45,17 @@ service cloud.firestore {
       return inWorkspace(workspaceId) && callerRole() in roles;
     }
 
+    // True if this workspace's Admin explicitly turned a module off for their
+    // own company (UserProfile.disabledModules, lives only on users/{workspaceId})
+    // — a per-company product decision, not a role restriction, so it applies
+    // even to that workspace's own Admin. Same get()-caching-per-doc-per-request
+    // as workspaceIsActive() above, so this costs zero extra reads when combined
+    // with roleIn()/inWorkspace() on the same workspaceId.
+    function moduleDisabled(workspaceId, moduleKey) {
+      let ws = get(/databases/$(database)/documents/users/$(workspaceId)).data;
+      return ('disabledModules' in ws) && (moduleKey in ws.disabledModules);
+    }
+
     // Users can read only their own profile. Writes are locked down to prevent
     // self-granting of role/workspaceId/platformAdmin — those are only ever set
     // via the Admin SDK (server-side API routes), which bypasses these rules.
@@ -181,9 +192,14 @@ service cloud.firestore {
       allow update, delete: if roleIn(workspaceId, ['admin']);
     }
 
-    // Caja sessions: Ventas only.
+    // Caja sessions: Ventas only — y solo si esta empresa usa el módulo
+    // (algunos clientes no manejan efectivo/no necesitan abrir y cerrar caja,
+    // ver UserProfile.disabledModules). Sin este chequeo acá, alguien podría
+    // seguir abriendo/cerrando caja llamando al SDK directo aunque la UI ya
+    // no se lo ofrezca — mismo criterio "UI-only gate ≠ rule-level gate" que
+    // el resto de este archivo.
     match /caja/{workspaceId}/sessions/{sessionId} {
-      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
+      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']) && !moduleDisabled(workspaceId, 'caja');
     }
 
     // Conteos físicos: lives inside the Inventario page (Logística), not Caja.

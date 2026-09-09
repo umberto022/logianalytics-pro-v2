@@ -13,9 +13,11 @@ export const dynamic = "force-dynamic";
 /**
  * Cualquier usuario autenticado puede consultar el estado de SU PROPIO workspace —
  * esto es solo para que el cliente muestre un mensaje amigable ("cuenta pendiente
- * de aprobación", "acceso suspendido"...) en vez de errores crudos de permisos.
- * La protección real vive en firestore.rules (workspaceIsActive()) — aunque alguien
- * se salte esta ruta, cada lectura/escritura real sigue bloqueada del lado servidor.
+ * de aprobación", "acceso suspendido"...) en vez de errores crudos de permisos, y
+ * para que sepa qué módulos tiene desactivados esa empresa puntual (`disabledModules`,
+ * ver UserProfile). La protección real vive en firestore.rules (workspaceIsActive())
+ * — aunque alguien se salte esta ruta, cada lectura/escritura real sigue bloqueada
+ * del lado servidor (caja además chequea `disabledModules` ahí mismo).
  */
 export async function GET(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -26,18 +28,19 @@ export async function GET(req: NextRequest) {
     const db = getAdminDb();
 
     const ownSnap = await db.collection("users").doc(decoded.uid).get();
-    if (!ownSnap.exists) return noStore({ status: "active" });
+    if (!ownSnap.exists) return noStore({ status: "active", disabledModules: [] });
 
     const workspaceId = (ownSnap.data()?.workspaceId as string | undefined) ?? decoded.uid;
     const wsSnap = workspaceId === decoded.uid ? ownSnap : await db.collection("users").doc(workspaceId).get();
     const status = wsSnap.exists ? (wsSnap.data()?.workspaceStatus ?? "active") : "active";
+    const disabledModules = wsSnap.exists ? (wsSnap.data()?.disabledModules ?? []) : [];
 
-    return noStore({ status });
+    return noStore({ status, disabledModules });
   } catch (e) {
     // Fallamos "abierto" acá a propósito — este endpoint es solo UX. Si algo sale
     // mal, mejor mostrar la app normal (y que firestore.rules corte de verdad si
     // corresponde) que dejar a un usuario activo mirando una pantalla de error.
     console.error("workspace-status error:", e);
-    return noStore({ status: "active" });
+    return noStore({ status: "active", disabledModules: [] });
   }
 }
