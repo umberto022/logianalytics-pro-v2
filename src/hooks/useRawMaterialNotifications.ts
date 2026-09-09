@@ -17,6 +17,7 @@ async function pushToWorkspace(item: RawMaterial) {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
       body: JSON.stringify({
+        itemId: item.id,
         itemName: item.name,
         currentStock: item.currentStock,
         minStock: item.minStock,

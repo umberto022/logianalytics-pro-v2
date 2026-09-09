@@ -23,16 +23,36 @@ export async function POST(req: NextRequest) {
     const callerProfile = callerDoc.data()!;
     const workspaceId = (callerProfile.workspaceId as string | undefined) ?? decoded.uid;
 
-    const { itemName, currentStock, minStock, excludeToken, module } = (await req.json()) as {
-      itemName: string;
-      currentStock: number;
-      minStock: number;
+    const { itemId, excludeToken, module } = (await req.json()) as {
+      itemId: string;
       excludeToken?: string;
       /** Qué módulo dispara la alerta — decide quién la recibe. Default "inventario" por compatibilidad. */
       module?: ModuleKey;
     };
-    if (!itemName) return NextResponse.json({ error: "Missing itemName" }, { status: 400 });
+    if (!itemId) return NextResponse.json({ error: "Missing itemId" }, { status: 400 });
     const targetModule: ModuleKey = module ?? "inventario";
+
+    // Releer el item real en el server en vez de confiar en lo que manda el cliente
+    // (itemName/currentStock/minStock antes venían tal cual del body) — sin esto,
+    // cualquier empleado autenticado podía disparar una alerta push falsa con
+    // cualquier texto/cifra a todo el equipo del workspace. `caller` ya está
+    // verificado por el ID token arriba, así que este get() con Admin SDK es
+    // seguro pese a saltarse firestore.rules (equivalente a lo que las rules ya
+    // le permitirían leer a este mismo caller en su propio workspace).
+    const itemRef = targetModule === "insumos"
+      ? db.collection("users").doc(workspaceId).collection("rawMaterials").doc(itemId)
+      : db.collection("inventory").doc(workspaceId).collection("items").doc(itemId);
+    const itemSnap = await itemRef.get();
+    if (!itemSnap.exists) return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    const itemData = itemSnap.data()!;
+    const itemName = itemData.name as string;
+    const currentStock = itemData.currentStock as number;
+    const minStock = itemData.minStock as number;
+    // Mismo umbral que getStockStatus() en utils.ts ("critical" = currentStock <= minStock)
+    // — no reenviar la alerta si el item ya no está realmente en crítico.
+    if (!(currentStock <= minStock)) {
+      return NextResponse.json({ sent: 0, skipped: "not critical" });
+    }
 
     // Recipients: quien puede VER ese módulo (ej. Inventario → admin/logística/ventas
     // read-only; Insumos → solo admin), fanned out a cada dispositivo con push habilitado,

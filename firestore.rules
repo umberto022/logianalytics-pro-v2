@@ -77,9 +77,17 @@ service cloud.firestore {
     // Companies: profile metadata doc (name, RIF, address...), doc id is an
     // auto-generated Firestore id (not a uid), unrelated to workspace data scoping.
     // Only the company's own admin may read/write their company profile doc.
+    // create/update are split (instead of one `write`) so `ownerId` can be pinned
+    // to the caller on create AND locked from being reassigned on update — before
+    // this split, any admin could set `ownerId` to someone else's uid on create
+    // (the app's own createCompany() never does, but the rule allowed it).
     match /companies/{companyId} {
-      allow read, write: if isAuth() && callerRole() == 'admin' &&
-        (resource == null || resource.data.ownerId == request.auth.uid);
+      allow read: if isAuth() && callerRole() == 'admin' && resource.data.ownerId == request.auth.uid;
+      allow create: if isAuth() && callerRole() == 'admin' &&
+        request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuth() && callerRole() == 'admin' &&
+        resource.data.ownerId == request.auth.uid &&
+        request.resource.data.ownerId == resource.data.ownerId;
     }
 
     // Inventory: Logística crea/edita; Ventas reads (to know what's sellable);
@@ -159,10 +167,18 @@ service cloud.firestore {
       allow read, write: if roleIn(workspaceId, ['admin']);
     }
 
-    // Audit log: any workspace member can log their own actions; only Admin reads.
+    // Audit log: any workspace member can log their own actions (create-only —
+    // the app only ever calls addDoc(), never update/delete); only Admin reads
+    // and manages it. `create` and `update/delete` are split on purpose: the old
+    // single `allow write: if inWorkspace(...)` let ANY employee delete/rewrite
+    // audit entries via the SDK directly (Firestore's `write` covers create+
+    // update+delete) — the exact "UI-only admin gate ≠ rule-level admin gate"
+    // hole already fixed elsewhere (inventory/customers/suppliers/purchaseOrders,
+    // commit 18d2592), just missed here, on the one collection where it matters most.
     match /auditLog/{workspaceId}/events/{eventId} {
       allow read: if roleIn(workspaceId, ['admin']);
-      allow write: if inWorkspace(workspaceId);
+      allow create: if inWorkspace(workspaceId);
+      allow update, delete: if roleIn(workspaceId, ['admin']);
     }
 
     // Caja sessions: Ventas only.
