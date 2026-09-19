@@ -1,10 +1,14 @@
-const CACHE_NAME = "logipro-v5";
-const STATIC_ASSETS = [
-  "/",
-  "/offline.html",
-  "/manifest.json",
-  "/icon.svg",
-];
+// Bump obligatorio al cambiar la estrategia de abajo: `activate` borra toda
+// caché cuyo nombre no coincida, así que subir la versión es lo que purga lo
+// que quedó guardado en los dispositivos que ya tienen la PWA instalada.
+// v5 -> v6 (18-sep-2026).
+const CACHE_NAME = "logipro-v6";
+
+// OJO: `cache.addAll` falla entero si UNO solo de estos da 404, y si install
+// falla el SW no se instala. Todo lo que se agregue aquí debe existir de verdad
+// en /public (por eso no está "/icon-192.png", que el manifest declara pero no
+// existe en el repo).
+const STATIC_ASSETS = ["/offline.html", "/manifest.json", "/icon.svg"];
 
 // --- Firebase Cloud Messaging (background push) ---
 // Lives in this same SW (instead of a separate firebase-messaging-sw.js) because
@@ -55,40 +59,87 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+/**
+ * El caché existe para instalabilidad + una pantalla de "sin conexión" decente.
+ * Los datos de esta app vienen de Firestore (otro origen, ni pasa por aquí), así
+ * que el SW NO intenta funcionar offline de verdad: solo evita la pantalla en
+ * blanco fea del navegador cuando no hay red.
+ *
+ * OJO con lo que se cachea (bug real, mismo que se corrigió en founders_crm el
+ * 18-sep-2026): la versión anterior mandaba a la red SOLO lo que pedía
+ * `text/html`, y todo el resto iba a un caché permanente sin revalidar nunca
+ * (`if (cached) return cached`). Las navegaciones dentro de la app NO piden
+ * `text/html`: con App Router, Next pide componentes de servidor
+ * (`text/x-component` / `?_rsc=`), así que caían en ese caché eterno y la PWA
+ * instalada seguía mostrando pantallas viejas después de cada deploy, sin forma
+ * de actualizarse salvo desinstalarla. Ahora solo se cachea lo estático.
+ */
+
+/** Respuesta de servidor, nunca cacheable: cambia con los datos. */
+function esContenidoDeServidor(request, url) {
+  return (
+    request.headers.get("RSC") === "1" ||
+    request.headers.get("Next-Router-Prefetch") === "1" ||
+    request.headers.get("accept")?.includes("text/x-component") ||
+    url.searchParams.has("_rsc") ||
+    url.pathname.startsWith("/api/")
+  );
+}
+
+/** Build de Next: el nombre lleva hash, así que un archivo dado nunca cambia de contenido. */
+function esInmutable(url) {
+  return url.pathname.startsWith("/_next/static/");
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and cross-origin (Firebase, Cloudinary)
+  // Skip non-GET y cross-origin (Firestore, Cloudinary, gstatic).
   if (request.method !== "GET" || url.origin !== location.origin) return;
 
-  // Network-first for HTML pages — fall back to offline.html
-  if (request.headers.get("accept")?.includes("text/html")) {
+  // Datos del servidor: siempre a la red, jamás al caché.
+  if (esContenidoDeServidor(request, url)) return;
+
+  // Navegación a una página: red primero, y si no hay conexión, la pantalla offline.
+  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
+    event.respondWith(fetch(request).catch(() => caches.match("/offline.html")));
+    return;
+  }
+
+  // Assets con hash en el nombre: caché directo, no pueden quedar viejos.
+  if (esInmutable(url)) {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+          }
           return res;
-        })
-        .catch(() =>
-          caches.match(request).then((r) => r || caches.match("/offline.html"))
-        )
+        });
+      })
     );
     return;
   }
 
-  // Cache-first for static assets (JS, CSS, images, fonts)
+  // Resto de estáticos con nombre fijo (íconos, logo, manifest): se sirve lo
+  // guardado para que sea instantáneo, pero SIEMPRE se revalida por detrás, así
+  // un archivo que cambió de contenido sin cambiar de nombre se actualiza solo
+  // en la visita siguiente en vez de quedar congelado para siempre.
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((res) => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(request, clone));
-        }
-        return res;
-      });
+      const red = fetch(request)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+          }
+          return res;
+        })
+        .catch(() => cached);
+      return cached || red;
     })
   );
 });
