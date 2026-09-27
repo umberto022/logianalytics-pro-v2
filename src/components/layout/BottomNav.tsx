@@ -7,7 +7,7 @@ import {
   LayoutDashboard, ShoppingCart, Package,
   ClipboardList, Users, MoreHorizontal,
   MapPin, TrendingUp, Settings, LogOut, X, Download, Store, CreditCard, ShieldAlert,
-  PackageCheck, UsersRound, Receipt, Layers,
+  PackageCheck, UsersRound, Receipt, Layers, Sparkles, Inbox,
 } from "lucide-react";
 import { useStockAlerts } from "@/hooks/useStockAlerts";
 import { useRawMaterialAlerts } from "@/hooks/useRawMaterialAlerts";
@@ -27,6 +27,8 @@ const MAIN_NAV: { href: string; label: string; icon: typeof LayoutDashboard; bad
 ];
 
 const MORE_NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge?: "insumos"; module: ModuleKey }[] = [
+  { href: "/catalogo",            label: "Mi catálogo",     icon: Sparkles,     module: "catalogo" },
+  { href: "/solicitudes",         label: "Solicitudes",     icon: Inbox,        module: "catalogo" },
   { href: "/rutas",               label: "Rutas",           icon: MapPin,       module: "rutas" },
   { href: "/recepciones",         label: "Recepciones",     icon: PackageCheck, module: "recepciones" },
   { href: "/proveedores",         label: "Proveedores",     icon: Store,        module: "proveedores" },

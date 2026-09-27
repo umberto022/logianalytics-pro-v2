@@ -20,6 +20,18 @@ import type { Sale } from "@/types";
 
 type Filter = "all" | "overdue" | "upcoming" | "paid";
 
+/**
+ * Monto realmente pendiente de cobro. Para una venta normal (sin
+ * `balanceDueCents`, el caso de siempre) es el total de la venta, igual que
+ * antes. Para una venta que vino de una cotización de catálogo con anticipo
+ * ya cobrado (ver convertQuoteToSale), es solo el SALDO — mostrar el total
+ * completo ahí sobrestimaría lo pendiente, porque el anticipo ya se cobró
+ * aparte y no pasó por acá.
+ */
+function amountOwed(s: Sale): number {
+  return s.balanceDueCents !== undefined ? s.balanceDueCents / 100 : s.totalRevenue;
+}
+
 export default function CuentasPorCobrarPage() {
   const { user } = useAuth();
   const { workspaceId } = useRole();
@@ -44,8 +56,8 @@ export default function CuentasPorCobrarPage() {
   const current  = creditSales.filter((s) => s.paymentStatus === "credito" && (!s.dueDate || s.dueDate.toDate() > in7days));
   const paid     = creditSales.filter((s) => s.paymentStatus === "pagado");
 
-  const totalPending = [...overdue, ...upcoming, ...current].reduce((s, v) => s + v.totalRevenue, 0);
-  const totalOverdue = overdue.reduce((s, v) => s + v.totalRevenue, 0);
+  const totalPending = [...overdue, ...upcoming, ...current].reduce((s, v) => s + amountOwed(v), 0);
+  const totalOverdue = overdue.reduce((s, v) => s + amountOwed(v), 0);
 
   const filtered = useMemo(() => {
     if (filter === "overdue")  return overdue;
@@ -134,7 +146,12 @@ export default function CuentasPorCobrarPage() {
                       <td className="py-3 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">{fmtDate(s.saleDate)}</td>
                       <td className="py-3 px-4 font-medium truncate max-w-[130px]">{s.client || "—"}</td>
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-300 truncate max-w-[130px]">{s.productName}</td>
-                      <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{fmtCurrency(s.totalRevenue)}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                        {fmtCurrency(amountOwed(s))}
+                        {s.balanceDueCents !== undefined && (
+                          <p className="text-[10px] font-normal text-slate-400">saldo · total {fmtCurrency(s.totalRevenue)}</p>
+                        )}
+                      </td>
                       <td className={`py-3 px-4 whitespace-nowrap text-xs font-semibold ${isOverdue ? "text-red-600 dark:text-red-400" : isDue7 ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400"}`}>
                         {dueDate ? fmtDate(s.dueDate!) : "—"}{isOverdue ? " ⚠️" : ""}
                       </td>
@@ -177,7 +194,7 @@ export default function CuentasPorCobrarPage() {
       <ConfirmModal
         isOpen={!!confirmSale}
         title="Marcar como pagado"
-        description={`¿Confirmas que se recibió el pago de ${confirmSale ? fmtCurrency(confirmSale.totalRevenue) : ""} de ${confirmSale?.client || "este cliente"}?`}
+        description={`¿Confirmas que se recibió el pago de ${confirmSale ? fmtCurrency(amountOwed(confirmSale)) : ""} de ${confirmSale?.client || "este cliente"}?`}
         confirmLabel="Sí, cobrado"
         loading={saving}
         onConfirm={markPaid}

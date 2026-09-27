@@ -28,19 +28,20 @@ export async function GET(req: NextRequest) {
     const db = getAdminDb();
 
     const ownSnap = await db.collection("users").doc(decoded.uid).get();
-    if (!ownSnap.exists) return noStore({ status: "active", disabledModules: [] });
+    if (!ownSnap.exists) return noStore({ status: "active", disabledModules: [], enabledModules: [] });
 
     const workspaceId = (ownSnap.data()?.workspaceId as string | undefined) ?? decoded.uid;
     const wsSnap = workspaceId === decoded.uid ? ownSnap : await db.collection("users").doc(workspaceId).get();
     const status = wsSnap.exists ? (wsSnap.data()?.workspaceStatus ?? "active") : "active";
     const disabledModules = wsSnap.exists ? (wsSnap.data()?.disabledModules ?? []) : [];
+    const enabledModules = wsSnap.exists ? (wsSnap.data()?.enabledModules ?? []) : [];
 
-    return noStore({ status, disabledModules });
+    return noStore({ status, disabledModules, enabledModules });
   } catch (e) {
     // Fallamos "abierto" acá a propósito — este endpoint es solo UX. Si algo sale
     // mal, mejor mostrar la app normal (y que firestore.rules corte de verdad si
     // corresponde) que dejar a un usuario activo mirando una pantalla de error.
     console.error("workspace-status error:", e);
-    return noStore({ status: "active", disabledModules: [] });
+    return noStore({ status: "active", disabledModules: [], enabledModules: [] });
   }
 }

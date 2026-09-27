@@ -56,6 +56,16 @@ service cloud.firestore {
       return ('disabledModules' in ws) && (moduleKey in ws.disabledModules);
     }
 
+    // Inverso de moduleDisabled: para módulos OPT-IN (apagados por defecto
+    // para todas las empresas, ver ModuleKey/OPT_IN_MODULES en permissions.ts
+    // — hoy solo "catalogo"), esta empresa puntual tiene que haberlo pedido
+    // explícitamente vía UserProfile.enabledModules. Mismo costo de get()
+    // cacheado por doc que moduleDisabled().
+    function moduleEnabled(workspaceId, moduleKey) {
+      let ws = get(/databases/$(database)/documents/users/$(workspaceId)).data;
+      return ('enabledModules' in ws) && (moduleKey in ws.enabledModules);
+    }
+
     // Users can read only their own profile. Writes are locked down to prevent
     // self-granting of role/workspaceId/platformAdmin — those are only ever set
     // via the Admin SDK (server-side API routes), which bypasses these rules.
@@ -212,6 +222,24 @@ service cloud.firestore {
     // secreta) — estas reglas solo protegen el registro/estado guardado acá.
     match /electronicInvoices/{workspaceId}/records/{invoiceId} {
       allow read, write: if roleIn(workspaceId, ['admin', 'ventas']);
+    }
+
+    // Catálogo público: módulo opt-in (ver moduleEnabled arriba). El visitante
+    // público NUNCA lee/escribe Firestore directo — /c/[slug] y
+    // /api/catalogo/* pasan por Admin SDK server-side, que ignora estas
+    // reglas. Estas reglas solo protegen el acceso INTERNO (Stefany/su
+    // equipo) a su propia configuración y bandeja de solicitudes.
+    match /catalogSettings/{workspaceId} {
+      allow read, write: if roleIn(workspaceId, ['admin', 'ventas']) && moduleEnabled(workspaceId, 'catalogo');
+    }
+
+    // Las solicitudes solo las crea el servidor (Admin SDK, al recibir un
+    // pedido público) — de ahí `create, delete: if false`. Ventas/Admin sí
+    // pueden actualizar (preparar cotización, marcar aceptada, registrar
+    // anticipo, confirmar) una vez creadas.
+    match /catalogQuotes/{workspaceId}/records/{quoteId} {
+      allow read, update: if roleIn(workspaceId, ['admin', 'ventas']) && moduleEnabled(workspaceId, 'catalogo');
+      allow create, delete: if false;
     }
   }
 }

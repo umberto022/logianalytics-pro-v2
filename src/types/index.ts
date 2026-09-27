@@ -35,6 +35,13 @@ export interface UserProfile {
    * rol permitiría siguen disponibles (comportamiento sin cambios).
    */
   disabledModules?: string[];
+  /**
+   * Solo en el doc del Admin dueño del workspace. Módulos OPT-IN (apagados por
+   * defecto para todos) que esta empresa puntual pidió activar — inverso de
+   * `disabledModules`. Primer uso: "catalogo" (ver [[project-logianalytics-insumos]]
+   * / catálogo público de Stefany's Creations). Ausente/vacío = ninguno activo.
+   */
+  enabledModules?: string[];
   paymentStatus?: WorkspacePaymentStatus;
   nextPaymentDate?: string;
   billingNotes?: string;
@@ -80,6 +87,33 @@ export interface PriceHistoryEntry {
   salePrice: number;
 }
 
+// ─── Catálogo público ──────────────────────────────────────────────────────
+// Una variante SOLO modifica descripción/precio de presentación (ej. "Color:
+// rojo", "Tamaño: grande") — comparte el stock del InventoryItem padre. No es
+// un SKU independiente: evita duplicar inventario, a costa de no poder llevar
+// existencias por variante en esta primera versión (limitación documentada).
+export interface CatalogVariant {
+  id: string;
+  label: string;
+  /** Si no está, la variante usa el `salePrice` del producto tal cual. */
+  priceOverrideCents?: number;
+}
+
+/** Precio distinto a partir de cierta cantidad del mismo producto (ej. 3+ unidades a otro precio). */
+export interface CatalogQuantityPriceRule {
+  minQty: number;
+  unitPriceCents: number;
+}
+
+export interface InventoryItemCatalogInfo {
+  published: boolean;
+  description?: string;
+  variants?: CatalogVariant[];
+  quantityPricing?: CatalogQuantityPriceRule[];
+  /** Puede pedirse por encargo aunque currentStock sea 0. */
+  allowBackorder?: boolean;
+}
+
 export interface InventoryItem {
   id: string;
   sku: string;
@@ -97,6 +131,8 @@ export interface InventoryItem {
   imageUrl?: string;
   updatedAt: Timestamp;
   priceHistory?: PriceHistoryEntry[];
+  /** Presencia/config en el catálogo público de esta empresa (ver [[project-logianalytics-insumos]]). Ausente = nunca se publicó. */
+  catalog?: InventoryItemCatalogInfo;
 }
 
 export type StockStatus = "critical" | "low" | "ok";
@@ -150,6 +186,12 @@ export interface Sale {
   totalRevenue: number;
   totalCost: number;
   profit: number;
+  /** Presentes solo si esta venta vino de una CatalogQuote (ver [[project-logianalytics-insumos]]) — ventas normales nunca los llenan. */
+  quoteId?: string;
+  advanceAmountCents?: number;
+  balanceDueCents?: number;
+  /** Entrega y pago son estados independientes: confirmar/pagar un pedido no implica haberlo entregado. Ausente = sin dato (ventas de antes de esta feature). */
+  deliveryStatus?: "pendiente" | "entregado";
 }
 
 export interface ClientStats {
@@ -266,6 +308,8 @@ export const LOW_STOCK_THRESHOLD = 0.25;
 
 // ─── Clientes ────────────────────────────────────────────────────────────────
 
+export type CustomerType = "nuevo" | "frecuente";
+
 export interface Customer {
   id: string;
   name: string;
@@ -276,6 +320,12 @@ export interface Customer {
   notes: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  /**
+   * Solo la empresa (Admin/Ventas, vía el módulo Clientes) o el sistema la
+   * asignan — un visitante del catálogo público nunca puede marcarse a sí
+   * mismo como "frecuente" (afecta si necesita anticipo). Ausente = "nuevo".
+   */
+  customerType?: CustomerType;
 }
 
 // ─── Compras ─────────────────────────────────────────────────────────────────
@@ -440,6 +490,134 @@ export interface ElectronicInvoice {
   /** URL de la representación impresa (PDF) del e-CF, si Alanube ya la generó. */
   printUrl?: string;
   errorMessage?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// ─── Catálogo público (Stefany's Creations y futuras empresas) ───────────────
+// Módulo opt-in (ver UserProfile.enabledModules). Nada de esto se lee/escribe
+// desde el navegador de un visitante: las rutas públicas (/c/[slug] y
+// /api/catalogo/*) pasan por Admin SDK server-side, nunca por firestore.rules.
+
+export interface CatalogColors {
+  primary: string;
+  accent: string;
+}
+
+export interface CatalogDiscountRule {
+  /** Cantidad total de unidades en el carrito a partir de la cual aplica el descuento (pueden ser del mismo producto). */
+  minQty: number;
+  pct: number;
+  /** Regla provisional confirmada por Stefany: el descuento no alcanza el envío. */
+  appliesToShipping: boolean;
+}
+
+export interface CatalogAdvanceRule {
+  pct: number;
+  /** En centavos. Pedido "grande" a partir de este monto de productos. */
+  largeOrderThresholdCents: number;
+  /** true = el umbral se evalúa sobre el total de productos YA con descuento aplicado, sin envío (regla provisional confirmada). */
+  thresholdAfterDiscountExcludingShipping: boolean;
+}
+
+export interface CatalogSettings {
+  /** Igual al workspaceId — un doc por empresa. */
+  id: string;
+  businessName: string;
+  logoUrl?: string;
+  colors: CatalogColors;
+  /** Solo dígitos, con código de país (ej. "18095551234"). Vacío = todavía no configurado, no se muestra el botón de WhatsApp. */
+  whatsappNumber?: string;
+  pickup: { enabled: boolean; address?: string };
+  delivery: { enabled: boolean; zones: string[] };
+  /** Slug único para /c/[slug] — no expone el uid/email de la dueña. */
+  publicSlug: string;
+  /** Stefany debe publicar explícitamente desde "Mi catálogo" — nunca queda público solo. */
+  enabled: boolean;
+  discountRule: CatalogDiscountRule;
+  advanceRule: CatalogAdvanceRule;
+  /** Texto de plazo mostrado en el catálogo — nunca se promete una fecha automática. */
+  leadTimeNote: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export type CatalogQuoteStatus =
+  | "recibida"
+  | "preparada"
+  | "enviada"
+  | "aceptada"
+  | "pendiente_anticipo"
+  | "confirmado"
+  | "convertida"
+  | "cancelada";
+
+export interface CatalogQuoteItem {
+  inventoryId: string;
+  sku: string;
+  productName: string;
+  category: string;
+  variantId?: string;
+  variantLabel?: string;
+  quantity: number;
+  /** Snapshot del precio unitario calculado server-side al momento de la solicitud (nunca el que mande el navegador). */
+  unitPriceCents: number;
+  /** true = no había stock suficiente al momento de la solicitud (o el producto se ofrece siempre por encargo). */
+  isBackorder: boolean;
+}
+
+export interface CatalogQuoteHistoryEntry {
+  action: string;
+  by: string;
+  at: Timestamp;
+  note?: string;
+}
+
+export interface CatalogQuotePayment {
+  amountCents: number;
+  method?: string;
+  note?: string;
+  recordedBy: string;
+  recordedAt: Timestamp;
+}
+
+export interface CatalogQuote {
+  id: string;
+  /** Referencia corta para que el cliente la use al hablar por WhatsApp — no sirve para consultar la solicitud públicamente, no hay endpoint de lectura pública. */
+  publicRef: string;
+  status: CatalogQuoteStatus;
+  items: CatalogQuoteItem[];
+  subtotalCents: number;
+  discountCents: number;
+  discountPct: number;
+  /** subtotal - descuento. */
+  productsTotalCents: number;
+  /** undefined mientras no se haya cotizado el envío ("Envío por cotizar"). */
+  shippingCents?: number;
+  /** undefined mientras falte el envío — nunca se muestra/guarda un total definitivo a medias. */
+  totalCents?: number;
+  deliveryMethod: "retiro" | "entrega";
+  zone?: string;
+  address?: string;
+  customerName: string;
+  /** Con código de país, tal como lo ingresó el cliente. */
+  customerPhone: string;
+  customerNote?: string;
+  customerId?: string;
+  /** Resuelto server-side desde el Customer existente (o "nuevo" si no había) — el visitante nunca lo envía. */
+  customerType: CustomerType;
+  requiresAdvance: boolean;
+  advancePct?: number;
+  advanceAmountCents?: number;
+  payments?: CatalogQuotePayment[];
+  balanceDueCents?: number;
+  leadTimeNote: string;
+  /** Incrementa cada vez que Stefany cambia precios/envío/descuento después de creada. */
+  revision: number;
+  /** Qué revisión aceptó el cliente — si Stefany cambia la cotización después, queda claro que el cliente no aceptó la versión nueva todavía. */
+  acceptedVersion?: number;
+  saleOrderId?: string;
+  history: CatalogQuoteHistoryEntry[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

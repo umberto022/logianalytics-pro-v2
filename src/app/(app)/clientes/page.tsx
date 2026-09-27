@@ -28,7 +28,7 @@ import { customerSchema, zodErrors } from "@/lib/schemas";
 import type { Customer } from "@/types";
 
 const EMPTY: Omit<Customer, "id" | "createdAt" | "updatedAt"> = {
-  name: "", rnc: "", phone: "", email: "", address: "", notes: "",
+  name: "", rnc: "", phone: "", email: "", address: "", notes: "", customerType: "nuevo",
 };
 
 export default function ClientesPage() {
@@ -96,7 +96,7 @@ export default function ClientesPage() {
 
   function openEdit(c: Customer) {
     setEditing(c);
-    const f = { name: c.name, rnc: c.rnc, phone: c.phone, email: c.email, address: c.address, notes: c.notes };
+    const f = { name: c.name, rnc: c.rnc, phone: c.phone, email: c.email, address: c.address, notes: c.notes, customerType: c.customerType ?? "nuevo" };
     setForm(f);
     setInitialForm(f);
     setShowModal(true);
@@ -312,6 +312,14 @@ export default function ClientesPage() {
                 <label className={lbl}>Notas</label>
                 <textarea value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                   className={`${inp} resize-none`} rows={2} placeholder="Notas internas opcionales…" />
+              </div>
+              <div>
+                <label className={lbl}>Tipo de cliente</label>
+                <select value={form.customerType ?? "nuevo"} onChange={(e) => setForm((p) => ({ ...p, customerType: e.target.value as Customer["customerType"] }))} className={inp}>
+                  <option value="nuevo">Nuevo</option>
+                  <option value="frecuente">Frecuente</option>
+                </select>
+                <p className="text-xs text-slate-400 mt-1">Lo asigna la empresa — afecta si el catálogo público le pide anticipo.</p>
               </div>
             </div>
 

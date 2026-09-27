@@ -27,7 +27,7 @@ import type { UserProfile, Department, WorkspaceStatus } from "@/types";
  * una entrada de caché vieja, sin depender de que cada capa intermedia
  * respete el header Cache-Control.
  */
-async function fetchWorkspaceStatus(u: User): Promise<{ status: WorkspaceStatus; disabledModules: string[] }> {
+async function fetchWorkspaceStatus(u: User): Promise<{ status: WorkspaceStatus; disabledModules: string[]; enabledModules: string[] }> {
   const token = await u.getIdToken();
   const res = await fetch(`/api/workspace-status?t=${Date.now()}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -37,6 +37,7 @@ async function fetchWorkspaceStatus(u: User): Promise<{ status: WorkspaceStatus;
   return {
     status: (data.status as WorkspaceStatus) ?? "active",
     disabledModules: (data.disabledModules as string[]) ?? [],
+    enabledModules: (data.enabledModules as string[]) ?? [],
   };
 }
 
@@ -60,6 +61,8 @@ interface AuthCtx {
   workspaceStatus: WorkspaceStatus | null;
   /** Módulos desactivados para el workspace del usuario actual (ver UserProfile.disabledModules). */
   disabledModules: string[];
+  /** Módulos opt-in activados para el workspace del usuario actual (ver UserProfile.enabledModules). */
+  enabledModules: string[];
   signIn:       (email: string, password: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
   register:     (email: string, password: string, fullName: string, phone: string) => Promise<void>;
@@ -76,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus | null>(null);
   const [disabledModules, setDisabledModules] = useState<string[]>([]);
+  const [enabledModules, setEnabledModules] = useState<string[]>([]);
 
   async function loadProfile(u: User): Promise<UserProfile | null> {
     try {
@@ -90,13 +94,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Se espera acá (no fire-and-forget) para que `loading` no baje a false
         // hasta tener el estado — evita un parpadeo de la app normal antes de
         // mostrar la pantalla de bloqueo a una cuenta pendiente/suspendida.
-        const { status, disabledModules: dm } = await fetchWorkspaceStatus(u)
-          .catch(() => ({ status: "active" as WorkspaceStatus, disabledModules: [] as string[] }));
+        const { status, disabledModules: dm, enabledModules: em } = await fetchWorkspaceStatus(u)
+          .catch(() => ({ status: "active" as WorkspaceStatus, disabledModules: [] as string[], enabledModules: [] as string[] }));
         setWorkspaceStatus(status);
         setDisabledModules(dm);
+        setEnabledModules(em);
       } else {
         setWorkspaceStatus(null);
         setDisabledModules([]);
+        setEnabledModules([]);
       }
       return p;
     } catch (e) {
@@ -191,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setWorkspaceStatus(null);
     setDisabledModules([]);
+    setEnabledModules([]);
   }
 
   async function resetPassword(email: string) {
@@ -202,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, profile, loading, workspaceStatus, disabledModules, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
+    <Ctx.Provider value={{ user, profile, loading, workspaceStatus, disabledModules, enabledModules, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
       {children}
     </Ctx.Provider>
   );

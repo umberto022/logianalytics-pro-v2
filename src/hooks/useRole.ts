@@ -5,7 +5,7 @@ import { canEditModule, canViewModule, type ModuleKey } from "@/lib/permissions"
 import type { Department } from "@/types";
 
 export function useRole() {
-  const { profile, disabledModules } = useAuth();
+  const { profile, disabledModules, enabledModules } = useAuth();
   const role: Department = profile?.role ?? "ventas";
   const workspaceId = profile?.workspaceId ?? profile?.id ?? "";
 
@@ -16,8 +16,8 @@ export function useRole() {
     isPlatformAdmin: profile?.platformAdmin === true,
     can(moduleKey: ModuleKey) {
       return {
-        canEdit: canEditModule(role, moduleKey, disabledModules),
-        canView: canViewModule(role, moduleKey, disabledModules),
+        canEdit: canEditModule(role, moduleKey, disabledModules, enabledModules),
+        canView: canViewModule(role, moduleKey, disabledModules, enabledModules),
       };
     },
   };
