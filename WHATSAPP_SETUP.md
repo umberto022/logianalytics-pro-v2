@@ -99,16 +99,18 @@ Proyecto `logianalytics-pro-v2` → Settings → Environment Variables → agreg
 
 Después de cargar las variables, hay que **re-desplegar** (un push vacío o "Redeploy" desde Vercel) para que la función serverless las tome.
 
-## 8. Plan de Vercel — el cron de reintentos necesita frecuencia menor a diaria
+## 8. Plan de Vercel — confirmado: Hobby (gratis)
 
-`vercel.json` programa el reintento de avisos fallidos cada 5 minutos
-(`*/5 * * * *`). **Los cron jobs con frecuencia menor a "una vez al día"
-requieren el plan Pro de Vercel** (u otro plan pago) — en el plan Hobby
-gratuito, Vercel fuerza los crons a como máximo una vez al día, lo que
-igual funciona como red de seguridad, pero un aviso que falló tardaría
-hasta 24h en reintentarse solo (el **envío inmediato al recibir la
-solicitud sigue funcionando igual** en cualquier plan — el cron es solo el
-respaldo para reintentos).
+Verifiqué por API que esta cuenta está en el plan **Hobby** de Vercel, que
+limita los cron jobs a **como máximo una vez al día** — por eso
+`vercel.json` programa el reintento a `"0 12 * * *"` (diario, 12:00 UTC) en
+vez de cada pocos minutos, **sin contratar ningún plan pago**. Esto no
+afecta lo principal: el **envío inmediato al recibir la solicitud sigue
+funcionando igual**, en cualquier plan — el cron diario es solo la red de
+seguridad para un aviso que falló y quedó "pending" (tardaría hasta 24h en
+reintentarse solo; mientras tanto, "Reintentar aviso" en Solicitudes lo
+dispara al instante, a mano). Si en algún momento se decide pasar a Vercel
+Pro, alcanza con acortar el `schedule` en `vercel.json`.
 
 ## 9. Costo
 

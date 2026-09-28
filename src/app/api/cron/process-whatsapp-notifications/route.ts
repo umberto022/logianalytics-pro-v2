@@ -16,8 +16,15 @@ export const dynamic = "force-dynamic";
  * /api/send-monthly-report (Authorization: Bearer CRON_SECRET). También
  * acepta POST para poder dispararla a mano en pruebas.
  *
- * Nota de plan de Vercel: los crons con frecuencia menor a "una vez al día"
- * requieren un plan pago (Pro o superior) — ver vercel.json.
+ * Nota de plan de Vercel: esta cuenta está en plan Hobby (confirmado vía API,
+ * campo billing.plan), que limita los cron jobs a como máximo una vez al día
+ * — por eso vercel.json lo programa a "0 12 * * *" (diario) y no cada pocos
+ * minutos. Esto NO afecta el camino principal: el intento en línea al recibir
+ * la solicitud (ver /api/catalogo/[slug]/solicitud) sigue siendo inmediato en
+ * cualquier plan — este cron es solo el respaldo diario para lo que haya
+ * quedado "pending" (falló el intento en línea, o Meta no estaba configurada
+ * todavía). Si en el futuro se contrata Vercel Pro, se puede acortar el
+ * schedule en vercel.json sin tocar este archivo.
  */
 async function handle(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
