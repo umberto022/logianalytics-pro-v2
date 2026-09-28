@@ -505,18 +505,18 @@ export interface CatalogColors {
 }
 
 export interface CatalogDiscountRule {
-  /** Cantidad total de unidades en el carrito a partir de la cual aplica el descuento (pueden ser del mismo producto). */
+  /** Cantidad total de unidades en el carrito a partir de la cual aplica el descuento (pueden ser del mismo producto o combinadas). */
   minQty: number;
   pct: number;
-  /** Regla provisional confirmada por Stefany: el descuento no alcanza el envío. */
+  /** El descuento se aplica solo al subtotal de productos — el envío nunca lo lleva. */
   appliesToShipping: boolean;
 }
 
 export interface CatalogAdvanceRule {
   pct: number;
-  /** En centavos. Pedido "grande" a partir de este monto de productos. */
+  /** En centavos. Pedido "grande" a partir de este monto de productos (inclusive). */
   largeOrderThresholdCents: number;
-  /** true = el umbral se evalúa sobre el total de productos YA con descuento aplicado, sin envío (regla provisional confirmada). */
+  /** true = el umbral se evalúa sobre el total de productos YA con descuento aplicado, sin envío. */
   thresholdAfterDiscountExcludingShipping: boolean;
 }
 
@@ -536,6 +536,24 @@ export interface CatalogSettings {
   enabled: boolean;
   discountRule: CatalogDiscountRule;
   advanceRule: CatalogAdvanceRule;
+  /**
+   * true = el precio publicado es el precio final del producto — el
+   * catálogo/cotización de ESTA empresa no suma cargos adicionales encima.
+   * Es una decisión de cómo esta empresa presenta sus precios, no una
+   * exención fiscal: no toca la configuración de e-CF/DGII (ver Company/
+   * ElectronicInvoice) ni la de ninguna otra empresa.
+   */
+  pricesAreFinal: boolean;
+  /**
+   * La empresa (o quien la representa) debe revisar y confirmar
+   * explícitamente discountRule/advanceRule/pricesAreFinal antes de poder
+   * publicar — bloquea "Publicar catálogo" en /catalogo mientras sea false;
+   * la vista previa interna (/catalogo/vista-previa) sigue disponible
+   * siempre, confirmado o no.
+   */
+  commercialRulesConfirmed: boolean;
+  commercialRulesConfirmedBy?: string;
+  commercialRulesConfirmedAt?: Timestamp;
   /** Texto de plazo mostrado en el catálogo — nunca se promete una fecha automática. */
   leadTimeNote: string;
   createdAt: Timestamp;

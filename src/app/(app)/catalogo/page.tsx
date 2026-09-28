@@ -7,6 +7,8 @@ import {
   Store, Copy, Eye, Upload, Plus, X, AlertTriangle, CheckCircle2,
   Image as ImageIcon, Trash2, Package,
 } from "lucide-react";
+import { Timestamp } from "firebase/firestore";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { useCatalogSettings } from "@/hooks/useCatalogSettings";
 import { updateCatalogSettings } from "@/lib/firestore/catalogSettings";
@@ -20,6 +22,7 @@ import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import type { CatalogVariant, CatalogQuantityPriceRule, InventoryItem } from "@/types";
 
 export default function CatalogoPage() {
+  const { profile } = useAuth();
   const { workspaceId } = useRole();
   const { settings, loading, refetch } = useCatalogSettings();
   const { items, loading: itemsLoading } = useInventory();
@@ -68,6 +71,7 @@ export default function CatalogoPage() {
       { ok: !!whatsapp, label: "Número de WhatsApp configurado" },
       { ok: !pickupEnabled || !!pickupAddress, label: "Dirección de retiro configurada (si ofrecés retiro)" },
       { ok: !deliveryEnabled || zones.length > 0, label: "Al menos una zona de entrega (si ofrecés entrega)" },
+      { ok: !!settings.commercialRulesConfirmed, label: "Condiciones comerciales confirmadas" },
     ];
     return list;
   }, [settings, publishedItems, missingPrice, whatsapp, pickupEnabled, pickupAddress, deliveryEnabled, zones]);
@@ -115,6 +119,18 @@ export default function CatalogoPage() {
       catalog: { ...(item.catalog ?? {}), published },
     });
     if (result.ok) { invalidateInventory(); toast.success(published ? `"${item.name}" publicado` : `"${item.name}" retirado del catálogo`); }
+    else toast.error(result.message);
+  }
+
+  async function toggleCommercialRulesConfirmed(checked: boolean) {
+    if (!workspaceId) return;
+    const result = await updateCatalogSettings(workspaceId, {
+      commercialRulesConfirmed: checked,
+      ...(checked
+        ? { commercialRulesConfirmedBy: profile?.fullName || profile?.email || "—", commercialRulesConfirmedAt: Timestamp.now() }
+        : {}),
+    });
+    if (result.ok) { toast.success(checked ? "Condiciones comerciales confirmadas" : "Confirmación retirada"); refetch(); }
     else toast.error(result.message);
   }
 
@@ -172,15 +188,35 @@ export default function CatalogoPage() {
         )}
       </div>
 
-      {/* Reglas comerciales todavía pendientes de validar */}
-      <div className="bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-200 dark:border-amber-800 p-4 mb-5">
-        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1.5">Reglas comerciales pendientes de confirmar</p>
-        <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
-          <li>El descuento de {settings.discountRule.pct}% (desde {settings.discountRule.minQty} unidades) hoy <strong>no</strong> se aplica al envío — a confirmar.</li>
-          <li>El umbral de pedido grande (RD${(settings.advanceRule.largeOrderThresholdCents / 100).toLocaleString("es-DO")}) se evalúa <strong>después</strong> del descuento, sin envío, e incluye ese monto exacto — a confirmar.</li>
-          <li>&quot;Sin impuestos&quot; no está implementado como exención — la configuración fiscal existente no se modificó.</li>
+      {/* Condiciones comerciales — deben confirmarse una vez antes de poder publicar */}
+      <div className={`rounded-2xl border p-4 mb-5 ${settings.commercialRulesConfirmed ? "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700" : "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-800"}`}>
+        <p className={`text-sm font-semibold mb-1.5 ${settings.commercialRulesConfirmed ? "text-slate-700 dark:text-slate-200" : "text-amber-800 dark:text-amber-300"}`}>
+          Condiciones comerciales
+        </p>
+        <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+          <li>Descuento del {settings.discountRule.pct}% al comprar {settings.discountRule.minQty} unidades o más (iguales o combinadas), solo sobre productos — el delivery nunca lo lleva.</li>
+          <li>Pedido grande: desde RD${(settings.advanceRule.largeOrderThresholdCents / 100).toLocaleString("es-DO")} inclusive, calculado después del descuento y sin delivery.</li>
+          <li>Anticipo del {settings.advanceRule.pct}% del total de productos (después del descuento, sin delivery) para clientes nuevos o pedidos grandes; cliente frecuente con pedido menor puede pagar contra entrega.</li>
+          <li>El delivery se cotiza aparte y se suma al saldo pendiente — no lleva descuento ni cuenta para el anticipo.</li>
+          {settings.pricesAreFinal && <li>El precio publicado es el precio final del producto — no se suman cargos adicionales en el catálogo ni en la cotización.</li>}
+          <li>Los pagos se coordinan por WhatsApp y quedan registrados por quien administra el catálogo.</li>
         </ul>
-        <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">No publiques el catálogo hasta validar esto con la dueña del negocio.</p>
+
+        <label className="flex items-start gap-2 text-sm mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <input type="checkbox" className="mt-0.5" checked={!!settings.commercialRulesConfirmed}
+            onChange={(e) => toggleCommercialRulesConfirmed(e.target.checked)} />
+          <span className="text-slate-700 dark:text-slate-200 font-medium">
+            Confirmo que revisé y apruebo estas condiciones comerciales para mi negocio.
+          </span>
+        </label>
+        {settings.commercialRulesConfirmed ? (
+          <p className="text-xs text-emerald-600 mt-1.5">
+            Confirmado por {settings.commercialRulesConfirmedBy || "—"}
+            {settings.commercialRulesConfirmedAt ? ` el ${settings.commercialRulesConfirmedAt.toDate().toLocaleDateString("es-DO")}` : ""}.
+          </p>
+        ) : (
+          <p className="text-xs text-amber-700 dark:text-amber-400 mt-1.5">No podés publicar el catálogo hasta confirmar esto.</p>
+        )}
       </div>
 
       {/* Identidad */}

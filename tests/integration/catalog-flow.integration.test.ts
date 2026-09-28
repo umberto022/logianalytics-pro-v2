@@ -16,6 +16,7 @@ import { auth, db } from "@/lib/firebase";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { ensureCatalogSettings, updateCatalogSettings, getCatalogSettings } from "@/lib/firestore/catalogSettings";
 import { updateInventoryItem, addInventoryItem, listInventory } from "@/lib/firestore/inventory";
+import { updateSalePaymentStatus } from "@/lib/firestore/sales";
 import {
   listQuotes, prepareQuote, markQuoteAccepted, registerQuoteAdvance, convertQuoteToSale,
 } from "@/lib/firestore/catalogQuotes";
@@ -197,6 +198,29 @@ describe("Recorrido integrado del catálogo (emulador real, código real)", () =
 
     const salesSnap = await getDocs(query(collection(db, "sales", ADMIN_A_UID, "records"), where("quoteId", "==", quoteId)));
     expect(salesSnap.size).toBe(1); // sigue siendo una sola venta
+  });
+
+  it("7b. Cobrar el saldo restante con \"Marcar pagado\" (flujo habitual de Cuentas por Cobrar): saldo queda en cero, sin pago duplicado", async () => {
+    const quoteId = (await listQuotes(ADMIN_A_UID))[0].id;
+    const salesSnap = await getDocs(query(collection(db, "sales", ADMIN_A_UID, "records"), where("quoteId", "==", quoteId)));
+    expect(salesSnap.size).toBe(1);
+    const saleRef = salesSnap.docs[0];
+    const saleBefore = saleRef.data() as Sale;
+    expect(saleBefore.paymentStatus).toBe("credito");
+    expect(saleBefore.balanceDueCents).toBe(toCents(1000));
+
+    // Reconciliación: anticipo + saldo == total del pedido (productos con
+    // descuento + envío) — nada de impuestos ni cargos de más se cuelan acá.
+    expect((saleBefore.advanceAmountCents ?? 0) + (saleBefore.balanceDueCents ?? 0)).toBe(toCents(1800));
+
+    const result = await updateSalePaymentStatus(ADMIN_A_UID, saleRef.id, "pagado");
+    expect(result.ok).toBe(true);
+
+    const salesAfter = await getDocs(query(collection(db, "sales", ADMIN_A_UID, "records"), where("quoteId", "==", quoteId)));
+    expect(salesAfter.size).toBe(1); // "Marcar pagado" actualiza la venta existente, no crea una nueva
+    const saleAfter = salesAfter.docs[0].data() as Sale;
+    expect(saleAfter.paymentStatus).toBe("pagado"); // estado correcto: ni "pendiente" invisible ni sigue en "credito"
+    expect(saleAfter.balanceDueCents).toBe(toCents(1000)); // snapshot histórico del saldo que HABÍA — paymentStatus "pagado" es lo que dice que ya no se debe nada
   });
 
   it("8. Solicitud mixta/sin stock: la conversión se bloquea entera, no vende parcial", async () => {

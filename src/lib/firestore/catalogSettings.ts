@@ -25,7 +25,7 @@ export async function getCatalogSettings(uid: string): Promise<CatalogSettings |
   return { id: snap.id, ...snap.data() } as CatalogSettings;
 }
 
-/** Crea la config inicial la primera vez que alguien entra a "Mi catálogo" — valores provisionales confirmados, WhatsApp/dirección vacíos (no se inventan), enabled:false hasta publicar. */
+/** Crea la config inicial la primera vez que alguien entra a "Mi catálogo" — descuento/anticipo con los valores que Stefany ya aprobó (ver commercialRulesConfirmed), WhatsApp/dirección vacíos (no se inventan), enabled:false hasta publicar. */
 export async function ensureCatalogSettings(uid: string, businessName: string): Promise<CatalogSettings> {
   const existing = await getCatalogSettings(uid);
   if (existing) return existing;
@@ -45,6 +45,12 @@ export async function ensureCatalogSettings(uid: string, businessName: string): 
       largeOrderThresholdCents: toCents(2000),
       thresholdAfterDiscountExcludingShipping: true,
     },
+    pricesAreFinal: true,
+    // Falso por defecto para CUALQUIER empresa nueva — que estos valores por
+    // defecto coincidan con lo que Stefany ya aprobó no exime de que alguien
+    // (ella o quien administre esta empresa puntual) lo confirme una vez,
+    // explícitamente, antes de publicar.
+    commercialRulesConfirmed: false,
     leadTimeNote: "Desde 3 días, sujeto a confirmación según el producto",
     createdAt: now,
     updatedAt: now,
