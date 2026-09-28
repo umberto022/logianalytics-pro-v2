@@ -31,14 +31,16 @@
         { "fieldPath": "status",        "order": "ASCENDING" },
         { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "jobs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "providerMessageId", "order": "ASCENDING" }
-      ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "jobs",
+      "fieldPath": "providerMessageId",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    }
+  ]
 }
