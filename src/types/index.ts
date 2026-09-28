@@ -554,6 +554,15 @@ export interface CatalogSettings {
   commercialRulesConfirmed: boolean;
   commercialRulesConfirmedBy?: string;
   commercialRulesConfirmedAt?: Timestamp;
+  /**
+   * Consentimiento explícito para recibir el aviso automático de nuevas
+   * solicitudes por WhatsApp (Cloud API) en `whatsappNumber`. Ausente/false =
+   * no se crea ningún job de notificación — la solicitud se guarda igual,
+   * simplemente no se avisa por WhatsApp (Stefany la ve en Solicitudes).
+   */
+  whatsappNotificationsConsent?: boolean;
+  whatsappNotificationsConsentBy?: string;
+  whatsappNotificationsConsentAt?: Timestamp;
   /** Texto de plazo mostrado en el catálogo — nunca se promete una fecha automática. */
   leadTimeNote: string;
   createdAt: Timestamp;
@@ -636,6 +645,38 @@ export interface CatalogQuote {
   acceptedVersion?: number;
   saleOrderId?: string;
   history: CatalogQuoteHistoryEntry[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// ─── Aviso automático por WhatsApp (Cloud API de Meta) ───────────────────────
+// Un job por solicitud (doc id == quoteId), creado atómicamente junto con la
+// CatalogQuote. Nunca lo escribe el cliente — solo el servidor (creación,
+// cron de reintentos, webhook de estado). Ver src/lib/whatsappNotificationJob.ts.
+
+export type WhatsappNotificationStatus =
+  | "pending"    // creado, sin intentar todavía o esperando el próximo reintento
+  | "sent"       // Meta lo aceptó (HTTP 200 + message id) — NO prueba entrega al teléfono
+  | "delivered"  // el webhook de Meta confirmó entrega al dispositivo
+  | "read"       // el webhook confirmó que se leyó (señal extra, no crítica)
+  | "failed";    // agotó los reintentos o Meta devolvió un error no reintentable
+
+export interface WhatsappNotificationJob {
+  id: string; // == quoteId
+  quoteId: string;
+  status: WhatsappNotificationStatus;
+  attempts: number;
+  maxAttempts: number;
+  nextAttemptAt: Timestamp;
+  lastAttemptAt?: Timestamp;
+  /** wamid devuelto por Meta al aceptar el envío — se usa para matchear los webhooks de estado. */
+  providerMessageId?: string;
+  /** Timestamp del último evento de estado aplicado (del webhook) — evita que un evento fuera de orden retroceda el estado. */
+  lastStatusAt?: Timestamp;
+  /** Resumen seguro del último error (código/mensaje de Meta) — nunca el payload crudo ni credenciales. */
+  lastErrorSafe?: string;
+  /** Snapshot del número receptor (E.164) al momento de crear el job. */
+  recipientPhone: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

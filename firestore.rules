@@ -241,5 +241,16 @@ service cloud.firestore {
       allow read, update: if roleIn(workspaceId, ['admin', 'ventas']) && moduleEnabled(workspaceId, 'catalogo');
       allow create, delete: if false;
     }
+
+    // Jobs de aviso automático por WhatsApp (Cloud API): SOLO lectura para
+    // Admin/Ventas (para mostrar el estado en Solicitudes) — toda escritura
+    // (creación junto con la cotización, reintentos del cron, actualización
+    // de estado por el webhook de Meta) pasa exclusivamente por Admin SDK.
+    // El botón "Reintentar aviso" llama a /api/catalogo/notifications/retry,
+    // nunca escribe el doc directo.
+    match /whatsappNotifications/{workspaceId}/jobs/{jobId} {
+      allow read: if roleIn(workspaceId, ['admin', 'ventas']) && moduleEnabled(workspaceId, 'catalogo');
+      allow write: if false;
+    }
   }
 }

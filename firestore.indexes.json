@@ -23,6 +23,21 @@
         { "fieldPath": "customerPhone", "order": "ASCENDING" },
         { "fieldPath": "createdAt",     "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "jobs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status",        "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "jobs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "providerMessageId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

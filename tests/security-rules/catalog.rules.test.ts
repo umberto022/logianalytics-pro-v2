@@ -83,6 +83,11 @@ beforeEach(async () => {
       currentStock: 10, minStock: 1, maxStock: 100, unitCost: 100, salePrice: 200,
       leadTimeDays: 7, updatedAt: now,
     });
+
+    await setDoc(doc(db, "whatsappNotifications", "adminA", "jobs", "q1"), {
+      quoteId: "q1", status: "pending", attempts: 0, maxAttempts: 5,
+      nextAttemptAt: now, recipientPhone: "+18095550000", createdAt: now, updatedAt: now,
+    });
   });
 });
 
@@ -198,5 +203,33 @@ describe("Qué rol puede realmente descontar stock y registrar la venta (crític
   it("'logistica' SÍ puede actualizar el stock (pero no tiene acceso a catalogQuotes)", async () => {
     const db = testEnv.authenticatedContext("logisticaA").firestore();
     await assertSucceeds(updateDoc(doc(db, "inventory", "adminA", "items", "item1"), { currentStock: 9 }));
+  });
+});
+
+describe("Jobs de aviso automático por WhatsApp: solo lectura interna, ninguna escritura de cliente", () => {
+  it("'ventas' del workspace A puede LEER el estado del aviso", async () => {
+    const db = testEnv.authenticatedContext("ventasA").firestore();
+    await assertSucceeds(getDoc(doc(db, "whatsappNotifications", "adminA", "jobs", "q1")));
+  });
+
+  it("ni siquiera el admin dueño puede escribir el job directo desde el cliente (toda escritura es server-only)", async () => {
+    const db = testEnv.authenticatedContext("adminA").firestore();
+    await assertFails(updateDoc(doc(db, "whatsappNotifications", "adminA", "jobs", "q1"), { status: "sent" }));
+  });
+
+  it("'logistica' (sin acceso al módulo catálogo) NO puede leer el job", async () => {
+    const db = testEnv.authenticatedContext("logisticaA").firestore();
+    await assertFails(getDoc(doc(db, "whatsappNotifications", "adminA", "jobs", "q1")));
+  });
+
+  it("la empresa B no puede leer el job de la empresa A", async () => {
+    const db = testEnv.authenticatedContext("adminB").firestore();
+    await assertFails(getDoc(doc(db, "whatsappNotifications", "adminA", "jobs", "q1")));
+  });
+
+  it("un visitante anónimo no puede leer ni escribir ningún job", async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(db, "whatsappNotifications", "adminA", "jobs", "q1")));
+    await assertFails(setDoc(doc(db, "whatsappNotifications", "adminA", "jobs", "q2"), { status: "pending" }));
   });
 });

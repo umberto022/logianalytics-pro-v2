@@ -523,6 +523,10 @@ function CheckoutSheet({ cart, data, slug, mode, submitting, setSubmitting, onCl
             <label className="text-xs font-semibold text-slate-600 block mb-1">Observación (opcional)</label>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className={cn(inp, "resize-none")} placeholder="Alguna indicación para tu pedido…" />
           </div>
+
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            Tu nombre y WhatsApp se comparten con el negocio para gestionar tu solicitud y contactarte por tu pedido — no se usan para publicidad ni se comparten con nadie más.
+          </p>
         </div>
 
         <button onClick={submit} disabled={!valid || submitting}

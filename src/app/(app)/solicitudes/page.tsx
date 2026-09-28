@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   Inbox, X, MessageCircle, Phone, Package, Truck, Store, Clock, CheckCircle2, AlertTriangle,
+  Send, RefreshCw, Contact,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
@@ -13,13 +14,46 @@ import {
   prepareQuote, markQuoteSent, markQuoteAccepted, registerQuoteAdvance,
   markQuoteConfirmed, cancelQuote, convertQuoteToSale,
 } from "@/lib/firestore/catalogQuotes";
+import { getNotificationJob } from "@/lib/firestore/whatsappNotifications";
 import { buildWhatsappLink, buildQuoteMessage, buildConfirmationMessage } from "@/lib/whatsapp";
 import { fmtRD, toCents } from "@/lib/money";
 import { fmtDatetime } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
-import type { CatalogQuote, CatalogQuoteStatus } from "@/types";
+import type { CatalogQuote, CatalogQuoteStatus, WhatsappNotificationJob } from "@/types";
+
+const NOTIF_LABEL: Record<WhatsappNotificationJob["status"], string> = {
+  pending: "Aviso pendiente de enviar",
+  sent: "Aviso enviado a Meta (no confirma entrega)",
+  delivered: "Aviso entregado al teléfono",
+  read: "Aviso leído",
+  failed: "Aviso de WhatsApp falló",
+};
+
+const NOTIF_COLOR: Record<WhatsappNotificationJob["status"], string> = {
+  pending: "text-slate-500",
+  sent: "text-indigo-600",
+  delivered: "text-emerald-600",
+  read: "text-emerald-700",
+  failed: "text-red-600",
+};
+
+function downloadVcf(name: string, phone: string) {
+  const vcf = [
+    "BEGIN:VCARD", "VERSION:3.0",
+    `FN:${name}`,
+    `TEL;TYPE=CELL:${phone}`,
+    "END:VCARD",
+  ].join("\r\n");
+  const blob = new Blob([vcf], { type: "text/vcard;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name.trim().replace(/[^a-zA-Z0-9 ]/g, "") || "contacto"}.vcf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const STATUS_LABEL: Record<CatalogQuoteStatus, string> = {
   recibida: "Recibida",
@@ -44,7 +78,7 @@ const STATUS_COLOR: Record<CatalogQuoteStatus, string> = {
 };
 
 export default function SolicitudesPage() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { workspaceId, isAdmin } = useRole();
   const { quotes, loading } = useCatalogQuotes();
   const { settings } = useCatalogSettings();
@@ -58,6 +92,18 @@ export default function SolicitudesPage() {
   }, [quotes, filter]);
 
   const by = profile?.fullName || profile?.email || "equipo";
+
+  // Enlace autenticado del aviso de WhatsApp: /solicitudes?ref=<quoteId> abre
+  // directo el detalle de esa solicitud (requiere la sesión habitual — el
+  // enlace en sí no lleva ningún token).
+  useEffect(() => {
+    if (typeof window === "undefined" || quotes.length === 0) return;
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) {
+      const match = quotes.find((q) => q.id === ref);
+      if (match) setSelected(match);
+    }
+  }, [quotes]);
 
   async function reload() { invalidate(); if (selected) { /* el detalle se cierra para forzar releer desde la lista */ setSelected(null); } }
 
@@ -113,6 +159,7 @@ export default function SolicitudesPage() {
           workspaceId={workspaceId}
           by={by}
           isAdmin={isAdmin}
+          idToken={async () => user?.getIdToken() ?? null}
           onClose={() => setSelected(null)}
           onChanged={reload}
         />
@@ -139,12 +186,13 @@ function ItemsList({ quote }: { quote: CatalogQuote }) {
   );
 }
 
-function QuoteDetail({ quote, settings, workspaceId, by, isAdmin, onClose, onChanged }: {
+function QuoteDetail({ quote, settings, workspaceId, by, isAdmin, idToken, onClose, onChanged }: {
   quote: CatalogQuote;
   settings: NonNullable<ReturnType<typeof useCatalogSettings>["settings"]>;
   workspaceId: string;
   by: string;
   isAdmin: boolean;
+  idToken: () => Promise<string | null>;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -152,12 +200,42 @@ function QuoteDetail({ quote, settings, workspaceId, by, isAdmin, onClose, onCha
   const [busy, setBusy] = useState(false);
   const [advanceAmount, setAdvanceAmount] = useState(quote.advanceAmountCents ? String(quote.advanceAmountCents / 100) : "");
   const [advanceMethod, setAdvanceMethod] = useState("");
+  const [notifJob, setNotifJob] = useState<WhatsappNotificationJob | null>(null);
+  const [retryingNotif, setRetryingNotif] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getNotificationJob(workspaceId, quote.id).then((j) => { if (!cancelled) setNotifJob(j); });
+    return () => { cancelled = true; };
+  }, [workspaceId, quote.id]);
 
   async function run(fn: () => Promise<{ ok: boolean; message: string }>) {
     setBusy(true);
     const r = await fn();
     setBusy(false);
     if (r.ok) { toast.success(r.message); onChanged(); } else toast.error(r.message);
+  }
+
+  async function retryNotification() {
+    setRetryingNotif(true);
+    try {
+      const token = await idToken();
+      if (!token) { toast.error("Sesión no disponible"); return; }
+      const res = await fetch("/api/catalogo/notifications/retry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ quoteId: quote.id }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) { toast.error(json.error ?? "No se pudo reintentar"); return; }
+      toast.success("Reintento enviado");
+      const refreshed = await getNotificationJob(workspaceId, quote.id);
+      setNotifJob(refreshed);
+    } catch {
+      toast.error("Error de conexión");
+    } finally {
+      setRetryingNotif(false);
+    }
   }
 
   const waQuoteLink = settings.whatsappNumber
@@ -184,13 +262,35 @@ function QuoteDetail({ quote, settings, workspaceId, by, isAdmin, onClose, onCha
         </span>
 
         <div className="space-y-1.5 text-sm text-slate-600 dark:text-slate-300 mb-4">
-          <div className="flex items-center gap-2"><Phone size={13} className="text-slate-400" /> {quote.customerPhone}</div>
+          <div className="flex items-center gap-2 justify-between">
+            <span className="flex items-center gap-2"><Phone size={13} className="text-slate-400" /> {quote.customerPhone}</span>
+            <button onClick={() => downloadVcf(quote.customerName, quote.customerPhone)}
+              className="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">
+              <Contact size={13} /> Guardar contacto
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             {quote.deliveryMethod === "retiro" ? <Store size={13} className="text-slate-400" /> : <Truck size={13} className="text-slate-400" />}
             {quote.deliveryMethod === "retiro" ? "Retiro" : `Entrega · ${quote.zone}${quote.address ? ` · ${quote.address}` : ""}`}
           </div>
           <div className="flex items-center gap-2"><Clock size={13} className="text-slate-400" /> {quote.leadTimeNote}</div>
           {quote.customerNote && <p className="bg-slate-50 dark:bg-slate-700/40 rounded-lg p-2 text-xs">{quote.customerNote}</p>}
+          {notifJob && (
+            <div className={`flex items-center justify-between gap-2 text-xs ${NOTIF_COLOR[notifJob.status]}`}>
+              <span className="flex items-center gap-1.5">
+                <Send size={12} /> {NOTIF_LABEL[notifJob.status]}
+                {notifJob.status === "failed" && notifJob.lastErrorSafe && (
+                  <span className="text-slate-400"> — {notifJob.lastErrorSafe}</span>
+                )}
+              </span>
+              {notifJob.status === "failed" && (
+                <button onClick={retryNotification} disabled={retryingNotif}
+                  className="flex items-center gap-1 font-semibold text-brand-600 hover:underline disabled:opacity-50 flex-shrink-0">
+                  <RefreshCw size={12} className={retryingNotif ? "animate-spin" : ""} /> Reintentar aviso
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="border-t border-slate-100 dark:border-slate-700 pt-3 mb-3">

@@ -122,6 +122,18 @@ export default function CatalogoPage() {
     else toast.error(result.message);
   }
 
+  async function toggleWhatsappNotificationsConsent(checked: boolean) {
+    if (!workspaceId) return;
+    const result = await updateCatalogSettings(workspaceId, {
+      whatsappNotificationsConsent: checked,
+      ...(checked
+        ? { whatsappNotificationsConsentBy: profile?.fullName || profile?.email || "—", whatsappNotificationsConsentAt: Timestamp.now() }
+        : {}),
+    });
+    if (result.ok) { toast.success(checked ? "Avisos automáticos activados" : "Avisos automáticos desactivados"); refetch(); }
+    else toast.error(result.message);
+  }
+
   async function toggleCommercialRulesConfirmed(checked: boolean) {
     if (!workspaceId) return;
     const result = await updateCatalogSettings(workspaceId, {
@@ -249,6 +261,23 @@ export default function CatalogoPage() {
           <label className={lbl}>WhatsApp comercial (con código de país)</label>
           <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={inp} placeholder="+1 809 000 0000" />
         </div>
+
+        <label className="flex items-start gap-2 text-sm pt-2 border-t border-slate-100 dark:border-slate-700">
+          <input type="checkbox" className="mt-0.5" checked={!!settings.whatsappNotificationsConsent}
+            onChange={(e) => toggleWhatsappNotificationsConsent(e.target.checked)} />
+          <span className="text-slate-700 dark:text-slate-200">
+            Avisarme automáticamente por WhatsApp a este número cada vez que llegue una solicitud nueva del catálogo.
+            <span className="block text-xs text-slate-400 mt-0.5">
+              El aviso llega desde un número de WhatsApp Business dedicado (no desde este mismo número) e incluye nombre, WhatsApp, referencia, resumen del pedido y un enlace a la solicitud dentro del sistema. Podés desactivarlo cuando quieras — la solicitud igual queda guardada aunque el aviso falle.
+            </span>
+          </span>
+        </label>
+        {settings.whatsappNotificationsConsent && (
+          <p className="text-xs text-emerald-600">
+            Activado por {settings.whatsappNotificationsConsentBy || "—"}
+            {settings.whatsappNotificationsConsentAt ? ` el ${settings.whatsappNotificationsConsentAt.toDate().toLocaleDateString("es-DO")}` : ""}.
+          </p>
+        )}
       </div>
 
       {/* Entrega y retiro */}

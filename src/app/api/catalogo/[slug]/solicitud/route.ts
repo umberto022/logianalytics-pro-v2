@@ -1,11 +1,13 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { Timestamp } from "firebase-admin/firestore";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { noStoreJson as noStore } from "@/lib/noStoreJson";
 import { toCents } from "@/lib/money";
 import { computeCartPricing } from "@/lib/catalogPricing";
 import { resolvePublicCatalog } from "@/lib/catalogPublicPayload";
+import { stageNotificationJob, attemptSendJob, buildTemplateBodyParams } from "@/lib/whatsappNotificationJob";
 import type { CatalogQuoteItem, CustomerType } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -118,9 +120,19 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       });
     }
 
+    // Teléfono: se valida y normaliza a E.164 con libphonenumber-js — si es
+    // ambiguo (falta código de país, formato irreconocible), se rechaza en
+    // vez de adivinar el país. Esto también es lo que se manda al aviso
+    // automático de WhatsApp, así que tiene que ser un número real.
+    const parsedPhone = parsePhoneNumberFromString(body.customerPhone);
+    if (!parsedPhone || !parsedPhone.isValid()) {
+      return noStore({ error: "El WhatsApp no es válido — incluí el código de país (ej. +1 809 555 0000)" }, { status: 400 });
+    }
+    const normalizedPhone = parsedPhone.number; // E.164, ej. "+18095550000"
+    const prettyPhone = parsedPhone.formatInternational(); // ej. "+1 809 555 0000"
+
     // Cliente: se busca por teléfono para heredar customerType si ya existe
     // (el visitante NUNCA puede declararse "frecuente" a sí mismo).
-    const normalizedPhone = body.customerPhone.replace(/[^\d+]/g, "");
     const customersCol = db.collection("customers").doc(workspaceId).collection("records");
     const existingCustomerSnap = await customersCol.where("phone", "==", normalizedPhone).limit(1).get();
     let customerId: string;
@@ -139,9 +151,12 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       customerType = "nuevo";
     }
 
-    // Protección simple contra doble envío/spam: mismo teléfono + misma
-    // cantidad de ítems en los últimos 3 minutos → devolvemos la solicitud ya
-    // creada en vez de duplicarla (cubre doble click / reintento de red).
+    // Protección simple contra doble envío/spam: mismo teléfono + mismos
+    // ítems (producto, VARIANTE y cantidad) + misma modalidad/zona/dirección
+    // de entrega en los últimos 3 minutos → devolvemos la solicitud ya creada
+    // en vez de duplicarla (cubre doble click / reintento de red). Antes solo
+    // comparaba inventoryId+quantity: dos pedidos del mismo producto en
+    // variantes distintas (o con distinta zona/dirección) se confundían.
     const threeMinAgo = Timestamp.fromMillis(now.toMillis() - 3 * 60 * 1000);
     const recentSnap = await db.collection("catalogQuotes").doc(workspaceId).collection("records")
       .where("customerPhone", "==", normalizedPhone)
@@ -151,7 +166,13 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       const data = d.data();
       const items = (data.items ?? []) as CatalogQuoteItem[];
       return items.length === quoteItems.length &&
-        items.every((it, i) => it.inventoryId === quoteItems[i].inventoryId && it.quantity === quoteItems[i].quantity);
+        items.every((it, i) =>
+          it.inventoryId === quoteItems[i].inventoryId &&
+          it.quantity === quoteItems[i].quantity &&
+          (it.variantId ?? null) === (quoteItems[i].variantId ?? null)) &&
+        data.deliveryMethod === body.deliveryMethod &&
+        (data.zone ?? null) === (body.zone ?? null) &&
+        (data.address ?? null) === (body.address ?? null);
     });
     if (duplicate) {
       return noStore({ ok: true, publicRef: duplicate.data().publicRef });
@@ -164,7 +185,13 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
     const publicRef = `${publicRefPrefix(settings.businessName)}-${randomCode(6)}`;
 
-    await db.collection("catalogQuotes").doc(workspaceId).collection("records").add({
+    // La cotización y el job de aviso por WhatsApp se crean en el MISMO
+    // batch — atómico: o quedan los dos, o no queda ninguno. Se pre-genera
+    // el id de la cotización (en vez de add()) para poder usarlo también
+    // como id del job.
+    const quoteRef = db.collection("catalogQuotes").doc(workspaceId).collection("records").doc();
+    const batch = db.batch();
+    batch.set(quoteRef, {
       publicRef,
       status: "recibida",
       items: quoteItems,
@@ -189,6 +216,35 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       createdAt: now,
       updatedAt: now,
     });
+
+    // Aviso automático por WhatsApp: solo si Stefany dio su consentimiento Y
+    // configuró un número receptor — nunca se avisa "por las dudas". El
+    // número emisor (API) es siempre el de la cuenta de Meta de LogiAnalytics
+    // (env vars), nunca el de Stefany.
+    const notifyConsent = !!settings.whatsappNotificationsConsent && !!settings.whatsappNumber;
+    if (notifyConsent) {
+      stageNotificationJob(db, batch, workspaceId, quoteRef.id, settings.whatsappNumber!);
+    }
+
+    await batch.commit();
+
+    // Intento en línea (esperado, no "fire-and-forget") — best effort: si
+    // Meta falla o tarda, la solicitud YA quedó guardada (el batch de arriba
+    // ya se confirmó); esto solo decide si el aviso sale ahora mismo o queda
+    // "pending" para que el cron de reintentos lo levante después.
+    if (notifyConsent) {
+      try {
+        await attemptSendJob(db, workspaceId, quoteRef.id, buildTemplateBodyParams({
+          customerName: body.customerName,
+          customerPhonePretty: prettyPhone,
+          publicRef,
+          items: quoteItems,
+          quoteId: quoteRef.id,
+        }));
+      } catch (e) {
+        console.error("Aviso de WhatsApp: intento en línea falló (no afecta la solicitud guardada):", e);
+      }
+    }
 
     return noStore({ ok: true, publicRef });
   } catch (e) {
