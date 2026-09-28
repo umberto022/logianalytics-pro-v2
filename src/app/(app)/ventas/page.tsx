@@ -33,7 +33,7 @@ import { FullPageSpinner } from "@/components/ui/Spinner";
 import { InvoiceModal, type InvoiceData } from "@/components/ui/InvoiceModal";
 import { Pagination } from "@/components/ui/Pagination";
 import { usePagination } from "@/hooks/usePagination";
-import { getCompany } from "@/lib/firestore/companies";
+import { resolveInvoiceCompanyInfo } from "@/lib/companyIdentity";
 import { saleSchema, zodErrors } from "@/lib/schemas";
 import type { InventoryItem, Sale, Period, PaymentStatus } from "@/types";
 
@@ -802,19 +802,7 @@ export default function VentasPage() {
     if (r.ok) {
       toast.success(r.message);
       // Build invoice data before clearing cart
-      let companyName, companyRif, companyPhone, companyEmail, companyAddress;
-      try {
-        if (profile?.companyId) {
-          const co = await getCompany(profile.companyId);
-          if (co) {
-            companyName    = co.name;
-            companyRif     = co.rif;
-            companyPhone   = co.phone;
-            companyEmail   = co.email;
-            companyAddress = co.address;
-          }
-        }
-      } catch { /* use defaults */ }
+      const companyInfo = await resolveInvoiceCompanyInfo(profile);
       setInvoice({
         invoiceNumber:  r.invoiceNumber ?? `FAC-${Date.now()}`,
         ncf:            r.ncf,
@@ -833,7 +821,7 @@ export default function VentasPage() {
           name: c.name, sku: c.sku, category: c.category,
           quantity: c.quantity, unitPrice: c.unitPrice, unitCost: c.unitCost,
         })),
-        companyName, companyRif, companyPhone, companyEmail, companyAddress,
+        ...companyInfo,
       });
       setCart([]);
       setRoute(""); setZone(""); setClient("");
@@ -861,17 +849,7 @@ export default function VentasPage() {
     const ref = (sale.saleOrderId ?? sale.id).slice(-4).toUpperCase();
     const invoiceNumber = `FAC-${yy}${mm}${dd}-${ref}`;
 
-    let companyName, companyRif, companyPhone, companyEmail, companyAddress;
-    try {
-      if (profile?.companyId) {
-        const co = await getCompany(profile.companyId);
-        if (co) {
-          companyName = co.name; companyRif = co.rif;
-          companyPhone = co.phone; companyEmail = co.email;
-          companyAddress = co.address;
-        }
-      }
-    } catch { /* use defaults */ }
+    const companyInfo = await resolveInvoiceCompanyInfo(profile);
 
     setInvoice({
       invoiceNumber:  sale.invoiceNumber ?? invoiceNumber,
@@ -891,7 +869,7 @@ export default function VentasPage() {
         name: s.productName, sku: s.sku, category: s.category,
         quantity: s.quantity, unitPrice: s.unitPrice, unitCost: s.unitCost,
       })),
-      companyName, companyRif, companyPhone, companyEmail, companyAddress,
+      ...companyInfo,
     });
   }
 

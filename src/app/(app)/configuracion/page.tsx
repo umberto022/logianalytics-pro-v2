@@ -7,12 +7,13 @@ import { doc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { updateUserProfile } from "@/lib/firestore/users";
 import { createCompany, getCompany, updateCompany } from "@/lib/firestore/companies";
+import { getCatalogSettings } from "@/lib/firestore/catalogSettings";
 import { uploadToCloudinary } from "@/lib/cloudinaryUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/hooks/useRole";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { INDUSTRIES, COUNTRIES, ECF_TYPE_LABELS, type Company, type TaxpayerType, type ECfType } from "@/types";
-import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck, Mail, Send, Receipt } from "lucide-react";
+import { CheckCircle2, Bell, BellOff, Camera, User as UserIcon, History, ShieldCheck, Mail, Send, Receipt, Image as ImageIcon, Copy } from "lucide-react";
 import { listAuditLog, type AuditEntry, type AuditAction } from "@/lib/firestore/auditLog";
 import {
   isPushEnabled,
@@ -68,7 +69,7 @@ const ACTION_COLOR: Record<AuditAction, string> = {
 };
 
 export default function ConfiguracionPage() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, enabledModules } = useAuth();
   const { workspaceId, isAdmin } = useRole();
   const [company, setCompany] = useState<Company | null>(null);
   const [auditLog,     setAuditLog]     = useState<AuditEntry[]>([]);
@@ -149,10 +150,13 @@ export default function ConfiguracionPage() {
   const [prof, setProf] = useState({ fullName: "", phone: "" });
   const [comp, setComp] = useState<{
     name: string; rif: string; address: string; phone: string; email: string;
-    industry: string; country: string;
+    industry: string; country: string; tradeName: string; logoUrl: string;
   }>({
     name: "", rif: "", address: "", phone: "", email: "", industry: INDUSTRIES[0], country: COUNTRIES[0],
+    tradeName: "", logoUrl: "",
   });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [catalogBrand, setCatalogBrand] = useState<{ businessName: string; logoUrl?: string } | null>(null);
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
 
   const [savingECf, setSavingECf] = useState(false);
@@ -173,12 +177,26 @@ export default function ConfiguracionPage() {
     if (profile) setProf({ fullName: profile.fullName, phone: profile.phone });
   }, [profile]);
 
+  // Si la empresa ya tiene un catálogo público configurado, ofrece copiar de
+  // ahí el nombre/logo en vez de subirlo de nuevo (evita duplicar la fuente —
+  // ella ya cargó ese logo real para su catálogo).
+  useEffect(() => {
+    if (!profile?.workspaceId || !enabledModules.includes("catalogo")) return;
+    getCatalogSettings(profile.workspaceId).then((cs) => {
+      if (cs?.businessName) setCatalogBrand({ businessName: cs.businessName, logoUrl: cs.logoUrl });
+    }).catch(() => {});
+  }, [profile?.workspaceId, enabledModules]);
+
   useEffect(() => {
     if (profile?.companyId) {
       getCompany(profile.companyId).then((c) => {
         if (c) {
           setCompany(c);
-          setComp({ name: c.name, rif: c.rif, address: c.address, phone: c.phone, email: c.email, industry: c.industry, country: c.country });
+          setComp({
+            name: c.name, rif: c.rif, address: c.address, phone: c.phone, email: c.email,
+            industry: c.industry, country: c.country,
+            tradeName: c.tradeName ?? "", logoUrl: c.logoUrl ?? "",
+          });
           setECf({
             taxpayerType: c.taxpayerType ?? "",
             eCfEnvironment: c.eCfEnvironment ?? "sandbox",
@@ -225,6 +243,32 @@ export default function ConfiguracionPage() {
     }
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const url = await uploadToCloudinary(file, file.name, "company-logos");
+      setComp((p) => ({ ...p, logoUrl: url }));
+    } catch {
+      toast.error("Error al subir el logo");
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = "";
+    }
+  }
+
+  function copyFromCatalog() {
+    if (!catalogBrand) return;
+    setComp((p) => ({
+      ...p,
+      tradeName: p.tradeName || catalogBrand.businessName,
+      logoUrl: p.logoUrl || catalogBrand.logoUrl || "",
+      name: p.name || catalogBrand.businessName,
+    }));
+    toast.success("Copiado desde Mi catálogo — revisá y guardá");
+  }
+
   function flashSaved(setter: (v: boolean) => void) {
     setter(true);
     setTimeout(() => setter(false), 3000);
@@ -246,6 +290,7 @@ export default function ConfiguracionPage() {
     setSavingCompany(true);
     if (company) {
       await updateCompany(company.id, comp);
+      await refreshProfile();
       flashSaved(setSavedCompany);
     } else {
       const r = await createCompany(user.uid, comp);
@@ -424,6 +469,43 @@ export default function ConfiguracionPage() {
                 <label className={labelCls}>Dirección</label>
                 <textarea value={comp.address} onChange={(e) => setComp((p) => ({ ...p, address: e.target.value }))}
                   className={`${inputCls} resize-none`} rows={2} />
+              </div>
+            </div>
+
+            <div className="mb-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100 mb-1">Identidad visual</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                Nombre y logo para mostrar en el menú, la factura y el título de la pestaña. El nombre y RIF fiscales de arriba
+                no cambian — siguen siendo los que se usan para la facturación electrónica (DGII).
+              </p>
+
+              {catalogBrand && (!comp.tradeName || !comp.logoUrl) && (
+                <button type="button" onClick={copyFromCatalog}
+                  className="mb-3 inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-300 dark:hover:bg-brand-500/25 transition">
+                  <Copy size={13} /> Copiar desde Mi catálogo
+                </button>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className={labelCls}>Nombre comercial (para mostrar)</label>
+                  <input value={comp.tradeName} onChange={(e) => setComp((p) => ({ ...p, tradeName: e.target.value }))}
+                    className={inputCls} placeholder={comp.name || "Ej: Stefany's Creations"} />
+                </div>
+                <div>
+                  <label className={labelCls}>Logo</label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-lg overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 flex items-center justify-center flex-shrink-0">
+                      {comp.logoUrl
+                        ? <img src={comp.logoUrl} alt="" className="w-full h-full object-contain" />
+                        : <ImageIcon size={16} className="text-slate-300" />}
+                    </div>
+                    <label className={`text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition ${uploadingLogo ? "opacity-50 pointer-events-none" : ""}`}>
+                      {uploadingLogo ? "Subiendo…" : "Cambiar"}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
 

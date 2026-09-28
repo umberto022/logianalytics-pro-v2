@@ -1,6 +1,6 @@
 import { auth } from "@/lib/firebase";
 
-export type CloudinaryFolder = "inventory-photos" | "receipt-photos" | "profile-photos";
+export type CloudinaryFolder = "inventory-photos" | "receipt-photos" | "profile-photos" | "company-logos";
 
 /**
  * Sube un archivo a Cloudinary con firma del servidor (`/api/cloudinary-signature`).

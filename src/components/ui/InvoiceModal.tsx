@@ -31,6 +31,7 @@ export interface InvoiceData {
   }>;
   // Company
   companyName?: string;
+  companyLogoUrl?: string;
   companyRif?: string;
   companyPhone?: string;
   companyEmail?: string;
@@ -95,6 +96,8 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
     body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1e293b;background:#fff;padding:32px}
     /* ── Header ── */
     .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #4f46e5;margin-bottom:20px}
+    .company{display:flex;gap:12px;align-items:flex-start}
+    .company .logo{width:48px;height:48px;object-fit:contain;border-radius:8px;flex-shrink:0}
     .company h1{font-size:20px;font-weight:800;color:#4f46e5;margin-bottom:4px}
     .company p{font-size:11px;color:#64748b;line-height:1.6}
     .inv-box{text-align:right}
@@ -138,11 +141,14 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
   <!-- Header -->
   <div class="header">
     <div class="company">
-      <h1>${data.companyName || "Mi Empresa"}</h1>
-      ${data.companyRif ? `<p><b>RNC:</b> ${data.companyRif}</p>` : ""}
-      ${data.companyAddress ? `<p>${data.companyAddress}</p>` : ""}
-      ${data.companyPhone ? `<p>Tel: ${data.companyPhone}</p>` : ""}
-      ${data.companyEmail ? `<p>${data.companyEmail}</p>` : ""}
+      ${data.companyLogoUrl ? `<img class="logo" src="${data.companyLogoUrl}" alt=""/>` : ""}
+      <div>
+        <h1>${data.companyName || "Mi Empresa"}</h1>
+        ${data.companyRif ? `<p><b>RNC:</b> ${data.companyRif}</p>` : ""}
+        ${data.companyAddress ? `<p>${data.companyAddress}</p>` : ""}
+        ${data.companyPhone ? `<p>Tel: ${data.companyPhone}</p>` : ""}
+        ${data.companyEmail ? `<p>${data.companyEmail}</p>` : ""}
+      </div>
     </div>
     <div class="inv-box">
       <div class="title">FACTURA</div>
@@ -268,15 +274,21 @@ export function InvoiceModal({ data, onClose }: { data: InvoiceData; onClose: ()
 
             {/* Header */}
             <div className="flex justify-between items-start pb-5 border-b-4 border-indigo-600 mb-5">
-              <div>
-                <h1 className="text-xl font-extrabold text-indigo-600">{data.companyName || "Mi Empresa"}</h1>
-                {data.companyRif     && <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">RNC: {data.companyRif}</p>}
-                {data.companyAddress && <p className="text-xs text-slate-400 dark:text-slate-400">{data.companyAddress}</p>}
-                {(data.companyPhone || data.companyEmail) && (
-                  <p className="text-xs text-slate-400 dark:text-slate-400">
-                    {data.companyPhone}{data.companyEmail ? ` · ${data.companyEmail}` : ""}
-                  </p>
+              <div className="flex gap-3 items-start">
+                {data.companyLogoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={data.companyLogoUrl} alt="" className="w-12 h-12 object-contain rounded-lg flex-shrink-0" />
                 )}
+                <div>
+                  <h1 className="text-xl font-extrabold text-indigo-600">{data.companyName || "Mi Empresa"}</h1>
+                  {data.companyRif     && <p className="text-xs text-slate-500 mt-0.5 dark:text-slate-400">RNC: {data.companyRif}</p>}
+                  {data.companyAddress && <p className="text-xs text-slate-400 dark:text-slate-400">{data.companyAddress}</p>}
+                  {(data.companyPhone || data.companyEmail) && (
+                    <p className="text-xs text-slate-400 dark:text-slate-400">
+                      {data.companyPhone}{data.companyEmail ? ` · ${data.companyEmail}` : ""}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-black text-slate-900 tracking-widest dark:text-slate-100">FACTURA</p>

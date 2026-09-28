@@ -27,7 +27,10 @@ import type { UserProfile, Department, WorkspaceStatus } from "@/types";
  * una entrada de caché vieja, sin depender de que cada capa intermedia
  * respete el header Cache-Control.
  */
-async function fetchWorkspaceStatus(u: User): Promise<{ status: WorkspaceStatus; disabledModules: string[]; enabledModules: string[] }> {
+async function fetchWorkspaceStatus(u: User): Promise<{
+  status: WorkspaceStatus; disabledModules: string[]; enabledModules: string[];
+  companyTradeName: string | null; companyLogoUrl: string | null;
+}> {
   const token = await u.getIdToken();
   const res = await fetch(`/api/workspace-status?t=${Date.now()}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -38,6 +41,8 @@ async function fetchWorkspaceStatus(u: User): Promise<{ status: WorkspaceStatus;
     status: (data.status as WorkspaceStatus) ?? "active",
     disabledModules: (data.disabledModules as string[]) ?? [],
     enabledModules: (data.enabledModules as string[]) ?? [],
+    companyTradeName: (data.companyTradeName as string | null) ?? null,
+    companyLogoUrl: (data.companyLogoUrl as string | null) ?? null,
   };
 }
 
@@ -63,6 +68,9 @@ interface AuthCtx {
   disabledModules: string[];
   /** Módulos opt-in activados para el workspace del usuario actual (ver UserProfile.enabledModules). */
   enabledModules: string[];
+  /** Identidad visual de la empresa (companies/{companyId}.tradeName||name / .logoUrl) — null si no configuró ninguna. Ver Sidebar/(app)/layout.tsx/InvoiceModal. */
+  companyTradeName: string | null;
+  companyLogoUrl: string | null;
   signIn:       (email: string, password: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
   register:     (email: string, password: string, fullName: string, phone: string) => Promise<void>;
@@ -80,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus | null>(null);
   const [disabledModules, setDisabledModules] = useState<string[]>([]);
   const [enabledModules, setEnabledModules] = useState<string[]>([]);
+  const [companyTradeName, setCompanyTradeName] = useState<string | null>(null);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
   async function loadProfile(u: User): Promise<UserProfile | null> {
     try {
@@ -94,15 +104,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Se espera acá (no fire-and-forget) para que `loading` no baje a false
         // hasta tener el estado — evita un parpadeo de la app normal antes de
         // mostrar la pantalla de bloqueo a una cuenta pendiente/suspendida.
-        const { status, disabledModules: dm, enabledModules: em } = await fetchWorkspaceStatus(u)
-          .catch(() => ({ status: "active" as WorkspaceStatus, disabledModules: [] as string[], enabledModules: [] as string[] }));
+        const { status, disabledModules: dm, enabledModules: em, companyTradeName: ctn, companyLogoUrl: clu } = await fetchWorkspaceStatus(u)
+          .catch(() => ({
+            status: "active" as WorkspaceStatus, disabledModules: [] as string[], enabledModules: [] as string[],
+            companyTradeName: null as string | null, companyLogoUrl: null as string | null,
+          }));
         setWorkspaceStatus(status);
         setDisabledModules(dm);
         setEnabledModules(em);
+        setCompanyTradeName(ctn);
+        setCompanyLogoUrl(clu);
       } else {
         setWorkspaceStatus(null);
         setDisabledModules([]);
         setEnabledModules([]);
+        setCompanyTradeName(null);
+        setCompanyLogoUrl(null);
       }
       return p;
     } catch (e) {
@@ -198,6 +215,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setWorkspaceStatus(null);
     setDisabledModules([]);
     setEnabledModules([]);
+    setCompanyTradeName(null);
+    setCompanyLogoUrl(null);
   }
 
   async function resetPassword(email: string) {
@@ -209,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Ctx.Provider value={{ user, profile, loading, workspaceStatus, disabledModules, enabledModules, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
+    <Ctx.Provider value={{ user, profile, loading, workspaceStatus, disabledModules, enabledModules, companyTradeName, companyLogoUrl, signIn, signInGoogle, register, logout, resetPassword, refreshProfile }}>
       {children}
     </Ctx.Provider>
   );

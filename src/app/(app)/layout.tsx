@@ -143,7 +143,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useStockNotifications();
   useRawMaterialNotifications();
   useOverdueOrders();
-  const { profile } = useAuth();
+  const { profile, companyTradeName, companyLogoUrl } = useAuth();
   const { can } = useRole();
   const { session, loading: cajaLoading, needsCierre, requestLogout } = useCaja();
   const router = useRouter();
@@ -156,6 +156,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     const moduleKey = moduleForPath(pathname);
     if (moduleKey && !can(moduleKey).canView) router.replace("/dashboard");
   }, [pathname, can, router]);
+
+  // Título de pestaña dinámico — solo dentro de la sesión de esta empresa.
+  // El default (metadata estático del root layout) es el mismo texto de
+  // siempre; al salir de esta sección (logout, o companyTradeName pasa a
+  // null) el cleanup lo restaura, para no dejar la marca de una empresa
+  // puesta cuando otra cuenta inicia sesión después en el mismo navegador.
+  useEffect(() => {
+    const DEFAULT_TITLE = "LogiAnalytics Pro — Gestión logística en tiempo real";
+    document.title = companyTradeName ? `${companyTradeName} · LogiAnalytics Pro` : DEFAULT_TITLE;
+    return () => { document.title = DEFAULT_TITLE; };
+  }, [companyTradeName]);
 
   const canSell = can("ventas").canEdit;
   const canUseCaja = can("caja").canView;
@@ -170,11 +181,19 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       <main className="flex-1 min-h-screen bg-slate-50 dark:bg-slate-900 lg:ml-[var(--sidebar-width)]">
         {/* Mobile top bar */}
         <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-sidebar border-b border-white/10 sticky top-0 z-20">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center">
-              <Truck size={14} className="text-white" />
-            </div>
-            <span className="text-white font-bold text-sm">LogiAnalytics</span>
+          <div className="flex items-center gap-2 min-w-0">
+            {companyTradeName ? (
+              <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+                {companyLogoUrl
+                  ? <img src={companyLogoUrl} alt={companyTradeName} className="w-full h-full object-contain" />
+                  : <Truck size={13} className="text-white" />}
+              </div>
+            ) : (
+              <div className="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Truck size={14} className="text-white" />
+              </div>
+            )}
+            <span className="text-white font-bold text-sm truncate">{companyTradeName || "LogiAnalytics"}</span>
           </div>
           <div className="flex items-center gap-3">
             {session && (

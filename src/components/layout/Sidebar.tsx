@@ -37,29 +37,47 @@ const NAV: { href: string; label: string; icon: typeof LayoutDashboard; badge: "
 
 export function Sidebar() {
   const pathname               = usePathname();
-  const { profile }            = useAuth();
+  const { profile, companyTradeName, companyLogoUrl } = useAuth();
   const { requestLogout, session } = useCaja();
   const criticalCount          = useStockAlerts();
   const rawCriticalCount       = useRawMaterialAlerts();
   const { isDark, toggle }     = useTheme();
   const { isAdmin, isPlatformAdmin, can } = useRole();
   const visibleNav = NAV.filter((item) => can(item.module).canView);
+  const hasCompanyBrand = !!companyTradeName;
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[var(--sidebar-width)] bg-sidebar text-slate-200 flex-col z-20">
-      {/* Logo */}
+      {/* Logo — identidad de la empresa si la configuró (Configuración → Empresa); si no, marca de la plataforma sin cambios. */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-        <div className="w-9 h-9 bg-brand-500 rounded-lg flex items-center justify-center shadow-md">
-          <Truck size={20} className="text-white" />
-        </div>
-        <div>
-          <p className="text-white font-bold text-sm leading-none">LogiAnalytics</p>
-          <p className="text-slate-400 text-xs mt-0.5">Gestión logística</p>
+        {hasCompanyBrand ? (
+          <div className="w-9 h-9 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center flex-shrink-0">
+            {companyLogoUrl
+              ? <img src={companyLogoUrl} alt={companyTradeName ?? ""} className="w-full h-full object-contain" />
+              : <Truck size={18} className="text-white" />}
+          </div>
+        ) : (
+          <div className="w-9 h-9 bg-brand-500 rounded-lg flex items-center justify-center shadow-md">
+            <Truck size={20} className="text-white" />
+          </div>
+        )}
+        <div className="min-w-0">
+          {hasCompanyBrand ? (
+            <>
+              <p className="text-white font-bold text-sm leading-none truncate">{companyTradeName}</p>
+              <p className="text-slate-400 text-[10px] mt-0.5">LogiAnalytics Pro</p>
+            </>
+          ) : (
+            <>
+              <p className="text-white font-bold text-sm leading-none">LogiAnalytics</p>
+              <p className="text-slate-400 text-xs mt-0.5">Gestión logística</p>
+            </>
+          )}
         </div>
         <button
           onClick={toggle}
           title={isDark ? "Modo claro" : "Modo oscuro"}
-          className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+          className="ml-auto p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition flex-shrink-0"
         >
           {isDark ? <Sun size={15} /> : <Moon size={15} />}
         </button>
@@ -77,7 +95,8 @@ export function Sidebar() {
             </span>
           )}
         </div>
-        {profile?.companyName && (
+        {/* Si ya se muestra arriba con logo, no repetir el mismo nombre acá abajo. */}
+        {!hasCompanyBrand && profile?.companyName && (
           <div className="flex items-center gap-1.5 mt-1">
             <Building2 size={12} className="text-slate-400 flex-shrink-0" />
             <p className="text-slate-400 text-xs truncate">{profile.companyName}</p>

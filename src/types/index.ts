@@ -65,6 +65,12 @@ export interface Company {
   country: string;
   ownerId: string;
   createdAt: Timestamp;
+  // ─── Identidad visual (menú, factura, título de pestaña) ───────────────────
+  // SOLO para mostrar — nunca alimentan el e-CF/DGII (eso sigue leyendo `name`
+  // y `rif` de arriba). Si `tradeName` está vacío, se usa `name` para mostrar.
+  /** Nombre comercial — puede diferir de la razón social fiscal (`name`). */
+  tradeName?: string;
+  logoUrl?: string;
   // ─── Facturación electrónica (DGII / e-CF, República Dominicana) ───────────
   /** Categoría de contribuyente ante DGII — define el plazo de obligatoriedad del e-CF. */
   taxpayerType?: TaxpayerType;

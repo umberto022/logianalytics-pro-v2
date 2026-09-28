@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 // Whitelist explícita de carpetas firmables — nunca se acepta un folder libre
 // mandado por el cliente, para que nadie pueda firmar una subida hacia una
 // carpeta ajena/arbitraria de la cuenta de Cloudinary.
-const ALLOWED_FOLDERS = ["inventory-photos", "receipt-photos", "profile-photos"] as const;
+const ALLOWED_FOLDERS = ["inventory-photos", "receipt-photos", "profile-photos", "company-logos"] as const;
 type AllowedFolder = (typeof ALLOWED_FOLDERS)[number];
 
 // Firma subidas a Cloudinary del lado servidor con el API secret (nunca llega
