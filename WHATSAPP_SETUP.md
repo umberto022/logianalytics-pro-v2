@@ -2,13 +2,13 @@
 
 Última revisión: 2026-09-29. Este documento distingue tres cosas que no son lo mismo:
 **implementado** (está en el código y probado), **desplegado** (corre en producción) y
-**operativo** (un aviso real llega de verdad). Hoy: implementado sí, desplegado no, operativo no.
+**operativo** (un aviso real llega de verdad). Hoy (2026-09-30): implementado sí, **desplegado sí (con el envío APAGADO)**, operativo no (falta el emisor definitivo).
 
 ## 1. Estado real
 
 | | Estado | Evidencia |
 |---|---|---|
-| Código del aviso (job atómico, toma con lease, reintentos, reconciliación, expiración) | **Implementado** en local, sin desplegar | `npm test` (95), `npm run test:rules` (24), `npm run test:integration` (60) contra emuladores; defectos inyectados detectados |
+| Código del aviso (job atómico, toma con lease, reintentos, reconciliación, expiración) | **Desplegado en producción el 2026-09-30 ~21:00** (Vercel, push `f97a1cb`; reglas de Firestore publicadas, solo denegaciones explícitas nuevas) | `npm test` (95), `npm run test:rules` (24), `npm run test:integration` (60) contra emuladores; defectos inyectados detectados |
 | Webhook (`/api/webhooks/whatsapp`) | **Implementado**; comprobado por HTTPS público contra un entorno aislado | `npm run sandbox:preflight` (8 comprobaciones, ver §7) |
 | Plantilla `nueva_solicitud_cotizacion` | **Creada y APROBADA en la WABA de prueba** (Utilidad, es; creada 2026-09-29 20:05, aprobada antes del 2026-09-30 20:00). La WABA de PRUEBA sí permite plantillas propias. Falta crearla en la WABA de producción | §3 |
 | Envío de nuestra plantilla a un teléfono real | **Probado en el sandbox (2026-09-30 20:24, WABA y número de PRUEBA de Meta)**: aviso PAL-Z6SZ4Z → Stefany; la API de Meta devolvió el wamid; llegaron 3 POST reales de Meta, firmados y validados (`sent`, `delivered`, `read`), todos con el MISMO wamid del envío. `hello_world` no contaba | `sandbox:e2e -- send` |
@@ -16,6 +16,8 @@
 | Vinculación de NUESTRA app a la WABA de prueba (`subscribed_apps`) | **NO vinculada**: solo figura la app de Meta "WA DevX Webhook Events 1P App". Sin esto los eventos de esa WABA no llegan a nuestro webhook. Pendiente de autorización (`npm run sandbox:link-waba -- --apply`) | `sandbox:meta-check` |
 | Evento firmado de Meta recibido por NUESTRO servidor | **Probado** (2026-09-30 20:25): 3 POST reales (User-Agent `facebookexternalua`, IPv6 `2a03:2880::/32`, firmas `X-Hub-Signature` y `-256`) aceptados con 200 tras validar la firma con el App Secret real | inspector del túnel + emulador |
 | Producción | **Envío apagado**: Vercel no tiene ninguna variable `WHATSAPP_*` (verificado 2026-09-29) | `vercel env ls production` |
+| Emisor definitivo / WABA de producción | **NO EXISTE.** Con el token vigente la única cuenta accesible es la WABA de prueba, con un único número "Test Number" (+1 555-165-1639, modo LIVE pero `NOT_VERIFIED`, negocio `not_verified`). El campo LIVE no lo convierte en emisor de producción. Sin esto no hay plantilla de producción ni credenciales que cargar | Graph API, 2026-09-30 |
+| Humo de producción tras el despliegue | Worker: 401 con `Bearer undefined` (antes 200, abierto) y sin credencial; webhook: 403/401 con token o firma falsos; catálogo público de Stefany 200 (12 productos); un visitante sin sesión que abre `/solicitudes?ref=` llega a `/login?next=…` | curl + navegador, 2026-09-30 |
 | Recuperación en minutos | **No existe todavía** (Vercel Hobby: cron 1 vez al día) — recomendación en §6 | — |
 
 Un HTTP 200 de Meta al enviar solo significa "aceptado". Solo un evento `delivered`/`read` firmado, asociado al mismo
@@ -218,7 +220,7 @@ enero/abril/julio/octubre; el 1-oct-2026 no estaba publicado al 29-sep: volver a
 
 ## 10. Checklist de activación en producción (en este orden)
 
-1. Desplegar este código (`git push origin master`) y `firebase deploy --only firestore:rules` (reglas nuevas: dedup y eventos, solo Admin SDK). Sin ninguna variable `WHATSAPP_*`, el envío sigue apagado.
+1. ~~Desplegar este código y las reglas~~ **HECHO el 2026-09-30.** Sin ninguna variable `WHATSAPP_*`, el envío sigue apagado.
 2. Crear en Vercel `CRON_SECRET` (si se quiere el cron diario) y, si se adopta, las de QStash.
 3. Registrar el número emisor definitivo y crear la plantilla en esa WABA; aprobar.
 4. Configurar el webhook de producción y comprobar el handshake.
