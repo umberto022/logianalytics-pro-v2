@@ -7,3 +7,12 @@ node_modules/
 
 .vercel
 .claude/
+
+# Sandbox aislado de WhatsApp (secretos locales y build separado — nunca al repo)
+.env.sandbox.local
+.next-sandbox/
+.next-build/
+.next-sandbox-sender/
+
+# Evidencia local de pruebas con Meta (contiene datos personales codificados: no subir)
+evidence/
