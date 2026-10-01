@@ -13,6 +13,8 @@
     "sandbox:emulators": "firebase emulators:start --config firebase.sandbox.json --only firestore,auth --project demo-logianalytics-sandbox",
     "prod:secrets": "node scripts/whatsapp-prod/set-secrets.mjs",
     "prod:copy-verify-token": "node scripts/whatsapp-prod/copy-verify-token.mjs",
+    "prod:register": "node scripts/whatsapp-prod/register.mjs",
+    "prod:link-waba": "node scripts/whatsapp-prod/link-waba.mjs",
     "prod:check": "node scripts/whatsapp-prod/check.mjs",
     "prod:template": "node scripts/whatsapp-prod/template.mjs",
     "prod:qstash": "node scripts/whatsapp-prod/qstash-schedule.mjs",
