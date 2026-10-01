@@ -52,7 +52,7 @@ if (args.includes("status")) {
   if (status !== 200) { console.error(`No se pudo crear: HTTP ${status} ${safeError(json)}`); process.exit(1); }
   console.log(`Enviada a revisión: id=${json.id} estado=${json.status} categoría=${json.category} · botón → ${buttonUrl}`);
 } else {
-  console.log(`Plantilla: ${TEMPLATE_NAME} (UTILITY, es) en la WABA ${waba} — destino del botón: ${prod ? "PRODUCCIÓN" : "sandbox (túnel actual)"}\n`);
+  console.log(`Plantilla: ${TEMPLATE_NAME} (UTILITY, es) en la WABA ${waba ?? "(sin configurar todavía)"} — destino del botón: ${prod ? "PRODUCCIÓN" : "sandbox (túnel actual)"}\n`);
   console.log("── Cuerpo ─────────────────────────────────────────");
   console.log(BODY_TEXT);
   console.log("── Botón ──────────────────────────────────────────");

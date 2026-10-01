@@ -16,3 +16,6 @@ node_modules/
 
 # Evidencia local de pruebas con Meta (contiene datos personales codificados: no subir)
 evidence/
+
+# Credenciales de PRODUCCION de Meta/QStash en esta maquina (nunca al repo)
+.env.production-meta.local

@@ -10,7 +10,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const ENV_FILE = path.join(ROOT, ".env.sandbox.local");
+// WHATSAPP_META_ENV_FILE permite reutilizar template.mjs / meta-check.mjs con otro archivo (p. ej. .env.production-meta.local, ver scripts/whatsapp-prod).
+export const ENV_FILE = process.env.WHATSAPP_META_ENV_FILE ? path.resolve(ROOT, process.env.WHATSAPP_META_ENV_FILE) : path.join(ROOT, ".env.sandbox.local");
 
 export const PROJECT_ID = "demo-logianalytics-sandbox";
 export const WORKSPACE_ID = "sandbox-ws";
