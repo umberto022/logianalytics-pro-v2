@@ -198,11 +198,11 @@ async function newQuote(overrides: Record<string, unknown> = {}) {
   return { publicRef: json.publicRef as string, quoteId: await quoteIdByRef(json.publicRef) };
 }
 
-/** Deja un job "pending" SIN llamar a Meta: se crea con el envío apagado. */
+/** Deja un job "pending" SIN llamar a Meta: interruptor encendido pero sin credenciales (no se puede enviar, el job se crea igual). */
 async function newPendingJob(overrides: Record<string, unknown> = {}) {
-  process.env.WHATSAPP_SENDING_ENABLED = "false";
+  delete process.env.WHATSAPP_ACCESS_TOKEN;
   const q = await newQuote(overrides);
-  process.env.WHATSAPP_SENDING_ENABLED = "true";
+  process.env.WHATSAPP_ACCESS_TOKEN = "test-token";
   return q;
 }
 
@@ -330,21 +330,28 @@ describe("Solicitud → job atómico → plantilla enviada al receptor protegido
 });
 
 describe("Toma atómica y configuración ausente", () => {
-  it("con el envío apagado (o sin credenciales) el job queda 'pending', NO consume intentos y NO llama a Meta", async () => {
+  it("con el interruptor APAGADO no se crea NINGÚN aviso (la bandeja de la empresa queda limpia) y no se llama a Meta; la solicitud se guarda igual", async () => {
     process.env.WHATSAPP_SENDING_ENABLED = "false";
+    const { publicRef, quoteId } = await newQuote();
+    expect(publicRef).toBeTruthy();
+    expect(await getJob(quoteId)).toBeNull();
+    expect(metaCalls).toHaveLength(0);
+    delete process.env.WHATSAPP_SENDING_ENABLED; // ausente = apagado, igual que en producción hoy
+    const second = await newQuote();
+    expect(await getJob(second.quoteId)).toBeNull();
+  });
+
+  it("con el interruptor ENCENDIDO pero SIN credenciales, el job queda 'pending', NO consume intentos y NO llama a Meta", async () => {
+    delete process.env.WHATSAPP_ACCESS_TOKEN;
     const { quoteId } = await newQuote();
     let job = await getJob(quoteId);
     expect(job.status).toBe("pending");
     expect(job.attempts).toBe(0);
-    expect(job.lastErrorSafe).toContain("desactivado");
-
-    process.env.WHATSAPP_SENDING_ENABLED = "true";
-    delete process.env.WHATSAPP_ACCESS_TOKEN;
+    expect(job.lastErrorSafe).toContain("no está configurada");
     await processDueJobs(getAdminDb());
     job = await getJob(quoteId);
     expect(job.status).toBe("pending");
     expect(job.attempts).toBe(0);
-    expect(job.lastErrorSafe).toContain("no está configurada");
     expect(metaCalls).toHaveLength(0);
   });
 

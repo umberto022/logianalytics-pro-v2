@@ -8,6 +8,7 @@ import { computeCartPricing } from "@/lib/catalogPricing";
 import { resolvePublicCatalog } from "@/lib/catalogPublicPayload";
 import { persistCatalogQuote } from "@/lib/catalogQuoteCreate";
 import { processJob } from "@/lib/whatsappNotificationJob";
+import { isWhatsappSendingEnabled } from "@/lib/whatsappCloudApi";
 import type { CatalogQuoteItem } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -135,7 +136,11 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     // quien la administra) — nunca el teléfono que mandó el visitante ni uno
     // deducido del perfil. El emisor (API) es siempre la cuenta de Meta de
     // LogiAnalytics (env vars), nunca el número de la empresa.
-    const notifyRecipient = settings.whatsappNotificationsConsent && settings.whatsappNumber
+    //
+    // Solo se crea el aviso si el envío está ENCENDIDO (WHATSAPP_SENDING_ENABLED=true): con el interruptor apagado a
+    // propósito no se acumulan avisos que nunca saldrían (aparecerían como "pendiente" y luego "vencido" en la bandeja
+    // de la empresa). Encendido pero sin credenciales SÍ se crea y espera, sin consumir intentos.
+    const notifyRecipient = settings.whatsappNotificationsConsent && settings.whatsappNumber && isWhatsappSendingEnabled()
       ? (settings.whatsappNumber as string)
       : null;
 
