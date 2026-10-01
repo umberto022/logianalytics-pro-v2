@@ -19,6 +19,7 @@ import { useStockNotifications } from "@/hooks/useStockNotifications";
 import { useRawMaterialNotifications } from "@/hooks/useRawMaterialNotifications";
 import { useOverdueOrders } from "@/hooks/useOverdueOrders";
 import { CONTACT_EMAIL } from "@/lib/legal";
+import { loginUrlWithNext } from "@/lib/safeRedirect";
 import type { WorkspaceStatus } from "@/types";
 
 const BLOCKED_COPY: Record<Exclude<WorkspaceStatus, "active">, { title: string; desc: string }> = {
@@ -96,8 +97,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isOperator = profile?.platformAdmin === true && profile?.platformOnly === true;
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    // Sin sesión: al login, recordando a dónde volver (p. ej. el enlace /solicitudes?ref=<id> del aviso de WhatsApp).
+    if (!loading && !user) router.replace(loginUrlWithNext(pathname, window.location.search));
+  }, [user, loading, router, pathname]);
 
   // Una cuenta platformOnly no tiene negocio propio — su única página válida
   // es /admin. Si intenta ir a cualquier otro lado (o cae ahí después del

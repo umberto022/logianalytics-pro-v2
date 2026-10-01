@@ -8,6 +8,7 @@ import { Truck, Mail, Lock, Eye, EyeOff, X, Plus, Search, Loader2 } from "lucide
 import { getRecentAccounts, removeRecentAccount, type RecentAccount } from "@/lib/recentAccounts";
 import type { Department } from "@/types";
 import { CONTACT_EMAIL } from "@/lib/legal";
+import { safeNextPath } from "@/lib/safeRedirect";
 
 const ROLE_BADGE: Record<Department, { label: string; cls: string; ring: string; grad: string }> = {
   admin:     { label: "Admin",      cls: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300",     ring: "ring-brand-300 dark:ring-brand-500/60",     grad: "from-brand-400 to-brand-600" },
@@ -15,6 +16,11 @@ const ROLE_BADGE: Record<Department, { label: string; cls: string; ring: string;
   compras:   { label: "Compras",    cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",     ring: "ring-amber-300 dark:ring-amber-500/60",     grad: "from-amber-400 to-orange-500" },
   logistica: { label: "Logística",  cls: "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",             ring: "ring-sky-300 dark:ring-sky-500/60",         grad: "from-sky-400 to-blue-600" },
 };
+/** A dónde ir tras iniciar sesión: la ruta interna de ?next= (p. ej. el enlace de un aviso) o el dashboard. */
+function afterLoginPath(): string {
+  return safeNextPath(new URLSearchParams(window.location.search).get("next")) ?? "/dashboard";
+}
+
 const DEFAULT_AVATAR_GRAD = "from-fuchsia-400 to-brand-600";
 const DEFAULT_AVATAR_RING = "ring-white dark:ring-slate-700";
 
@@ -57,7 +63,7 @@ export default function LoginPage() {
   // carrera y redirige a /dashboard antes de que createUserProfile() llegue
   // a correr (mismo bug encontrado y arreglado en /register).
   useEffect(() => {
-    if (!authLoading && user && !loading && !googleLoading && !quickLoadingUid) router.replace("/dashboard");
+    if (!authLoading && user && !loading && !googleLoading && !quickLoadingUid) router.replace(afterLoginPath());
   }, [user, authLoading, loading, googleLoading, quickLoadingUid, router]);
 
   useEffect(() => {
@@ -117,7 +123,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(email, password);
-      router.replace("/dashboard");
+      router.replace(afterLoginPath());
     } catch {
       toast.error("Email o contraseña incorrectos");
     } finally {
@@ -129,7 +135,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       await signInGoogle();
-      router.replace("/dashboard");
+      router.replace(afterLoginPath());
     } catch {
       toast.error("Error al iniciar sesión con Google");
     } finally {
