@@ -1,76 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Timestamp } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase-admin";
-import { attemptSendJob, buildTemplateBodyParams } from "@/lib/whatsappNotificationJob";
-import type { CatalogQuote } from "@/types";
+import { processDueJobs, processJob } from "@/lib/whatsappNotificationJob";
+import { authorizeWorkerRequest } from "@/lib/workerAuth";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Reintenta jobs de aviso de WhatsApp pendientes cuyo backoff ya venció.
- * Backstop del intento en línea que ya se hace al recibir la solicitud (ver
- * /api/catalogo/[slug]/solicitud) — cubre el caso en que ese intento falló o
- * Meta todavía no estaba configurada.
+ * Worker de avisos de WhatsApp. Dos modos:
+ *  - Con cuerpo {workspaceId, quoteId} (despertador de la cola): procesa ESE job.
+ *  - Sin cuerpo (barrido programado / disparo manual): procesa los jobs vencidos.
  *
- * Vercel Cron invoca esta ruta por GET; se protege igual que
- * /api/send-monthly-report (Authorization: Bearer CRON_SECRET). También
- * acepta POST para poder dispararla a mano en pruebas.
+ * Autorización (falla cerrado, ver src/lib/workerAuth.ts): Bearer CRON_SECRET
+ * o firma de QStash. Sin ninguna de las dos configuradas, todo es 401.
  *
- * Nota de plan de Vercel: esta cuenta está en plan Hobby (confirmado vía API,
- * campo billing.plan), que limita los cron jobs a como máximo una vez al día
- * — por eso vercel.json lo programa a "0 12 * * *" (diario) y no cada pocos
- * minutos. Esto NO afecta el camino principal: el intento en línea al recibir
- * la solicitud (ver /api/catalogo/[slug]/solicitud) sigue siendo inmediato en
- * cualquier plan — este cron es solo el respaldo diario para lo que haya
- * quedado "pending" (falló el intento en línea, o Meta no estaba configurada
- * todavía). Si en el futuro se contrata Vercel Pro, se puede acortar el
- * schedule en vercel.json sin tocar este archivo.
+ * Quién lo llama, y cada cuánto:
+ *  - Vercel Cron (vercel.json) — plan Hobby: UNA vez al día (best effort). Es el
+ *    último respaldo, NO la recuperación en minutos.
+ *  - QStash (si está configurado): un mensaje con retraso por cada reintento
+ *    pendiente, y opcionalmente un schedule de barrido cada pocos minutos.
+ * El envío en línea al recibir la solicitud no depende de esta ruta.
+ *
+ * Nunca reprocesa avisos viejos ni consume intentos si el envío está apagado o
+ * sin credenciales (ver claimJob).
  */
 async function handle(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const rawBody = req.method === "POST" ? await req.text() : "";
+  const base = process.env.APP_BASE_URL || "https://logianalytics-pro-v2.vercel.app";
+  const auth = authorizeWorkerRequest({
+    authorizationHeader: req.headers.get("authorization"),
+    signatureHeader: req.headers.get("upstash-signature"),
+    rawBody,
+    url: `${base}${req.nextUrl.pathname}`,
+  });
+  if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const db = getAdminDb();
-    const now = Timestamp.now();
 
-    const pendingSnap = await db.collectionGroup("jobs")
-      .where("status", "==", "pending")
-      .where("nextAttemptAt", "<=", now)
-      .limit(50)
-      .get();
-
-    const results: Array<{ quoteId: string; workspaceId: string; ok: boolean }> = [];
-
-    for (const jobDoc of pendingSnap.docs) {
-      const workspaceId = jobDoc.ref.parent.parent?.id;
-      const quoteId = jobDoc.id;
-      if (!workspaceId) continue;
-
-      const quoteSnap = await db.collection("catalogQuotes").doc(workspaceId).collection("records").doc(quoteId).get();
-      if (!quoteSnap.exists) {
-        // La cotización ya no existe (no debería pasar — nunca se borra) — se marca fallido para no reintentar al vacío.
-        await jobDoc.ref.update({ status: "failed", lastErrorSafe: "La solicitud asociada ya no existe", updatedAt: now });
-        continue;
-      }
-      const quote = quoteSnap.data() as CatalogQuote;
-
-      const outcome = await attemptSendJob(db, workspaceId, quoteId, buildTemplateBodyParams({
-        customerName: quote.customerName,
-        customerPhonePretty: quote.customerPhone,
-        publicRef: quote.publicRef,
-        items: quote.items,
-        quoteId,
-      }));
-      results.push({ quoteId, workspaceId, ok: outcome.ok });
+    let target: { workspaceId: string; quoteId: string } | null = null;
+    if (rawBody) {
+      try {
+        const parsed = JSON.parse(rawBody);
+        if (typeof parsed?.workspaceId === "string" && typeof parsed?.quoteId === "string"
+          && /^[A-Za-z0-9_-]{1,128}$/.test(parsed.workspaceId) && /^[A-Za-z0-9_-]{1,128}$/.test(parsed.quoteId)) {
+          target = { workspaceId: parsed.workspaceId, quoteId: parsed.quoteId };
+        }
+      } catch { /* cuerpo no JSON: se trata como barrido */ }
     }
 
-    return NextResponse.json({ processed: results.length, results });
+    if (target) {
+      const outcome = await processJob(db, target.workspaceId, target.quoteId);
+      return NextResponse.json({ mode: "job", via: auth.via, status: outcome.status, attempted: outcome.attempted, reason: outcome.reason });
+    }
+    const summary = await processDueJobs(db);
+    return NextResponse.json({ mode: "sweep", via: auth.via, ...summary });
   } catch (e) {
-    console.error("Cron de WhatsApp: error:", e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    console.error("Worker de WhatsApp: error:", e instanceof Error ? e.message : "desconocido");
+    // 500: la cola (o el próximo barrido) reintenta; el estado en Firestore es idempotente.
+    return NextResponse.json({ error: "Error procesando avisos" }, { status: 500 });
   }
 }
 

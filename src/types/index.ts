@@ -661,27 +661,37 @@ export interface CatalogQuote {
 // cron de reintentos, webhook de estado). Ver src/lib/whatsappNotificationJob.ts.
 
 export type WhatsappNotificationStatus =
-  | "pending"    // creado, sin intentar todavía o esperando el próximo reintento
-  | "sent"       // Meta lo aceptó (HTTP 200 + message id) — NO prueba entrega al teléfono
-  | "delivered"  // el webhook de Meta confirmó entrega al dispositivo
-  | "read"       // el webhook confirmó que se leyó (señal extra, no crítica)
-  | "failed";    // agotó los reintentos o Meta devolvió un error no reintentable
+  | "pending"      // creado (o esperando el próximo reintento) — todavía no se llamó a Meta en este turno
+  | "sending"      // un worker lo tomó (lease con vencimiento) y está llamando a Meta ahora mismo
+  | "unconfirmed"  // timeout/corte AMBIGUO: puede que Meta sí lo haya procesado — NO se reenvía a ciegas; se reconcilia por webhook o lo revisa un humano
+  | "accepted"     // Meta aceptó la petición (HTTP 200 + wamid) — NO prueba que salió ni que llegó
+  | "sent"         // webhook de Meta: el mensaje salió de la plataforma hacia WhatsApp
+  | "delivered"    // webhook de Meta: entregado al dispositivo
+  | "read"         // webhook de Meta: leído (señal extra, no crítica)
+  | "failed"       // error permanente, agotó los reintentos, o el webhook informó una falla de entrega
+  | "expired";     // demasiado viejo para enviarse automáticamente (protección contra envíos masivos de avisos atrasados)
 
 export interface WhatsappNotificationJob {
   id: string; // == quoteId
   quoteId: string;
   status: WhatsappNotificationStatus;
+  /** Intentos REALES contra Meta (una configuración ausente o un lease ajeno no consumen intentos). */
   attempts: number;
   maxAttempts: number;
+  /** Próximo momento en que un worker puede tomarlo. Mientras status="sending", es el vencimiento del lease. */
   nextAttemptAt: Timestamp;
   lastAttemptAt?: Timestamp;
+  /** Dueño del lease vigente (id aleatorio por toma) — solo quien lo tomó puede cerrar ese intento. */
+  leaseOwner?: string;
+  /** Hasta cuándo esperar un webhook que reconcilie un envío ambiguo antes de dejarlo para revisión humana. */
+  reconcileUntil?: Timestamp;
   /** wamid devuelto por Meta al aceptar el envío — se usa para matchear los webhooks de estado. */
   providerMessageId?: string;
-  /** Timestamp del último evento de estado aplicado (del webhook) — evita que un evento fuera de orden retroceda el estado. */
+  /** Timestamp del último evento de estado aplicado (del webhook). */
   lastStatusAt?: Timestamp;
   /** Resumen seguro del último error (código/mensaje de Meta) — nunca el payload crudo ni credenciales. */
   lastErrorSafe?: string;
-  /** Snapshot del número receptor (E.164) al momento de crear el job. */
+  /** Snapshot del número receptor (E.164) tomado de la configuración protegida (catalogSettings.whatsappNumber). */
   recipientPhone: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;

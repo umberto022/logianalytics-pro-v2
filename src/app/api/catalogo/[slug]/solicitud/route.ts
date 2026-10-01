@@ -1,14 +1,14 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { Timestamp } from "firebase-admin/firestore";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { noStoreJson as noStore } from "@/lib/noStoreJson";
 import { toCents } from "@/lib/money";
 import { computeCartPricing } from "@/lib/catalogPricing";
 import { resolvePublicCatalog } from "@/lib/catalogPublicPayload";
-import { stageNotificationJob, attemptSendJob, buildTemplateBodyParams } from "@/lib/whatsappNotificationJob";
-import type { CatalogQuoteItem, CustomerType } from "@/types";
+import { persistCatalogQuote } from "@/lib/catalogQuoteCreate";
+import { processJob } from "@/lib/whatsappNotificationJob";
+import type { CatalogQuoteItem } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -129,124 +129,74 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       return noStore({ error: "El WhatsApp no es válido — incluí el código de país (ej. +1 809 555 0000)" }, { status: 400 });
     }
     const normalizedPhone = parsedPhone.number; // E.164, ej. "+18095550000"
-    const prettyPhone = parsedPhone.formatInternational(); // ej. "+1 809 555 0000"
 
-    // Cliente: se busca por teléfono para heredar customerType si ya existe
-    // (el visitante NUNCA puede declararse "frecuente" a sí mismo).
-    const customersCol = db.collection("customers").doc(workspaceId).collection("records");
-    const existingCustomerSnap = await customersCol.where("phone", "==", normalizedPhone).limit(1).get();
-    let customerId: string;
-    let customerType: CustomerType;
-    const now = Timestamp.now();
-    if (!existingCustomerSnap.empty) {
-      const cdoc = existingCustomerSnap.docs[0];
-      customerId = cdoc.id;
-      customerType = (cdoc.data().customerType as CustomerType) ?? "nuevo";
-    } else {
-      const created = await customersCol.add({
-        name: body.customerName, phone: normalizedPhone, rnc: "", email: "", address: body.address ?? "", notes: "",
-        customerType: "nuevo", createdAt: now, updatedAt: now,
-      });
-      customerId = created.id;
-      customerType = "nuevo";
-    }
+    // Receptor del aviso: SOLO la configuración protegida de la empresa
+    // (catalogSettings.whatsappNumber, con el consentimiento explícito de
+    // quien la administra) — nunca el teléfono que mandó el visitante ni uno
+    // deducido del perfil. El emisor (API) es siempre la cuenta de Meta de
+    // LogiAnalytics (env vars), nunca el número de la empresa.
+    const notifyRecipient = settings.whatsappNotificationsConsent && settings.whatsappNumber
+      ? (settings.whatsappNumber as string)
+      : null;
 
-    // Protección simple contra doble envío/spam: mismo teléfono + mismos
-    // ítems (producto, VARIANTE y cantidad) + misma modalidad/zona/dirección
-    // de entrega en los últimos 3 minutos → devolvemos la solicitud ya creada
-    // en vez de duplicarla (cubre doble click / reintento de red). Antes solo
-    // comparaba inventoryId+quantity: dos pedidos del mismo producto en
-    // variantes distintas (o con distinta zona/dirección) se confundían.
-    const threeMinAgo = Timestamp.fromMillis(now.toMillis() - 3 * 60 * 1000);
-    const recentSnap = await db.collection("catalogQuotes").doc(workspaceId).collection("records")
-      .where("customerPhone", "==", normalizedPhone)
-      .where("createdAt", ">=", threeMinAgo)
-      .get();
-    const duplicate = recentSnap.docs.find((d) => {
-      const data = d.data();
-      const items = (data.items ?? []) as CatalogQuoteItem[];
-      return items.length === quoteItems.length &&
-        items.every((it, i) =>
-          it.inventoryId === quoteItems[i].inventoryId &&
-          it.quantity === quoteItems[i].quantity &&
-          (it.variantId ?? null) === (quoteItems[i].variantId ?? null)) &&
-        data.deliveryMethod === body.deliveryMethod &&
-        (data.zone ?? null) === (body.zone ?? null) &&
-        (data.address ?? null) === (body.address ?? null);
-    });
-    if (duplicate) {
-      return noStore({ ok: true, publicRef: duplicate.data().publicRef });
-    }
-
-    const pricing = computeCartPricing(
-      quoteItems.map((it) => ({ unitPriceCents: it.unitPriceCents, quantity: it.quantity })),
-      { customerType, discountRule: settings.discountRule, advanceRule: settings.advanceRule }
-    );
-
-    const publicRef = `${publicRefPrefix(settings.businessName)}-${randomCode(6)}`;
-
-    // La cotización y el job de aviso por WhatsApp se crean en el MISMO
-    // batch — atómico: o quedan los dos, o no queda ninguno. Se pre-genera
-    // el id de la cotización (en vez de add()) para poder usarlo también
-    // como id del job.
-    const quoteRef = db.collection("catalogQuotes").doc(workspaceId).collection("records").doc();
-    const batch = db.batch();
-    batch.set(quoteRef, {
-      publicRef,
-      status: "recibida",
+    // Persistencia ATÓMICA: deduplicación, cliente, cotización y job de aviso
+    // en una sola transacción (ver src/lib/catalogQuoteCreate.ts). El cliente
+    // hereda su customerType si ya existe (el visitante NUNCA se declara
+    // "frecuente"), y el precio final depende de ese tipo.
+    const saved = await persistCatalogQuote(db, {
+      workspaceId,
+      normalizedPhone,
+      customerName: body.customerName,
+      customerAddress: body.address ?? "",
       items: quoteItems,
-      subtotalCents: pricing.subtotalCents,
-      discountCents: pricing.discountCents,
-      discountPct: pricing.discountPct,
-      productsTotalCents: pricing.productsTotalCents,
       deliveryMethod: body.deliveryMethod,
       zone: body.zone ?? null,
       address: body.address ?? null,
-      customerName: body.customerName,
-      customerPhone: normalizedPhone,
-      customerNote: body.note ?? null,
-      customerId,
-      customerType,
-      requiresAdvance: pricing.requiresAdvance,
-      advancePct: pricing.advancePct ?? null,
-      advanceAmountCents: pricing.advanceAmountCents,
-      leadTimeNote: settings.leadTimeNote,
-      revision: 1,
-      history: [{ action: "recibida", by: "cliente", at: now }],
-      createdAt: now,
-      updatedAt: now,
+      notifyRecipient,
+      buildQuote: ({ customerType, now }) => {
+        const pricing = computeCartPricing(
+          quoteItems.map((it) => ({ unitPriceCents: it.unitPriceCents, quantity: it.quantity })),
+          { customerType, discountRule: settings.discountRule, advanceRule: settings.advanceRule }
+        );
+        return {
+          publicRef: `${publicRefPrefix(settings.businessName)}-${randomCode(6)}`,
+          data: {
+            status: "recibida",
+            items: quoteItems,
+            subtotalCents: pricing.subtotalCents,
+            discountCents: pricing.discountCents,
+            discountPct: pricing.discountPct,
+            productsTotalCents: pricing.productsTotalCents,
+            deliveryMethod: body.deliveryMethod,
+            zone: body.zone ?? null,
+            address: body.address ?? null,
+            customerName: body.customerName,
+            customerPhone: normalizedPhone,
+            customerNote: body.note ?? null,
+            requiresAdvance: pricing.requiresAdvance,
+            advancePct: pricing.advancePct ?? null,
+            advanceAmountCents: pricing.advanceAmountCents,
+            leadTimeNote: settings.leadTimeNote,
+            revision: 1,
+            history: [{ action: "recibida", by: "cliente", at: now }],
+          },
+        };
+      },
     });
 
-    // Aviso automático por WhatsApp: solo si Stefany dio su consentimiento Y
-    // configuró un número receptor — nunca se avisa "por las dudas". El
-    // número emisor (API) es siempre el de la cuenta de Meta de LogiAnalytics
-    // (env vars), nunca el de Stefany.
-    const notifyConsent = !!settings.whatsappNotificationsConsent && !!settings.whatsappNumber;
-    if (notifyConsent) {
-      stageNotificationJob(db, batch, workspaceId, quoteRef.id, settings.whatsappNumber!);
-    }
-
-    await batch.commit();
-
-    // Intento en línea (esperado, no "fire-and-forget") — best effort: si
-    // Meta falla o tarda, la solicitud YA quedó guardada (el batch de arriba
-    // ya se confirmó); esto solo decide si el aviso sale ahora mismo o queda
-    // "pending" para que el cron de reintentos lo levante después.
-    if (notifyConsent) {
+    // Intento en línea (esperado, no "fire-and-forget") — best effort: si Meta
+    // falla o tarda, la solicitud YA quedó guardada; esto solo decide si el
+    // aviso sale ahora mismo o queda "pending" para el worker. La toma atómica
+    // del job impide que este intento y el de la cola envíen a la vez.
+    if (saved.notify) {
       try {
-        await attemptSendJob(db, workspaceId, quoteRef.id, buildTemplateBodyParams({
-          customerName: body.customerName,
-          customerPhonePretty: prettyPhone,
-          publicRef,
-          items: quoteItems,
-          quoteId: quoteRef.id,
-        }));
+        await processJob(db, workspaceId, saved.quoteId);
       } catch (e) {
-        console.error("Aviso de WhatsApp: intento en línea falló (no afecta la solicitud guardada):", e);
+        console.error("Aviso de WhatsApp: intento en línea falló (no afecta la solicitud guardada):", e instanceof Error ? e.message : "desconocido");
       }
     }
 
-    return noStore({ ok: true, publicRef });
+    return noStore({ ok: true, publicRef: saved.publicRef });
   } catch (e) {
     console.error("POST /api/catalogo/[slug]/solicitud error:", e);
     return noStore({ error: "No se pudo enviar la solicitud" }, { status: 500 });

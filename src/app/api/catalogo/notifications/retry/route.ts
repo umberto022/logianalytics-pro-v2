@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { noStoreJson as noStore } from "@/lib/noStoreJson";
-import { reopenFailedJobForRetry, attemptSendJob, buildTemplateBodyParams } from "@/lib/whatsappNotificationJob";
-import type { CatalogQuote } from "@/types";
+import { reopenJobForManualRetry, processJob } from "@/lib/whatsappNotificationJob";
 
 export const dynamic = "force-dynamic";
 
@@ -46,18 +45,18 @@ export async function POST(req: NextRequest) {
     // el job de otra empresa a partir de un quoteId adivinado.
     const quoteSnap = await db.collection("catalogQuotes").doc(workspaceId).collection("records").doc(quoteId).get();
     if (!quoteSnap.exists) return noStore({ error: "Solicitud no encontrada" }, { status: 404 });
-    const quote = quoteSnap.data() as CatalogQuote;
 
-    const reopened = await reopenFailedJobForRetry(db, workspaceId, quoteId);
-    if (!reopened) return noStore({ error: "El aviso no está en estado fallido (o no existe) — nada para reintentar" }, { status: 400 });
+    // El receptor vigente sale de la configuración protegida de la empresa,
+    // así corregir un número mal cargado surte efecto al reintentar.
+    const settingsSnap = await db.collection("catalogSettings").doc(workspaceId).get();
+    const currentRecipient = settingsSnap.data()?.whatsappNumber as string | undefined;
 
-    const outcome = await attemptSendJob(db, workspaceId, quoteId, buildTemplateBodyParams({
-      customerName: quote.customerName,
-      customerPhonePretty: quote.customerPhone,
-      publicRef: quote.publicRef,
-      items: quote.items,
-      quoteId,
-    }));
+    const { reopened, previous } = await reopenJobForManualRetry(db, workspaceId, quoteId, currentRecipient);
+    if (!reopened) {
+      return noStore({ error: "El aviso no está en un estado reintentable (fallido, vencido o sin confirmar) — nada para reintentar", status: previous ?? null }, { status: 400 });
+    }
+
+    const outcome = await processJob(db, workspaceId, quoteId);
 
     return noStore({ ok: true, status: outcome.status });
   } catch (e) {

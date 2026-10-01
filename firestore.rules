@@ -242,6 +242,17 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Claves de deduplicación de solicitudes del catálogo (anti doble envío,
+    // ver src/lib/catalogQuoteCreate.ts) y eventos de estado de WhatsApp
+    // (whatsappNotifications/.../jobs/{jobId}/events): SOLO Admin SDK. Se
+    // declara explícito aunque el default ya deniega, para que sea evidente.
+    match /catalogQuoteDedup/{workspaceId}/keys/{key} {
+      allow read, write: if false;
+    }
+    match /whatsappNotifications/{workspaceId}/jobs/{jobId}/events/{eventId} {
+      allow read, write: if false;
+    }
+
     // Jobs de aviso automático por WhatsApp (Cloud API): SOLO lectura para
     // Admin/Ventas (para mostrar el estado en Solicitudes) — toda escritura
     // (creación junto con la cotización, reintentos del cron, actualización

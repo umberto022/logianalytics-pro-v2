@@ -24,20 +24,31 @@ import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import type { CatalogQuote, CatalogQuoteStatus, WhatsappNotificationJob } from "@/types";
 
 const NOTIF_LABEL: Record<WhatsappNotificationJob["status"], string> = {
-  pending: "Aviso pendiente de enviar",
-  sent: "Aviso enviado a Meta (no confirma entrega)",
+  pending: "Aviso de WhatsApp pendiente de enviar",
+  sending: "Enviando aviso de WhatsApp…",
+  unconfirmed: "Aviso de WhatsApp sin confirmar (puede que sí haya salido)",
+  accepted: "Aviso aceptado por Meta (todavía no confirma que salió)",
+  sent: "Aviso enviado por WhatsApp (falta confirmar entrega)",
   delivered: "Aviso entregado al teléfono",
   read: "Aviso leído",
   failed: "Aviso de WhatsApp falló",
+  expired: "Aviso de WhatsApp vencido (no se envió automáticamente)",
 };
 
 const NOTIF_COLOR: Record<WhatsappNotificationJob["status"], string> = {
   pending: "text-slate-500",
+  sending: "text-slate-500",
+  unconfirmed: "text-amber-600",
+  accepted: "text-indigo-600",
   sent: "text-indigo-600",
   delivered: "text-emerald-600",
   read: "text-emerald-700",
   failed: "text-red-600",
+  expired: "text-amber-600",
 };
+
+/** Estados en los que un humano puede reabrir el aviso (unconfirmed puede duplicarlo si el original sí salió). */
+const NOTIF_RETRYABLE: WhatsappNotificationJob["status"][] = ["failed", "expired", "unconfirmed"];
 
 function downloadVcf(name: string, phone: string) {
   const vcf = [
@@ -279,12 +290,13 @@ function QuoteDetail({ quote, settings, workspaceId, by, isAdmin, idToken, onClo
             <div className={`flex items-center justify-between gap-2 text-xs ${NOTIF_COLOR[notifJob.status]}`}>
               <span className="flex items-center gap-1.5">
                 <Send size={12} /> {NOTIF_LABEL[notifJob.status]}
-                {notifJob.status === "failed" && notifJob.lastErrorSafe && (
+                {NOTIF_RETRYABLE.includes(notifJob.status) && notifJob.lastErrorSafe && (
                   <span className="text-slate-400"> — {notifJob.lastErrorSafe}</span>
                 )}
               </span>
-              {notifJob.status === "failed" && (
+              {NOTIF_RETRYABLE.includes(notifJob.status) && (
                 <button onClick={retryNotification} disabled={retryingNotif}
+                  title={notifJob.status === "unconfirmed" ? "Si el aviso original sí salió, llegará duplicado" : undefined}
                   className="flex items-center gap-1 font-semibold text-brand-600 hover:underline disabled:opacity-50 flex-shrink-0">
                   <RefreshCw size={12} className={retryingNotif ? "animate-spin" : ""} /> Reintentar aviso
                 </button>
